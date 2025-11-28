@@ -249,21 +249,18 @@ const checkHealth = async (repositoryId: string) => {
 		throw new NotFoundError("Repository not found");
 	}
 
-	const { error, status } = await restic
-		.snapshots(repository.config)
-		.then(() => ({ error: null, status: "healthy" as const }))
-		.catch((error) => ({ error: toMessage(error), status: "error" as const }));
+	const { hasErrors, error } = await restic.check(repository.config, { readData: true });
 
 	await db
 		.update(repositoriesTable)
 		.set({
-			status,
+			status: hasErrors ? "error" : "healthy",
 			lastChecked: Date.now(),
 			lastError: error,
 		})
 		.where(eq(repositoriesTable.id, repository.id));
 
-	return { status, lastError: error };
+	return { lastError: error };
 };
 
 const doctorRepository = async (name: string) => {
