@@ -25,7 +25,7 @@ const encrypt = async (data: string) => {
 		return data;
 	}
 
-	const secret = (await Bun.file(RESTIC_PASS_FILE).text()).trim();
+	const secret = await Bun.file(RESTIC_PASS_FILE).text();
 
 	const salt = crypto.randomBytes(16);
 	const key = crypto.pbkdf2Sync(secret, salt, 100000, keyLength, "sha256");
