@@ -2376,6 +2376,26 @@ export type GetMirrorCompatibilityResponses = {
 
 export type GetMirrorCompatibilityResponse = GetMirrorCompatibilityResponses[keyof GetMirrorCompatibilityResponses];
 
+export type ReorderBackupSchedulesData = {
+    body?: {
+        scheduleIds: Array<number>;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/backups/reorder';
+};
+
+export type ReorderBackupSchedulesResponses = {
+    /**
+     * Backup schedules reordered successfully
+     */
+    200: {
+        success: boolean;
+    };
+};
+
+export type ReorderBackupSchedulesResponse = ReorderBackupSchedulesResponses[keyof ReorderBackupSchedulesResponses];
+
 export type ListNotificationDestinationsData = {
     body?: never;
     path?: never;
