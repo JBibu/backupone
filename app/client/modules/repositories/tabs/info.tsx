@@ -41,6 +41,7 @@ export const RepositoryInfoTabContent = ({ repository }: Props) => {
 	const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
 	const isImportedLocal = repository.type === "local" && repository.config.isExistingRepository;
+	const effectiveLocalPath = getEffectiveLocalPath(repository);
 
 	const updateMutation = useMutation({
 		...updateRepositoryMutation(),
@@ -121,10 +122,10 @@ export const RepositoryInfoTabContent = ({ repository }: Props) => {
 								<div className="text-sm font-medium text-muted-foreground">Status</div>
 								<p className="mt-1 text-sm">{repository.status || "unknown"}</p>
 							</div>
-							{getEffectiveLocalPath(repository) && (
+							{effectiveLocalPath && (
 								<div className="md:col-span-2">
 									<div className="text-sm font-medium text-muted-foreground">Effective Local Path</div>
-									<p className="mt-1 text-sm font-mono">{getEffectiveLocalPath(repository)}</p>
+									<p className="mt-1 text-sm font-mono">{effectiveLocalPath}</p>
 								</div>
 							)}
 							<div>
