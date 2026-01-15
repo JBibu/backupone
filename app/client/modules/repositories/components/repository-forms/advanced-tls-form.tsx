@@ -10,13 +10,7 @@ import {
 import { Input } from "../../../../components/ui/input";
 import { Textarea } from "../../../../components/ui/textarea";
 import { Checkbox } from "../../../../components/ui/checkbox";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue
-} from "../../../../components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../../components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../../../components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import type { RepositoryFormValues } from "../create-repository-form";
@@ -30,26 +24,15 @@ type Props = {
 export const AdvancedForm = ({ form }: Props) => {
 	const insecureTls = form.watch("insecureTls");
 	const cacert = form.watch("cacert");
-	const uploadEnabled = form.watch("uploadLimit.enabled");
-	const downloadEnabled = form.watch("downloadLimit.enabled");
+	const uploadLimitEnabled = form.watch("uploadLimit.enabled");
+	const downloadLimitEnabled = form.watch("downloadLimit.enabled");
 
 	return (
 		<Collapsible>
 			<CollapsibleTrigger className="">Advanced Settings</CollapsibleTrigger>
 			<CollapsibleContent className="pb-4 space-y-4">
-				{/* Bandwidth Limit Controls */}
-				<div className="space-y-6 rounded-lg border bg-card p-6">
-					<div className="flex items-center gap-3">
-						<div>
-							<h3 className="text-base font-semibold">Bandwidth Limits</h3>
-							<p className="text-sm text-muted-foreground">
-								Control upload and download speeds to prevent saturating network bandwidth
-							</p>
-						</div>
-					</div>
-
-					<div className="grid gap-6 sm:grid-cols-2">
-						{/* Upload Limit */}
+				<div className="space-y-4 mt-4">
+					<div className="grid gap-6">
 						<div className="space-y-4 rounded-lg border bg-background/50 p-4">
 							<FormField
 								control={form.control}
@@ -57,155 +40,149 @@ export const AdvancedForm = ({ form }: Props) => {
 								render={({ field }) => (
 									<FormItem className="flex flex-row items-start space-x-3 space-y-0">
 										<FormControl>
-											<Checkbox
-												checked={field.value ?? false}
-												onCheckedChange={field.onChange}
-											/>
+											<Checkbox checked={field.value ?? false} onCheckedChange={field.onChange} />
 										</FormControl>
-										<div className="space-y-1 leading-none">
+										<div className="space-y-1">
 											<FormLabel>Enable upload speed limit</FormLabel>
-											<FormDescription className="text-xs">
-												Limit upload speed to the repository
-											</FormDescription>
+											<FormDescription className="text-xs">Limit upload speed to the repository</FormDescription>
 										</div>
 									</FormItem>
 								)}
 							/>
-
-							{uploadEnabled && (
-								<div className="space-y-3 pt-2">
-									<div className="flex items-center gap-2">
-										<FormField
-											control={form.control}
-											name="uploadLimit.value"
-											render={({ field }) => (
-												<FormItem className="flex-1">
-													<FormControl>
-														<div className="relative">
-															<Input
-																type="number"
-																placeholder="10"
-																min="0"
-																step="0.1"
-																className="pr-12"
-																{...field}
-																onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-															/>
-															<div className="absolute inset-y-0 right-0 flex items-center pr-3">
-																<div className="h-4 w-px bg-border" />
-															</div>
-														</div>
-													</FormControl>
+							<div className="flex items-center gap-2">
+								<FormField
+									control={form.control}
+									name="uploadLimit.value"
+									render={({ field }) => (
+										<FormItem className="flex-1">
+											<FormControl>
+												<div className="relative">
+													<Input
+														disabled={!uploadLimitEnabled}
+														type="number"
+														min={1}
+														step={1}
+														max={999999}
+														placeholder="10"
+														className="pr-12"
+														{...field}
+														onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
+													/>
+													<div className="absolute inset-y-0 right-0 flex items-center pr-3">
+														<div className="h-4 w-px bg-border" />
+													</div>
 													<FormMessage />
-												</FormItem>
-											)}
-										/>
-										<FormField
-											control={form.control}
-											name="uploadLimit.unit"
-											render={({ field }) => (
-												<FormItem className="w-24">
-													<Select onValueChange={field.onChange} defaultValue={field.value || "Mbps"} value={field.value || "Mbps"}>
-														<FormControl>
-															<SelectTrigger className="text-xs">
-																<SelectValue />
-															</SelectTrigger>
-														</FormControl>
-														<SelectContent>
-															{Object.keys(BANDWIDTH_UNITS).map((unit) => (
-																<SelectItem key={unit} value={unit} className="text-xs">
-																	{unit}
-																</SelectItem>
-															))}
-														</SelectContent>
-													</Select>
-													<FormMessage />
-												</FormItem>
-											)}
-										/>
-									</div>
-								</div>
-							)}
+												</div>
+											</FormControl>
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name="uploadLimit.unit"
+									render={({ field }) => (
+										<FormItem className="w-24">
+											<Select
+												onValueChange={field.onChange}
+												defaultValue={field.value || "Mbps"}
+												value={field.value || "Mbps"}
+												disabled={!uploadLimitEnabled}
+											>
+												<FormControl>
+													<SelectTrigger className="text-xs">
+														<SelectValue />
+													</SelectTrigger>
+												</FormControl>
+												<SelectContent>
+													{Object.keys(BANDWIDTH_UNITS).map((unit) => (
+														<SelectItem key={unit} value={unit} className="text-xs">
+															{unit}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
 						</div>
+					</div>
 
-						{/* Download Limit */}
-						<div className="space-y-4 rounded-lg border bg-background/50 p-4">
-
-							<FormField
-								control={form.control}
-								name="downloadLimit.enabled"
-								render={({ field }) => (
-									<FormItem className="flex flex-row items-start space-x-3 space-y-0">
-										<FormControl>
-											<Checkbox
-												checked={field.value ?? false}
-												onCheckedChange={field.onChange}
-											/>
-										</FormControl>
-										<div className="space-y-1 leading-none">
-											<FormLabel>Enable download speed limit</FormLabel>
-											<FormDescription className="text-xs">
-												Limit download speed from the repository
-											</FormDescription>
-										</div>
-									</FormItem>
-								)}
-							/>
-
-							{downloadEnabled && (
-								<div className="space-y-3 pt-2">
-									<div className="flex items-center gap-2">
-										<FormField
-											control={form.control}
-											name="downloadLimit.value"
-											render={({ field }) => (
-												<FormItem className="flex-1">
-													<FormControl>
-														<div className="relative">
-															<Input
-																type="number"
-																placeholder="10"
-																min="0"
-																step="0.1"
-																className="pr-12"
-																{...field}
-																onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-															/>
-															<div className="absolute inset-y-0 right-0 flex items-center pr-3">
-																<div className="h-4 w-px bg-border" />
-															</div>
-														</div>
-													</FormControl>
-													<FormMessage />
-												</FormItem>
-											)}
-										/>
-										<FormField
-											control={form.control}
-											name="downloadLimit.unit"
-											render={({ field }) => (
-												<FormItem className="w-24">
-													<Select onValueChange={field.onChange} defaultValue={field.value || "Mbps"} value={field.value || "Mbps"}>
-														<FormControl>
-															<SelectTrigger className="text-xs">
-																<SelectValue />
-															</SelectTrigger>
-														</FormControl>
-														<SelectContent>
-															{Object.keys(BANDWIDTH_UNITS).map((unit) => (
-																<SelectItem key={unit} value={unit} className="text-xs">
-																	{unit}
-																</SelectItem>
-															))}
-														</SelectContent>
-													</Select>
-													<FormMessage />
-												</FormItem>
-											)}
-										/>
+					<div className="rounded-lg border bg-background/50 p-4">
+						<FormField
+							control={form.control}
+							name="downloadLimit.enabled"
+							render={({ field }) => (
+								<FormItem className="flex flex-row items-start space-x-3 space-y-0">
+									<FormControl>
+										<Checkbox checked={field.value ?? false} onCheckedChange={field.onChange} />
+									</FormControl>
+									<div className="space-y-1">
+										<FormLabel>Enable download speed limit</FormLabel>
+										<FormDescription className="text-xs">Limit download speed from the repository</FormDescription>
 									</div>
-								</div>
+								</FormItem>
 							)}
+						/>
+
+						<div className="space-y-3 pt-2">
+							<div className="flex items-center gap-2">
+								<FormField
+									control={form.control}
+									name="downloadLimit.value"
+									render={({ field }) => (
+										<FormItem className="flex-1">
+											<FormControl>
+												<div className="relative">
+													<Input
+														placeholder="10"
+														type="number"
+														min={1}
+														step={1}
+														max={999999}
+														disabled={!downloadLimitEnabled}
+														className="pr-12"
+														{...field}
+														onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
+													/>
+													<div className="absolute inset-y-0 right-0 flex items-center pr-3">
+														<div className="h-4 w-px bg-border" />
+													</div>
+												</div>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+								<FormField
+									control={form.control}
+									name="downloadLimit.unit"
+									render={({ field }) => (
+										<FormItem className="w-24">
+											<Select
+												onValueChange={field.onChange}
+												defaultValue={field.value || "Mbps"}
+												value={field.value || "Mbps"}
+											>
+												<FormControl>
+													<SelectTrigger className="text-xs">
+														<SelectValue />
+													</SelectTrigger>
+												</FormControl>
+												<SelectContent>
+													{Object.keys(BANDWIDTH_UNITS).map((unit) => (
+														<SelectItem key={unit} value={unit} className="text-xs">
+															{unit}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</div>
 						</div>
 					</div>
 				</div>

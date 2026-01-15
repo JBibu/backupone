@@ -14,17 +14,16 @@ export const REPOSITORY_BACKENDS = {
 export type RepositoryBackend = keyof typeof REPOSITORY_BACKENDS;
 
 export const BANDWIDTH_UNITS = {
-	"Kbps": "Kbps",
-	"Mbps": "Mbps",
-	"Gbps": "Gbps",
+	Kbps: "Kbps",
+	Mbps: "Mbps",
+	Gbps: "Gbps",
 } as const;
 
 export type BandwidthUnit = keyof typeof BANDWIDTH_UNITS;
 
-// Bandwidth limit configuration
 export const bandwidthLimitSchema = type({
 	enabled: "boolean = false",
-	value: "number >= 0 = 0",
+	value: "number > 0 = 1",
 	unit: type.valueOf(BANDWIDTH_UNITS).default("Mbps"),
 });
 

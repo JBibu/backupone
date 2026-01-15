@@ -846,30 +846,13 @@ const copy = async (
 		args.push("latest");
 	}
 
-	// Apply common args without automatic bandwidth limit injection to prevent duplication
 	addCommonArgs(args, env, destConfig, { skipBandwidth: true });
 
-	// Manually handle bandwidth limits with correct copy semantics:
-	// --limit-download uses sourceConfig.downloadLimit (limiting downloads from source repo)
-	// --limit-upload uses destConfig.uploadLimit (limiting uploads to destination repo)
 	const sourceDownloadLimit = formatBandwidthLimit(sourceConfig.downloadLimit);
 	const destUploadLimit = formatBandwidthLimit(destConfig.uploadLimit);
 
-	if (sourceConfig.backend === "rclone") {
-		// For rclone source backends, use rclone.from.bwlimit with source download limit only
-		let effectiveSourceLimit = "";
-		if (sourceDownloadLimit) {
-			effectiveSourceLimit = sourceDownloadLimit;
-		}
-
-		if (effectiveSourceLimit) {
-			args.push("-o", `rclone.from.bwlimit=${effectiveSourceLimit}`);
-		}
-	} else {
-		// For restic source backends, apply download limit from source
-		if (sourceDownloadLimit) {
-			args.push("--limit-download", sourceDownloadLimit);
-		}
+	if (sourceDownloadLimit) {
+		args.push("--limit-download", sourceDownloadLimit);
 	}
 
 	// Apply upload limit to destination for all backends
@@ -899,13 +882,11 @@ const copy = async (
 	};
 };
 
-// Helper function to convert bandwidth limit to restic/rclone format
 const formatBandwidthLimit = (limit?: BandwidthLimit): string => {
 	if (!limit || !limit.enabled || limit.value <= 0) {
 		return "";
 	}
 
-	// Convert to KiB/s for restic compatibility, or use suffixed format for rclone
 	let kibibytesPerSecond: number;
 	switch (limit.unit) {
 		case "Kbps":
@@ -924,11 +905,15 @@ const formatBandwidthLimit = (limit?: BandwidthLimit): string => {
 			return "";
 	}
 
-	// Return as integer KiB/s for restic
 	return `${Math.floor(kibibytesPerSecond)}`;
 };
 
-export const addCommonArgs = (args: string[], env: Record<string, string>, config?: RepositoryConfig, options?: { skipBandwidth?: boolean }) => {
+export const addCommonArgs = (
+	args: string[],
+	env: Record<string, string>,
+	config?: RepositoryConfig,
+	options?: { skipBandwidth?: boolean },
+) => {
 	args.push("--json");
 
 	if (env._SFTP_SSH_ARGS) {
@@ -943,37 +928,15 @@ export const addCommonArgs = (args: string[], env: Record<string, string>, confi
 		args.push("--cacert", env.RESTIC_CACERT);
 	}
 
-	// Add bandwidth limits if configuration is provided and not skipped
 	if (config && !options?.skipBandwidth) {
-		if (config.backend === "rclone") {
-			// For rclone backends, consolidate both upload and download limits into one bwlimit
-			const uploadLimit = formatBandwidthLimit(config.uploadLimit);
-			const downloadLimit = formatBandwidthLimit(config.downloadLimit);
+		const uploadLimit = formatBandwidthLimit(config.uploadLimit);
+		if (uploadLimit) {
+			args.push("--limit-upload", uploadLimit);
+		}
 
-			// Determine effective limit (choose more restrictive when both exist)
-			let effectiveLimit = "";
-			if (uploadLimit && downloadLimit) {
-				effectiveLimit = parseInt(uploadLimit, 10) < parseInt(downloadLimit, 10) ? uploadLimit : downloadLimit;
-			} else if (uploadLimit) {
-				effectiveLimit = uploadLimit;
-			} else if (downloadLimit) {
-				effectiveLimit = downloadLimit;
-			}
-
-			if (effectiveLimit) {
-				args.push("-o", `rclone.bwlimit=${effectiveLimit}`);
-			}
-		} else {
-			// For restic backends, handle upload and download limits separately
-			const uploadLimit = formatBandwidthLimit(config.uploadLimit);
-			if (uploadLimit) {
-				args.push("--limit-upload", uploadLimit);
-			}
-
-			const downloadLimit = formatBandwidthLimit(config.downloadLimit);
-			if (downloadLimit) {
-				args.push("--limit-download", downloadLimit);
-			}
+		const downloadLimit = formatBandwidthLimit(config.downloadLimit);
+		if (downloadLimit) {
+			args.push("--limit-download", downloadLimit);
 		}
 	}
 };
@@ -995,26 +958,17 @@ export const restic = {
 	copy,
 };
 
-// Helper function to clean up temporary files
 export const cleanupTemporaryKeys = async (env: Record<string, string>) => {
 	const keysToClean = ["_SFTP_KEY_PATH", "_SFTP_KNOWN_HOSTS_PATH", "RESTIC_CACERT", "GOOGLE_APPLICATION_CREDENTIALS"];
 
 	for (const key of keysToClean) {
 		if (env[key]) {
-			try {
-				await fs.unlink(env[key]);
-			} catch (_error) {
-				// Ignore errors when cleaning up temporary files
-			}
+			await fs.unlink(env[key]).catch(() => {});
 		}
 	}
 
 	// Clean up custom password files
 	if (env.RESTIC_PASSWORD_FILE && env.RESTIC_PASSWORD_FILE !== RESTIC_PASS_FILE) {
-		try {
-			await fs.unlink(env.RESTIC_PASSWORD_FILE);
-		} catch (_error) {
-			// Ignore errors when cleaning up temporary files
-		}
+		await fs.unlink(env.RESTIC_PASSWORD_FILE).catch(() => {});
 	}
 };
