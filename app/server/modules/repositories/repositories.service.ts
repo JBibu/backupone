@@ -29,7 +29,7 @@ const listRepositories = async () => {
 };
 
 const encryptConfig = async (config: RepositoryConfig): Promise<RepositoryConfig> => {
-	const encryptedConfig: Record<string, string | boolean | number> = { ...config };
+	const encryptedConfig: Record<string, unknown> = { ...config };
 
 	if (config.customPassword) {
 		encryptedConfig.customPassword = await cryptoUtils.sealSecret(config.customPassword);
