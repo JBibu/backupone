@@ -246,18 +246,31 @@ pub fn run() {
 
             // Start the sidecar and navigate to server
             tauri::async_runtime::spawn(async move {
+                let _ = app_handle.emit("loading-status", "Starting sidecar...");
+                info!("Starting sidecar...");
+
                 if let Err(e) = start_sidecar(&app_handle, &state_clone).await {
-                    error!("Failed to start sidecar: {}", e);
+                    let msg = format!("Failed to start sidecar: {}", e);
+                    error!("{}", msg);
+                    let _ = app_handle.emit("loading-status", msg);
                     return;
                 }
+
+                let _ = app_handle.emit("loading-status", "Sidecar ready, navigating...");
+                info!("Sidecar ready, navigating to server...");
 
                 // Navigate to the SSR server instead of using static assets
                 if let Some(window) = app_handle.get_webview_window("main") {
                     let url = format!("http://localhost:{}/", state_clone.backend_port);
                     info!("Navigating to SSR server at {}", url);
                     if let Err(e) = window.navigate(url.parse().unwrap()) {
-                        error!("Failed to navigate to server: {}", e);
+                        let msg = format!("Failed to navigate: {}", e);
+                        error!("{}", msg);
+                        let _ = app_handle.emit("loading-status", msg);
                     }
+                } else {
+                    error!("Could not get main window");
+                    let _ = app_handle.emit("loading-status", "Error: Could not get main window");
                 }
             });
 
