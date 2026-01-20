@@ -37,7 +37,8 @@
       "icons/icon.ico"
     ],
     "resources": {
-      "binaries/assets/migrations": "assets/migrations"
+      "binaries/assets/migrations": "assets/migrations",
+      "binaries/dist/client": "dist/client"
     },
     "externalBin": [
       "binaries/zerobyte-server",

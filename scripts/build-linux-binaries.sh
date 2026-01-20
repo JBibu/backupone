@@ -43,6 +43,10 @@ echo "Copying migrations..."
 mkdir -p "$OUTPUT_DIR/assets/migrations"
 cp -r app/drizzle/* "$OUTPUT_DIR/assets/migrations/"
 
+# Copy client assets for SSR hydration
+echo "Copying client assets..."
+cp -r dist/client "$OUTPUT_DIR/dist/"
+
 # Verify the output file exists
 if [ -f "$OUTPUT_FILE" ]; then
     SIZE=$(du -h "$OUTPUT_FILE" | cut -f1)

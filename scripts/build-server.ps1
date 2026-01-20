@@ -71,4 +71,10 @@ if (-not (Test-Path $migrationsDir)) {
 Copy-Item -Path "app\drizzle\*" -Destination $migrationsDir -Recurse -Force
 Write-Host "Migrations copied to: $migrationsDir" -ForegroundColor Green
 
+# Copy client assets for SSR hydration
+Write-Host "Copying client assets..." -ForegroundColor Yellow
+$clientDir = Join-Path $OutputDir "dist\client"
+Copy-Item -Path "dist\client" -Destination (Join-Path $OutputDir "dist") -Recurse -Force
+Write-Host "Client assets copied to: $clientDir" -ForegroundColor Green
+
 Write-Host "Done!" -ForegroundColor Green
