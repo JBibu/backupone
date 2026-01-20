@@ -17,6 +17,10 @@ import { handleServiceError } from "./utils/errors";
 import { logger } from "./utils/logger";
 import { config } from "./core/config";
 import { auth } from "~/lib/auth";
+import { closeDatabase } from "./db/db";
+
+// Flag to track if shutdown has been requested
+let isShuttingDown = false;
 
 export const generalDescriptor = (app: Hono) =>
 	openAPIRouteHandler(app, {
@@ -62,6 +66,25 @@ export const createApp = () => {
 
 	app
 		.get("healthcheck", (c) => c.json({ status: "ok" }))
+		.post("/api/shutdown", async (c) => {
+			// Graceful shutdown endpoint for Tauri/Service
+			if (isShuttingDown) {
+				return c.json({ message: "Shutdown already in progress" }, 200);
+			}
+
+			isShuttingDown = true;
+			logger.info("Graceful shutdown requested");
+
+			// Schedule shutdown after response is sent
+			setTimeout(async () => {
+				logger.info("Closing database connection...");
+				closeDatabase();
+				logger.info("Database closed. Exiting...");
+				process.exit(0);
+			}, 100);
+
+			return c.json({ message: "Shutdown initiated" }, 200);
+		})
 		.route("/api/v1/auth", authController)
 		.route("/api/v1/volumes", volumeController)
 		.route("/api/v1/repositories", repositoriesController)

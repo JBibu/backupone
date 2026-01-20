@@ -2,12 +2,15 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import { BACKEND_STATUS, type BackendConfig } from "~/schemas/volumes";
 import { OPERATION_TIMEOUT } from "../../../core/constants";
+import { IS_WINDOWS } from "../../../core/platform";
 import { toMessage } from "../../../utils/errors";
 import { logger } from "../../../utils/logger";
 import { getMountForPath } from "../../../utils/mountinfo";
 import { withTimeout } from "../../../utils/timeout";
 import type { VolumeBackend } from "../backend";
 import { executeMount, executeUnmount } from "../utils/backend-utils";
+
+const WINDOWS_NFS_ERROR = "NFS is not supported on Windows. Consider using SMB shares or rclone for network storage.";
 
 const mount = async (config: BackendConfig, path: string) => {
 	logger.debug(`Mounting volume ${path}...`);
@@ -17,6 +20,14 @@ const mount = async (config: BackendConfig, path: string) => {
 		return {
 			status: BACKEND_STATUS.error,
 			error: "Provided config is not for NFS backend",
+		};
+	}
+
+	if (IS_WINDOWS) {
+		logger.error(WINDOWS_NFS_ERROR);
+		return {
+			status: BACKEND_STATUS.error,
+			error: WINDOWS_NFS_ERROR,
 		};
 	}
 
@@ -75,6 +86,14 @@ const mount = async (config: BackendConfig, path: string) => {
 };
 
 const unmount = async (path: string) => {
+	if (IS_WINDOWS) {
+		logger.error(WINDOWS_NFS_ERROR);
+		return {
+			status: BACKEND_STATUS.error,
+			error: WINDOWS_NFS_ERROR,
+		};
+	}
+
 	if (os.platform() !== "linux") {
 		logger.error("NFS unmounting is only supported on Linux hosts.");
 		return {
@@ -110,6 +129,13 @@ const unmount = async (path: string) => {
 };
 
 const checkHealth = async (path: string) => {
+	if (IS_WINDOWS) {
+		return {
+			status: BACKEND_STATUS.error,
+			error: WINDOWS_NFS_ERROR,
+		};
+	}
+
 	const run = async () => {
 		try {
 			await fs.access(path);
@@ -140,6 +166,13 @@ const checkHealth = async (path: string) => {
 		}
 		return { status: BACKEND_STATUS.error, error: message };
 	}
+};
+
+/**
+ * Check if NFS backend is supported on the current platform.
+ */
+export const isNfsSupported = (): boolean => {
+	return !IS_WINDOWS && os.platform() === "linux";
 };
 
 export const makeNfsBackend = (config: BackendConfig, path: string): VolumeBackend => ({

@@ -1,14 +1,19 @@
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import { OPERATION_TIMEOUT } from "../../../core/constants";
+import { IS_WINDOWS } from "../../../core/platform";
 import { toMessage } from "../../../utils/errors";
 import { logger } from "../../../utils/logger";
 import { getMountForPath } from "../../../utils/mountinfo";
 import { withTimeout } from "../../../utils/timeout";
 import type { VolumeBackend } from "../backend";
-import { executeUnmount } from "../utils/backend-utils";
+import { executeUnmount, isPathAccessible } from "../utils/backend-utils";
 import { BACKEND_STATUS, type BackendConfig } from "~/schemas/volumes";
 import { exec } from "~/server/utils/spawn";
+
+const WINDOWS_MOUNT_ERROR =
+	"Rclone mounting is not supported on Windows in this application. " +
+	"Consider using rclone as a repository backend instead, or access cloud storage directly via the rclone remote.";
 
 const mount = async (config: BackendConfig, path: string) => {
 	logger.debug(`Mounting rclone volume ${path}...`);
@@ -16,6 +21,12 @@ const mount = async (config: BackendConfig, path: string) => {
 	if (config.backend !== "rclone") {
 		logger.error("Provided config is not for rclone backend");
 		return { status: BACKEND_STATUS.error, error: "Provided config is not for rclone backend" };
+	}
+
+	// Rclone mounting on Windows requires WinFsp and is complex - suggest alternatives
+	if (IS_WINDOWS) {
+		logger.error(WINDOWS_MOUNT_ERROR);
+		return { status: BACKEND_STATUS.error, error: WINDOWS_MOUNT_ERROR };
 	}
 
 	if (os.platform() !== "linux") {
@@ -72,6 +83,11 @@ const mount = async (config: BackendConfig, path: string) => {
 };
 
 const unmount = async (path: string) => {
+	if (IS_WINDOWS) {
+		logger.debug("Rclone unmount not applicable on Windows");
+		return { status: BACKEND_STATUS.unmounted };
+	}
+
 	if (os.platform() !== "linux") {
 		logger.error("Rclone unmounting is only supported on Linux hosts.");
 		return { status: BACKEND_STATUS.error, error: "Rclone unmounting is only supported on Linux hosts." };
@@ -100,6 +116,10 @@ const unmount = async (path: string) => {
 };
 
 const checkHealth = async (path: string) => {
+	if (IS_WINDOWS) {
+		return { status: BACKEND_STATUS.error, error: WINDOWS_MOUNT_ERROR };
+	}
+
 	const run = async () => {
 		try {
 			await fs.access(path);
@@ -130,6 +150,14 @@ const checkHealth = async (path: string) => {
 		}
 		return { status: BACKEND_STATUS.error, error: message };
 	}
+};
+
+/**
+ * Check if rclone volume mounting is supported on the current platform.
+ * Note: rclone itself works on Windows, but FUSE mounting doesn't.
+ */
+export const isRcloneMountSupported = (): boolean => {
+	return !IS_WINDOWS && os.platform() === "linux";
 };
 
 export const makeRcloneBackend = (config: BackendConfig, path: string): VolumeBackend => ({

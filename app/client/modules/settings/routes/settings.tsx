@@ -20,6 +20,7 @@ import { Label } from "~/client/components/ui/label";
 import { authClient } from "~/client/lib/auth-client";
 import { appContext } from "~/context";
 import { TwoFactorSection } from "../components/two-factor-section";
+import { WindowsServiceSection } from "../components/windows-service-section";
 import type { Route } from "./+types/settings";
 
 export const handle = {
@@ -280,6 +281,8 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 			</CardContent>
 
 			<TwoFactorSection twoFactorEnabled={loaderData.user?.twoFactorEnabled} />
+
+			<WindowsServiceSection />
 		</Card>
 	);
 }

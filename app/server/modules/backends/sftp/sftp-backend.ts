@@ -3,6 +3,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { $ } from "bun";
 import { OPERATION_TIMEOUT } from "../../../core/constants";
+import { IS_WINDOWS, getSshKeysPath } from "../../../core/platform";
 import { cryptoUtils } from "../../../utils/crypto";
 import { toMessage } from "../../../utils/errors";
 import { logger } from "../../../utils/logger";
@@ -12,7 +13,12 @@ import type { VolumeBackend } from "../backend";
 import { executeUnmount } from "../utils/backend-utils";
 import { BACKEND_STATUS, type BackendConfig } from "~/schemas/volumes";
 
-const SSH_KEYS_DIR = "/var/lib/zerobyte/ssh";
+const WINDOWS_SFTP_ERROR =
+	"SFTP volume mounting is not supported on Windows. " +
+	"Consider using SFTP as a repository backend instead (for restic backups), " +
+	"or use a tool like WinSCP for manual file access.";
+
+const SSH_KEYS_DIR = getSshKeysPath();
 
 const getPrivateKeyPath = (mountPath: string) => {
 	const name = path.basename(mountPath);
@@ -30,6 +36,11 @@ const mount = async (config: BackendConfig, mountPath: string) => {
 	if (config.backend !== "sftp") {
 		logger.error("Provided config is not for SFTP backend");
 		return { status: BACKEND_STATUS.error, error: "Provided config is not for SFTP backend" };
+	}
+
+	if (IS_WINDOWS) {
+		logger.error(WINDOWS_SFTP_ERROR);
+		return { status: BACKEND_STATUS.error, error: WINDOWS_SFTP_ERROR };
 	}
 
 	if (os.platform() !== "linux") {
@@ -123,6 +134,11 @@ const mount = async (config: BackendConfig, mountPath: string) => {
 };
 
 const unmount = async (mountPath: string) => {
+	if (IS_WINDOWS) {
+		logger.debug("SFTP unmount not applicable on Windows");
+		return { status: BACKEND_STATUS.unmounted };
+	}
+
 	if (os.platform() !== "linux") {
 		logger.error("SFTP unmounting is only supported on Linux hosts.");
 		return { status: BACKEND_STATUS.error, error: "SFTP unmounting is only supported on Linux hosts." };
@@ -157,6 +173,10 @@ const unmount = async (mountPath: string) => {
 };
 
 const checkHealth = async (mountPath: string) => {
+	if (IS_WINDOWS) {
+		return { status: BACKEND_STATUS.error, error: WINDOWS_SFTP_ERROR };
+	}
+
 	const mount = await getMountForPath(mountPath);
 
 	if (!mount || mount.mountPoint !== mountPath) {
@@ -171,6 +191,13 @@ const checkHealth = async (mountPath: string) => {
 	}
 
 	return { status: BACKEND_STATUS.mounted };
+};
+
+/**
+ * Check if SFTP volume mounting is supported on the current platform.
+ */
+export const isSftpMountSupported = (): boolean => {
+	return !IS_WINDOWS && os.platform() === "linux";
 };
 
 export const makeSftpBackend = (config: BackendConfig, mountPath: string): VolumeBackend => ({

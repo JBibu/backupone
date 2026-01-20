@@ -1,5 +1,6 @@
 import * as fs from "node:fs/promises";
 import { logger } from "../utils/logger";
+import { IS_WINDOWS, getRcloneConfigPath } from "./platform";
 
 export type SystemCapabilities = {
 	rclone: boolean;
@@ -34,14 +35,18 @@ async function detectCapabilities(): Promise<SystemCapabilities> {
 
 /**
  * Checks if rclone is available by:
- * 1. Checking if /root/.config/rclone directory exists and is accessible
+ * 1. Checking if the rclone config directory exists and is accessible
+ *    - Windows: %APPDATA%\rclone
+ *    - Linux: /root/.config/rclone (or ~/.config/rclone)
  */
 async function detectRclone(): Promise<boolean> {
+	const rcloneConfigPath = getRcloneConfigPath();
+
 	try {
-		await fs.access("/root/.config/rclone");
+		await fs.access(rcloneConfigPath);
 
 		// Make sure the folder is not empty
-		const files = await fs.readdir("/root/.config/rclone");
+		const files = await fs.readdir(rcloneConfigPath);
 		if (files.length === 0) {
 			throw new Error("rclone config directory is empty");
 		}
@@ -49,12 +54,26 @@ async function detectRclone(): Promise<boolean> {
 		logger.info("rclone capability: enabled");
 		return true;
 	} catch (_) {
-		logger.warn("rclone capability: disabled. " + "To enable: mount /root/.config/rclone in docker-compose.yml");
+		if (IS_WINDOWS) {
+			logger.warn(`rclone capability: disabled. To enable: create rclone config at ${rcloneConfigPath}`);
+		} else {
+			logger.warn("rclone capability: disabled. To enable: mount /root/.config/rclone in docker-compose.yml");
+		}
 		return false;
 	}
 }
 
+/**
+ * Detects if the process has CAP_SYS_ADMIN capability (Linux only).
+ * On Windows, this capability doesn't exist - mounting is handled differently.
+ */
 async function detectSysAdmin(): Promise<boolean> {
+	// Windows doesn't have Linux capabilities - mounting is handled via different mechanisms
+	if (IS_WINDOWS) {
+		logger.info("sysAdmin capability: not applicable on Windows");
+		return false;
+	}
+
 	if (process.platform !== "linux") {
 		logger.warn("sysAdmin capability: disabled. Non-Linux platform detected");
 		return false;

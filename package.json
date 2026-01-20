@@ -21,7 +21,11 @@
 		"test": "bun run test:server && bun run test:client",
 		"test:e2e": "NODE_ENV=test dotenv -e .env.local -- playwright test",
 		"test:e2e:ui": "NODE_ENV=test dotenv -e .env.local -- playwright test --ui",
-		"test:codegen": "playwright codegen localhost:4096"
+		"test:codegen": "playwright codegen localhost:4096",
+		"tauri:dev": "tauri dev",
+		"tauri:build": "tauri build",
+		"tauri:build-server": "pwsh ./scripts/build-server.ps1",
+		"tauri:download-binaries": "pwsh ./scripts/download-windows-binaries.ps1"
 	},
 	"dependencies": {
 		"@dnd-kit/core": "^6.3.1",

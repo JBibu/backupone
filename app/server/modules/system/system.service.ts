@@ -1,15 +1,29 @@
 import { getCapabilities } from "../../core/capabilities";
 import { config } from "../../core/config";
+import { IS_SERVICE_MODE, getZerobytePath } from "../../core/platform";
 import type { UpdateInfoDto } from "./system.dto";
 import semver from "semver";
 import { cache } from "../../utils/cache";
 import { logger } from "~/server/utils/logger";
+import os from "node:os";
 
 const CACHE_TTL = 60 * 60;
+
+const getPlatformOs = (): "windows" | "linux" | "darwin" => {
+	const platform = os.platform();
+	if (platform === "win32") return "windows";
+	if (platform === "darwin") return "darwin";
+	return "linux";
+};
 
 const getSystemInfo = async () => {
 	return {
 		capabilities: await getCapabilities(),
+		platform: {
+			os: getPlatformOs(),
+			isServiceMode: IS_SERVICE_MODE,
+			dataPath: getZerobytePath(),
+		},
 	};
 };
 

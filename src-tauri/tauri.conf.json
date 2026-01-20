@@ -1,0 +1,64 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Zerobyte",
+  "version": "0.1.0",
+  "identifier": "com.zerobyte.app",
+  "build": {
+    "beforeDevCommand": "bun run dev",
+    "devUrl": "http://localhost:4096",
+    "beforeBuildCommand": "bun run build",
+    "frontendDist": "../dist/client"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Zerobyte",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi", "nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": [],
+    "externalBin": [
+      "binaries/zerobyte-server",
+      "binaries/restic",
+      "binaries/rclone",
+      "binaries/shoutrrr"
+    ],
+    "windows": {
+      "digestAlgorithm": "sha256",
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "installMode": "currentUser",
+        "languages": ["English"]
+      }
+    },
+    "category": "Utility",
+    "shortDescription": "Backup automation powered by Restic",
+    "longDescription": "Zerobyte is a backup automation tool that provides a modern web interface for managing encrypted backups using Restic.",
+    "publisher": "Zerobyte Contributors"
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    }
+  }
+}

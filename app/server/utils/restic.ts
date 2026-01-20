@@ -12,6 +12,9 @@ import type { RetentionPolicy } from "../modules/backups/backups.dto";
 import { safeSpawn, exec } from "./spawn";
 import type { CompressionMode, RepositoryConfig, OverwriteMode, BandwidthLimit } from "~/schemas/restic";
 import { ResticError } from "./errors";
+import { getDefaultPath } from "../core/platform";
+
+const getTempDir = () => os.tmpdir();
 
 const backupOutputSchema = type({
 	message_type: "'summary'",
@@ -108,12 +111,12 @@ export const buildRepoUrl = (config: RepositoryConfig): string => {
 export const buildEnv = async (config: RepositoryConfig) => {
 	const env: Record<string, string> = {
 		RESTIC_CACHE_DIR,
-		PATH: process.env.PATH || "/usr/local/bin:/usr/bin:/bin",
+		PATH: getDefaultPath(),
 	};
 
 	if (config.isExistingRepository && config.customPassword) {
 		const decryptedPassword = await cryptoUtils.resolveSecret(config.customPassword);
-		const passwordFilePath = path.join("/tmp", `zerobyte-pass-${crypto.randomBytes(8).toString("hex")}.txt`);
+		const passwordFilePath = path.join(getTempDir(), `zerobyte-pass-${crypto.randomBytes(8).toString("hex")}.txt`);
 
 		await fs.writeFile(passwordFilePath, decryptedPassword, { mode: 0o600 });
 		env.RESTIC_PASSWORD_FILE = passwordFilePath;
@@ -134,7 +137,7 @@ export const buildEnv = async (config: RepositoryConfig) => {
 			break;
 		case "gcs": {
 			const decryptedCredentials = await cryptoUtils.resolveSecret(config.credentialsJson);
-			const credentialsPath = path.join("/tmp", `zerobyte-gcs-${crypto.randomBytes(8).toString("hex")}.json`);
+			const credentialsPath = path.join(getTempDir(), `zerobyte-gcs-${crypto.randomBytes(8).toString("hex")}.json`);
 			await fs.writeFile(credentialsPath, decryptedCredentials, { mode: 0o600 });
 			env.GOOGLE_PROJECT_ID = config.projectId;
 			env.GOOGLE_APPLICATION_CREDENTIALS = credentialsPath;
@@ -159,7 +162,7 @@ export const buildEnv = async (config: RepositoryConfig) => {
 		}
 		case "sftp": {
 			const decryptedKey = await cryptoUtils.resolveSecret(config.privateKey);
-			const keyPath = path.join("/tmp", `zerobyte-ssh-${crypto.randomBytes(8).toString("hex")}`);
+			const keyPath = path.join(getTempDir(), `zerobyte-ssh-${crypto.randomBytes(8).toString("hex")}`);
 
 			let normalizedKey = decryptedKey.replace(/\r\n/g, "\n");
 			if (!normalizedKey.endsWith("\n")) {
@@ -189,7 +192,7 @@ export const buildEnv = async (config: RepositoryConfig) => {
 			if (config.skipHostKeyCheck || !config.knownHosts) {
 				sshArgs.push("-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null");
 			} else if (config.knownHosts) {
-				const knownHostsPath = path.join("/tmp", `zerobyte-known-hosts-${crypto.randomBytes(8).toString("hex")}`);
+				const knownHostsPath = path.join(getTempDir(), `zerobyte-known-hosts-${crypto.randomBytes(8).toString("hex")}`);
 				await fs.writeFile(knownHostsPath, config.knownHosts, { mode: 0o600 });
 				env._SFTP_KNOWN_HOSTS_PATH = knownHostsPath;
 				sshArgs.push("-o", "StrictHostKeyChecking=yes", "-o", `UserKnownHostsFile=${knownHostsPath}`);
@@ -207,7 +210,7 @@ export const buildEnv = async (config: RepositoryConfig) => {
 
 	if (config.cacert) {
 		const decryptedCert = await cryptoUtils.resolveSecret(config.cacert);
-		const certPath = path.join("/tmp", `zerobyte-cacert-${crypto.randomBytes(8).toString("hex")}.pem`);
+		const certPath = path.join(getTempDir(), `zerobyte-cacert-${crypto.randomBytes(8).toString("hex")}.pem`);
 		await fs.writeFile(certPath, decryptedCert, { mode: 0o600 });
 		env.RESTIC_CACERT = certPath;
 	}

@@ -33,3 +33,11 @@ playwright/.auth
 playwright/temp
 
 .idea/
+
+# Tauri
+/src-tauri/target/
+/src-tauri/binaries/
+/src-tauri/icons/*.ico
+/src-tauri/icons/*.icns
+/src-tauri/icons/*.png
+!src-tauri/icons/.gitkeep

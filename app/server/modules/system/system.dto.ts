@@ -6,8 +6,15 @@ export const capabilitiesSchema = type({
 	sysAdmin: "boolean",
 });
 
+export const platformInfoSchema = type({
+	os: '"windows" | "linux" | "darwin"',
+	isServiceMode: "boolean",
+	dataPath: "string",
+});
+
 export const systemInfoResponse = type({
 	capabilities: capabilitiesSchema,
+	platform: platformInfoSchema,
 });
 
 export type SystemInfoDto = typeof systemInfoResponse.infer;

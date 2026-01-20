@@ -3,6 +3,7 @@ import path from "node:path";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { DATABASE_URL } from "../core/constants";
+import { IS_WINDOWS, getZerobytePath } from "../core/platform";
 import fs from "node:fs";
 import { config } from "../core/config";
 import type * as schemaTypes from "./schema";
@@ -53,16 +54,49 @@ export const db = new Proxy(
 	},
 ) as ReturnType<typeof drizzle<typeof schemaTypes>>;
 
-export const runDbMigrations = () => {
-	let migrationsFolder: string;
-
+/**
+ * Get the migrations folder path based on platform and environment.
+ */
+const getMigrationsFolder = (): string => {
+	// Use custom migrations path if specified
 	if (config.migrationsPath) {
-		migrationsFolder = config.migrationsPath;
-	} else if (config.__prod__) {
-		migrationsFolder = path.join("/app", "assets", "migrations");
-	} else {
-		migrationsFolder = path.join(process.cwd(), "app", "drizzle");
+		return config.migrationsPath;
 	}
+
+	// In production mode
+	if (config.__prod__) {
+		if (IS_WINDOWS) {
+			// For Windows Tauri app, migrations are bundled with the app
+			// Check multiple possible locations
+			const possiblePaths = [
+				// Tauri resource directory
+				path.join(process.cwd(), "assets", "migrations"),
+				// Same directory as the executable
+				path.join(path.dirname(process.execPath), "assets", "migrations"),
+				// Development fallback
+				path.join(process.cwd(), "app", "drizzle"),
+			];
+
+			for (const p of possiblePaths) {
+				if (fs.existsSync(p)) {
+					return p;
+				}
+			}
+
+			// Fallback to the first option
+			return possiblePaths[0]!;
+		}
+
+		// Linux Docker production path
+		return path.join("/app", "assets", "migrations");
+	}
+
+	// Development mode
+	return path.join(process.cwd(), "app", "drizzle");
+};
+
+export const runDbMigrations = () => {
+	const migrationsFolder = getMigrationsFolder();
 
 	migrate(db, { migrationsFolder });
 
@@ -71,4 +105,26 @@ export const runDbMigrations = () => {
 	}
 
 	_sqlite.run("PRAGMA foreign_keys = ON;");
+};
+
+/**
+ * Flush WAL and checkpoint the database.
+ * Useful before shutdown to ensure all data is written.
+ */
+export const flushDatabase = () => {
+	if (_sqlite) {
+		_sqlite.run("PRAGMA wal_checkpoint(TRUNCATE);");
+	}
+};
+
+/**
+ * Close the database connection.
+ */
+export const closeDatabase = () => {
+	if (_sqlite) {
+		flushDatabase();
+		_sqlite.close();
+		_sqlite = undefined;
+		_db = undefined;
+	}
 };

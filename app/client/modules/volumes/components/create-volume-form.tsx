@@ -64,8 +64,18 @@ export const CreateVolumeForm = ({ onSubmit, mode = "create", initialValues, for
 
 	const { watch, getValues } = form;
 
-	const { capabilities } = useSystemInfo();
+	const { capabilities, platform } = useSystemInfo();
 	const watchedBackend = watch("backend");
+
+	// Check if we're on Windows
+	const isWindows = platform?.os === "windows";
+
+	// Backend availability based on platform
+	const isNfsAvailable = capabilities.sysAdmin && !isWindows;
+	const isSmbAvailable = capabilities.sysAdmin || isWindows; // SMB is always available on Windows
+	const isWebdavAvailable = capabilities.sysAdmin && !isWindows;
+	const isSftpAvailable = capabilities.sysAdmin && !isWindows;
+	const isRcloneAvailable = capabilities.rclone && capabilities.sysAdmin && !isWindows;
 
 	useEffect(() => {
 		if (mode === "create") {
@@ -150,64 +160,79 @@ export const CreateVolumeForm = ({ onSubmit, mode = "create", initialValues, for
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<div>
-												<SelectItem disabled={!capabilities.sysAdmin} value="nfs">
+												<SelectItem disabled={!isNfsAvailable} value="nfs">
 													NFS
 												</SelectItem>
 											</div>
 										</TooltipTrigger>
-										<TooltipContent className={cn({ hidden: capabilities.sysAdmin })}>
-											<p>Remote mounts require SYS_ADMIN capability</p>
+										<TooltipContent className={cn({ hidden: isNfsAvailable })}>
+											{isWindows ? (
+												<p>NFS is not supported on Windows. Use SMB instead.</p>
+											) : (
+												<p>Remote mounts require SYS_ADMIN capability</p>
+											)}
 										</TooltipContent>
 									</Tooltip>
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<div>
-												<SelectItem disabled={!capabilities.sysAdmin} value="smb">
-													SMB
+												<SelectItem disabled={!isSmbAvailable} value="smb">
+													SMB {isWindows && "(Native)"}
 												</SelectItem>
 											</div>
 										</TooltipTrigger>
-										<TooltipContent className={cn({ hidden: capabilities.sysAdmin })}>
+										<TooltipContent className={cn({ hidden: isSmbAvailable })}>
 											<p>Remote mounts require SYS_ADMIN capability</p>
 										</TooltipContent>
 									</Tooltip>
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<div>
-												<SelectItem disabled={!capabilities.sysAdmin} value="webdav">
+												<SelectItem disabled={!isWebdavAvailable} value="webdav">
 													WebDAV
 												</SelectItem>
 											</div>
 										</TooltipTrigger>
-										<TooltipContent className={cn({ hidden: capabilities.sysAdmin })}>
-											<p>Remote mounts require SYS_ADMIN capability</p>
+										<TooltipContent className={cn({ hidden: isWebdavAvailable })}>
+											{isWindows ? (
+												<p>WebDAV mounting is not supported on Windows. Use rclone repository backend instead.</p>
+											) : (
+												<p>Remote mounts require SYS_ADMIN capability</p>
+											)}
 										</TooltipContent>
 									</Tooltip>
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<div>
-												<SelectItem disabled={!capabilities.sysAdmin} value="sftp">
+												<SelectItem disabled={!isSftpAvailable} value="sftp">
 													SFTP
 												</SelectItem>
 											</div>
 										</TooltipTrigger>
-										<TooltipContent className={cn({ hidden: capabilities.sysAdmin })}>
-											<p>Remote mounts require SYS_ADMIN capability</p>
+										<TooltipContent className={cn({ hidden: isSftpAvailable })}>
+											{isWindows ? (
+												<p>SFTP mounting is not supported on Windows. Use SFTP repository backend instead.</p>
+											) : (
+												<p>Remote mounts require SYS_ADMIN capability</p>
+											)}
 										</TooltipContent>
 									</Tooltip>
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<div>
-												<SelectItem disabled={!capabilities.rclone || !capabilities.sysAdmin} value="rclone">
+												<SelectItem disabled={!isRcloneAvailable} value="rclone">
 													rclone
 												</SelectItem>
 											</div>
 										</TooltipTrigger>
-										<TooltipContent className={cn({ hidden: capabilities.sysAdmin })}>
-											<p>Remote mounts require SYS_ADMIN capability</p>
-										</TooltipContent>
-										<TooltipContent className={cn({ hidden: !capabilities.sysAdmin || capabilities.rclone })}>
-											<p>Setup rclone to use this backend</p>
+										<TooltipContent className={cn({ hidden: isRcloneAvailable })}>
+											{isWindows ? (
+												<p>rclone mounting is not supported on Windows. Use rclone repository backend instead.</p>
+											) : !capabilities.sysAdmin ? (
+												<p>Remote mounts require SYS_ADMIN capability</p>
+											) : (
+												<p>Setup rclone to use this backend</p>
+											)}
 										</TooltipContent>
 									</Tooltip>
 								</SelectContent>
