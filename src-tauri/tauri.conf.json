@@ -36,12 +36,9 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": [
-      {
-        "src": "binaries/assets/migrations/**/*",
-        "target": "assets/migrations/"
-      }
-    ],
+    "resources": {
+      "binaries/assets/migrations": "assets/migrations"
+    },
     "externalBin": [
       "binaries/zerobyte-server",
       "binaries/restic",
