@@ -62,4 +62,13 @@ if (Test-Path $outputFile) {
     exit 1
 }
 
+# Copy migrations for bundling
+Write-Host "Copying migrations..." -ForegroundColor Yellow
+$migrationsDir = Join-Path $OutputDir "assets\migrations"
+if (-not (Test-Path $migrationsDir)) {
+    New-Item -ItemType Directory -Path $migrationsDir -Force | Out-Null
+}
+Copy-Item -Path "app\drizzle\*" -Destination $migrationsDir -Recurse -Force
+Write-Host "Migrations copied to: $migrationsDir" -ForegroundColor Green
+
 Write-Host "Done!" -ForegroundColor Green

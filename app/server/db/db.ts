@@ -65,30 +65,26 @@ const getMigrationsFolder = (): string => {
 
 	// In production mode
 	if (config.__prod__) {
-		if (IS_WINDOWS) {
-			// For Windows Tauri app, migrations are bundled with the app
-			// Check multiple possible locations
-			const possiblePaths = [
-				// Tauri resource directory
-				path.join(process.cwd(), "assets", "migrations"),
-				// Same directory as the executable
-				path.join(path.dirname(process.execPath), "assets", "migrations"),
-				// Development fallback
-				path.join(process.cwd(), "app", "drizzle"),
-			];
+		// Check multiple possible locations for migrations
+		const possiblePaths = [
+			// Tauri resource directory (cwd)
+			path.join(process.cwd(), "assets", "migrations"),
+			// Same directory as the executable
+			path.join(path.dirname(process.execPath), "assets", "migrations"),
+			// Linux Docker production path
+			path.join("/app", "assets", "migrations"),
+			// Development fallback
+			path.join(process.cwd(), "app", "drizzle"),
+		];
 
-			for (const p of possiblePaths) {
-				if (fs.existsSync(p)) {
-					return p;
-				}
+		for (const p of possiblePaths) {
+			if (fs.existsSync(p)) {
+				return p;
 			}
-
-			// Fallback to the first option
-			return possiblePaths[0]!;
 		}
 
-		// Linux Docker production path
-		return path.join("/app", "assets", "migrations");
+		// Fallback to the first option
+		return possiblePaths[0]!;
 	}
 
 	// Development mode
