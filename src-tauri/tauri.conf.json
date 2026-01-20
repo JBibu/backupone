@@ -50,8 +50,8 @@
       "digestAlgorithm": "sha256",
       "nsis": {
         "installerIcon": "icons/icon.ico",
-        "installMode": "currentUser",
-        "languages": ["English"]
+        "installMode": "perMachine",
+        "displayLanguageSelector": false
       }
     },
     "category": "Utility",
