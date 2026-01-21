@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FileEntry } from "../components/file-tree";
 
 type FetchFolderFn = (
@@ -30,7 +30,7 @@ export const useFileBrowser = (props: UseFileBrowserOptions) => {
 	const stripPath = pathTransform?.strip;
 	const addPath = pathTransform?.add;
 
-	useMemo(() => {
+	useEffect(() => {
 		if (initialData?.files) {
 			const files = initialData.files;
 			setAllFiles((prev) => {
