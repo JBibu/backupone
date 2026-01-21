@@ -8,9 +8,9 @@ import { IS_WINDOWS, EXE_SUFFIX, getDefaultPath } from "../core/platform";
  * @param name - The base name of the binary (e.g., "restic", "rclone")
  * @returns The binary name with .exe suffix on Windows
  */
-export const getBinaryName = (name: string): string => {
+export function getBinaryName(name: string): string {
 	return IS_WINDOWS ? `${name}${EXE_SUFFIX}` : name;
-};
+}
 
 type ExecProps = {
 	command: string;
@@ -18,7 +18,7 @@ type ExecProps = {
 	env?: NodeJS.ProcessEnv;
 } & ExecFileOptions;
 
-export const exec = async ({ command, args = [], env = {}, ...rest }: ExecProps) => {
+export async function exec({ command, args = [], env = {}, ...rest }: ExecProps) {
 	const options = {
 		env: { ...process.env, ...env, PATH: env.PATH || getDefaultPath() },
 	};
@@ -41,7 +41,7 @@ export const exec = async ({ command, args = [], env = {}, ...rest }: ExecProps)
 			stderr: execError.stderr || "",
 		};
 	}
-};
+}
 
 export interface SafeSpawnParams {
 	command: string;
@@ -58,7 +58,7 @@ type SpawnResult = {
 	error: string;
 };
 
-export const safeSpawn = (params: SafeSpawnParams) => {
+export function safeSpawn(params: SafeSpawnParams) {
 	const { command, args, env = {}, signal, onStdout, onStderr } = params;
 
 	// On Windows, automatically add .exe suffix if not present
@@ -105,4 +105,4 @@ export const safeSpawn = (params: SafeSpawnParams) => {
 			resolve({ exitCode: code ?? -1, summary: lastStdout, error: lastStderr });
 		});
 	});
-};
+}

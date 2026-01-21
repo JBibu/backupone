@@ -17,11 +17,11 @@ export const IS_SERVICE_MODE = process.env.ZEROBYTE_SERVICE_MODE === "1";
 
 /**
  * Get the application data path based on platform
- * - Windows: %APPDATA% (C:\Users\<user>\AppData\Roaming)
- * - Linux: /var/lib
+ * - Windows: %APPDATA% (e.g., C:\Users\<user>\AppData\Roaming)
  * - macOS: ~/Library/Application Support
+ * - Linux: /var/lib
  */
-export const getAppDataPath = (): string => {
+export function getAppDataPath(): string {
 	if (IS_WINDOWS) {
 		return process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming");
 	}
@@ -29,30 +29,33 @@ export const getAppDataPath = (): string => {
 		return path.join(os.homedir(), "Library", "Application Support");
 	}
 	return "/var/lib";
-};
+}
 
 /**
  * Get the program data path (for system-wide data on Windows)
- * - Windows: %PROGRAMDATA% (C:\ProgramData)
+ * - Windows: %PROGRAMDATA% (e.g., C:\ProgramData)
  * - Linux/macOS: Same as getAppDataPath()
  */
-export const getProgramDataPath = (): string => {
+export function getProgramDataPath(): string {
 	if (IS_WINDOWS) {
 		return process.env.PROGRAMDATA || "C:\\ProgramData";
 	}
 	return getAppDataPath();
-};
+}
 
 /**
  * Get the C3i Backup ONE data directory based on platform and mode
- * - Can be overridden with ZEROBYTE_DATA_DIR environment variable
- * - Desktop mode (Windows): %APPDATA%\C3i Backup ONE
- * - Service mode (Windows): %PROGRAMDATA%\C3i Backup ONE
+ *
+ * Can be overridden with ZEROBYTE_DATA_DIR environment variable
+ *
+ * Default paths:
+ * - Windows (Desktop): %APPDATA%\C3i Backup ONE
+ * - Windows (Service): %PROGRAMDATA%\C3i Backup ONE
+ * - macOS: ~/Library/Application Support/C3i Backup ONE
  * - Linux (production/Docker): /var/lib/zerobyte
  * - Linux (development): ~/.local/share/zerobyte
- * - macOS: ~/Library/Application Support/C3i Backup ONE
  */
-export const getZerobytePath = (): string => {
+export function getZerobytePath(): string {
 	// Allow override via environment variable
 	if (process.env.ZEROBYTE_DATA_DIR) {
 		return process.env.ZEROBYTE_DATA_DIR;
@@ -83,47 +86,40 @@ export const getZerobytePath = (): string => {
  * - Windows: %TEMP%
  * - Linux/macOS: /tmp or $TMPDIR
  */
-export const getTempPath = (): string => {
+export function getTempPath(): string {
 	return os.tmpdir();
-};
+}
 
 /**
  * Get the server port based on mode
  * - Desktop mode: 4096
  * - Service mode: 4097
  */
-export const getServerPort = (): number => {
-	if (IS_SERVICE_MODE) {
-		return 4097;
-	}
-	return 4096;
-};
+export function getServerPort(): number {
+	return IS_SERVICE_MODE ? 4097 : 4096;
+}
 
 /**
  * Get the rclone config directory based on platform
  * - Windows: %APPDATA%\rclone
- * - Linux: /root/.config/rclone (or ~/.config/rclone)
- * - macOS: ~/.config/rclone
+ * - Linux/macOS: ~/.config/rclone (or /root/.config/rclone in Docker)
  */
-export const getRcloneConfigPath = (): string => {
+export function getRcloneConfigPath(): string {
 	if (IS_WINDOWS) {
 		return path.join(getAppDataPath(), "rclone");
 	}
-	// For Docker/Linux, we use /root/.config/rclone
-	// For non-root users, use ~/.config/rclone
-	const homeDir = os.homedir();
-	return path.join(homeDir, ".config", "rclone");
-};
+	return path.join(os.homedir(), ".config", "rclone");
+}
 
 /**
  * Get SSH keys directory based on platform
  * - Windows (Desktop): %APPDATA%\C3i Backup ONE\ssh
  * - Windows (Service): %PROGRAMDATA%\C3i Backup ONE\ssh
- * - Linux: /var/lib/zerobyte/ssh
+ * - Linux/macOS: <data_path>/ssh
  */
-export const getSshKeysPath = (): string => {
+export function getSshKeysPath(): string {
 	return path.join(getZerobytePath(), "ssh");
-};
+}
 
 /**
  * Get the path separator for the current platform
@@ -133,29 +129,50 @@ export const PATH_SEPARATOR = path.sep;
 /**
  * Join paths using the correct separator for the current platform
  */
-export const joinPath = (...paths: string[]): string => {
+export function joinPath(...paths: string[]): string {
 	return path.join(...paths);
-};
+}
 
 /**
  * Convert a path to use forward slashes (for URLs, etc.)
  */
-export const toForwardSlashes = (p: string): string => {
+export function toForwardSlashes(p: string): string {
 	return p.replace(/\\/g, "/");
-};
+}
+
+/**
+ * Normalize a directory path for the current platform
+ * On Windows, ensures paths have a drive letter if they start with just a backslash
+ */
+export function normalizeDirectoryPath(dirPath: string): string {
+	if (!IS_WINDOWS) {
+		return dirPath;
+	}
+
+	const normalized = path.normalize(dirPath);
+
+	// If the path is just a backslash or starts with backslash without drive letter,
+	// prepend the current drive (usually C:)
+	if (normalized === "\\" || (normalized.startsWith("\\") && !/^[A-Za-z]:/.test(normalized))) {
+		const currentDrive = process.cwd().slice(0, 2); // e.g., "C:"
+		return path.join(currentDrive, normalized);
+	}
+
+	return normalized;
+}
 
 /**
  * Get binary name with platform-appropriate extension
  */
-export const getBinaryName = (name: string): string => {
+export function getBinaryName(name: string): string {
 	return IS_WINDOWS ? `${name}.exe` : name;
-};
+}
 
 /**
  * Get the default PATH environment variable with common binary locations
  * Includes the directory where the executable is located (for bundled binaries)
  */
-export const getDefaultPath = (): string => {
+export function getDefaultPath(): string {
 	// Get the directory containing the running executable (where restic, rclone, etc. are bundled)
 	const execDir = path.dirname(process.execPath);
 

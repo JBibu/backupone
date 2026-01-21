@@ -3,11 +3,59 @@ use std::time::Duration;
 #[cfg(target_os = "windows")]
 use tracing::info;
 
+/// Port used for Windows Service mode
+const SERVICE_PORT: u16 = 4097;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServiceStatus {
     pub installed: bool,
     pub running: bool,
     pub start_type: Option<String>,
+}
+
+#[cfg(target_os = "windows")]
+/// Helper to create and execute an elevated batch script for service operations
+async fn execute_elevated_script(
+    script_name: &str,
+    script_content: String,
+    log_path: &std::path::Path,
+    success_message: &str,
+) -> Result<(), String> {
+    use tokio::time::sleep;
+
+    // Create script in temp directory
+    let temp_dir = std::env::temp_dir();
+    let script_path = temp_dir.join(script_name);
+
+    std::fs::write(&script_path, script_content)
+        .map_err(|e| format!("Failed to write {} script: {}", script_name, e))?;
+
+    // Run the script with elevation
+    run_elevated(&script_path.to_string_lossy())?;
+
+    info!("Script {} initiated, waiting for completion...", script_name);
+
+    // Wait for the script to complete (check for log file updates)
+    for _ in 0..10 {
+        sleep(Duration::from_secs(1)).await;
+        if let Ok(content) = std::fs::read_to_string(log_path) {
+            if content.contains(success_message) || content.contains("ERROR:") {
+                break;
+            }
+        }
+    }
+
+    // Check for errors in log
+    if let Ok(content) = std::fs::read_to_string(log_path) {
+        if content.contains("ERROR:") {
+            return Err(format!(
+                "Operation failed. Check log file for details: {}",
+                log_path.display()
+            ));
+        }
+    }
+
+    Ok(())
 }
 
 /// Get the current status of the Windows Service
@@ -81,7 +129,8 @@ pub async fn is_service_running() -> Result<bool, String> {
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
-    match client.get("http://localhost:4097/healthcheck").send().await {
+    let url = format!("http://localhost:{}/healthcheck", SERVICE_PORT);
+    match client.get(&url).send().await {
         Ok(response) => Ok(response.status().is_success()),
         Err(_) => Ok(false),
     }
@@ -94,7 +143,6 @@ pub async fn install_service(app: tauri::AppHandle) -> Result<(), String> {
     {
         use std::env;
         use tauri::Manager;
-        use tokio::time::{sleep, Duration};
 
         // Get the path to the service executable
         let exe_dir = app
@@ -119,8 +167,7 @@ pub async fn install_service(app: tauri::AppHandle) -> Result<(), String> {
         // Remove old log file if it exists
         let _ = std::fs::remove_file(&log_path);
 
-        // Create a batch script to install the service with elevation
-        // Redirect all output to a log file for error diagnosis
+        // Create batch script content
         let script = format!(
             r#"@echo off
 echo Installing service... > "{log}"
@@ -137,25 +184,14 @@ echo Installation complete >> "{log}"
             log = log_path.display()
         );
 
-        // Write the script to a temp file
-        let script_path = temp_dir.join("zerobyte_install_service.bat");
-        std::fs::write(&script_path, script)
-            .map_err(|e| format!("Failed to write install script: {}", e))?;
-
-        // Run the script with elevation using ShellExecuteW with runas verb
-        run_elevated(&script_path.to_string_lossy())?;
-
-        info!("Service installation initiated, waiting for completion...");
-
-        // Wait for the script to complete (check for log file updates)
-        for _ in 0..10 {
-            sleep(Duration::from_secs(1)).await;
-            if let Ok(content) = std::fs::read_to_string(&log_path) {
-                if content.contains("Installation complete") || content.contains("ERROR:") {
-                    break;
-                }
-            }
-        }
+        // Execute the elevated script
+        execute_elevated_script(
+            "zerobyte_install_service.bat",
+            script,
+            &log_path,
+            "Installation complete",
+        )
+        .await?;
 
         // Check the service status to verify installation
         let status = get_service_status().await?;
@@ -186,7 +222,6 @@ pub async fn uninstall_service() -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
         use std::env;
-        use tokio::time::{sleep, Duration};
 
         let temp_dir = env::temp_dir();
         let log_path = temp_dir.join("zerobyte_service_uninstall.log");
@@ -194,7 +229,7 @@ pub async fn uninstall_service() -> Result<(), String> {
         // Remove old log file if it exists
         let _ = std::fs::remove_file(&log_path);
 
-        // Create a batch script to uninstall the service with elevation
+        // Create batch script content
         let script = format!(
             r#"@echo off
 echo Stopping service... > "{log}"
@@ -211,25 +246,14 @@ echo Uninstallation complete >> "{log}"
             log = log_path.display()
         );
 
-        // Write the script to a temp file
-        let script_path = temp_dir.join("zerobyte_uninstall_service.bat");
-        std::fs::write(&script_path, script)
-            .map_err(|e| format!("Failed to write uninstall script: {}", e))?;
-
-        // Run the script with elevation
-        run_elevated(&script_path.to_string_lossy())?;
-
-        info!("Service uninstallation initiated, waiting for completion...");
-
-        // Wait for the script to complete
-        for _ in 0..10 {
-            sleep(Duration::from_secs(1)).await;
-            if let Ok(content) = std::fs::read_to_string(&log_path) {
-                if content.contains("Uninstallation complete") || content.contains("ERROR:") {
-                    break;
-                }
-            }
-        }
+        // Execute the elevated script
+        execute_elevated_script(
+            "zerobyte_uninstall_service.bat",
+            script,
+            &log_path,
+            "Uninstallation complete",
+        )
+        .await?;
 
         // Check the service status to verify uninstallation
         let status = get_service_status().await?;
@@ -259,7 +283,6 @@ pub async fn start_service() -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
         use std::env;
-        use tokio::time::{sleep, Duration};
 
         let temp_dir = env::temp_dir();
         let log_path = temp_dir.join("zerobyte_service_start.log");
@@ -267,6 +290,7 @@ pub async fn start_service() -> Result<(), String> {
         // Remove old log file if it exists
         let _ = std::fs::remove_file(&log_path);
 
+        // Create batch script content
         let script = format!(
             r#"@echo off
 echo Starting service... > "{log}"
@@ -280,23 +304,14 @@ echo Service started >> "{log}"
             log = log_path.display()
         );
 
-        let script_path = temp_dir.join("zerobyte_start_service.bat");
-        std::fs::write(&script_path, script)
-            .map_err(|e| format!("Failed to write start script: {}", e))?;
-
-        run_elevated(&script_path.to_string_lossy())?;
-
-        info!("Service start initiated, waiting for completion...");
-
-        // Wait for the script to complete
-        for _ in 0..10 {
-            sleep(Duration::from_secs(1)).await;
-            if let Ok(content) = std::fs::read_to_string(&log_path) {
-                if content.contains("Service started") || content.contains("ERROR:") {
-                    break;
-                }
-            }
-        }
+        // Execute the elevated script
+        execute_elevated_script(
+            "zerobyte_start_service.bat",
+            script,
+            &log_path,
+            "Service started",
+        )
+        .await?;
 
         // Check if the service is running
         let status = get_service_status().await?;
@@ -326,7 +341,6 @@ pub async fn stop_service() -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
         use std::env;
-        use tokio::time::{sleep, Duration};
 
         let temp_dir = env::temp_dir();
         let log_path = temp_dir.join("zerobyte_service_stop.log");
@@ -334,6 +348,7 @@ pub async fn stop_service() -> Result<(), String> {
         // Remove old log file if it exists
         let _ = std::fs::remove_file(&log_path);
 
+        // Create batch script content
         let script = format!(
             r#"@echo off
 echo Stopping service... > "{log}"
@@ -347,23 +362,14 @@ echo Service stopped >> "{log}"
             log = log_path.display()
         );
 
-        let script_path = temp_dir.join("zerobyte_stop_service.bat");
-        std::fs::write(&script_path, script)
-            .map_err(|e| format!("Failed to write stop script: {}", e))?;
-
-        run_elevated(&script_path.to_string_lossy())?;
-
-        info!("Service stop initiated, waiting for completion...");
-
-        // Wait for the script to complete
-        for _ in 0..10 {
-            sleep(Duration::from_secs(1)).await;
-            if let Ok(content) = std::fs::read_to_string(&log_path) {
-                if content.contains("Service stopped") || content.contains("ERROR:") {
-                    break;
-                }
-            }
-        }
+        // Execute the elevated script
+        execute_elevated_script(
+            "zerobyte_stop_service.bat",
+            script,
+            &log_path,
+            "Service stopped",
+        )
+        .await?;
 
         // Check if the service is stopped
         let status = get_service_status().await?;

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun run tauri:*)",
+      "Bash(bun run tauri:dev:*)",
+      "Bash(bun install)",
+      "Bash(git add:*)"
+    ]
+  }
+}
