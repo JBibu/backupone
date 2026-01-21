@@ -19,6 +19,7 @@ import { Input } from "~/client/components/ui/input";
 import { Label } from "~/client/components/ui/label";
 import { authClient } from "~/client/lib/auth-client";
 import { appContext } from "~/context";
+import { AppSettingsSection } from "../components/app-settings-section";
 import { TwoFactorSection } from "../components/two-factor-section";
 import { WindowsServiceSection } from "../components/windows-service-section";
 import type { Route } from "./+types/settings";
@@ -281,6 +282,8 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 			</CardContent>
 
 			<TwoFactorSection twoFactorEnabled={loaderData.user?.twoFactorEnabled} />
+
+			<AppSettingsSection />
 
 			<WindowsServiceSection />
 		</Card>

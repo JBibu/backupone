@@ -2,6 +2,8 @@ pub mod commands;
 
 use std::sync::Arc;
 use std::time::Duration;
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{Emitter, Manager};
 use tauri_plugin_shell::ShellExt;
 use tokio::sync::Mutex;
@@ -234,8 +236,20 @@ pub fn run() {
         .init();
 
     tauri::Builder::default()
+        // Single instance plugin must be registered first
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            // Focus the main window when a new instance tries to start
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec!["--minimized"]),
+        ))
         .manage(AppState::default())
         .invoke_handler(tauri::generate_handler![
             commands::get_backend_url,
@@ -262,6 +276,87 @@ pub fn run() {
             if let Some(window) = app.get_webview_window("main") {
                 window.open_devtools();
             }
+
+            // Create system tray menu
+            let show = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
+            let separator1 = MenuItem::with_id(app, "sep1", "────────────", false, None::<&str>)?;
+            let volumes = MenuItem::with_id(app, "volumes", "Volumes", true, None::<&str>)?;
+            let repositories = MenuItem::with_id(app, "repositories", "Repositories", true, None::<&str>)?;
+            let backups = MenuItem::with_id(app, "backups", "Backups", true, None::<&str>)?;
+            let notifications = MenuItem::with_id(app, "notifications", "Notifications", true, None::<&str>)?;
+            let settings = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
+            let separator2 = MenuItem::with_id(app, "sep2", "────────────", false, None::<&str>)?;
+            let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+
+            let menu = Menu::with_items(
+                app,
+                &[
+                    &show,
+                    &separator1,
+                    &volumes,
+                    &repositories,
+                    &backups,
+                    &notifications,
+                    &settings,
+                    &separator2,
+                    &quit,
+                ],
+            )?;
+
+            let _tray = TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&menu)
+                .menu_on_left_click(false)
+                .tooltip("C3i Backup ONE")
+                .on_menu_event(|app, event| {
+                    let window = app.get_webview_window("main");
+                    match event.id.as_ref() {
+                        "show" => {
+                            if let Some(window) = window {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                        "volumes" | "repositories" | "backups" | "notifications" | "settings" => {
+                            if let Some(window) = window {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                                let url = format!("http://localhost:4096/{}", event.id.as_ref());
+                                let _ = window.navigate(url.parse().unwrap());
+                            }
+                        }
+                        "quit" => {
+                            let state = app.state::<AppState>();
+                            let state_clone = AppState {
+                                sidecar_handle: state.sidecar_handle.clone(),
+                                using_service: state.using_service,
+                                backend_port: state.backend_port,
+                            };
+                            tauri::async_runtime::block_on(async {
+                                if let Err(e) = stop_sidecar(&state_clone).await {
+                                    error!("Failed to stop sidecar: {}", e);
+                                }
+                            });
+                            app.exit(0);
+                        }
+                        _ => {}
+                    }
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
 
             // Start the sidecar and navigate to server
             tauri::async_runtime::spawn(async move {
@@ -296,22 +391,11 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::CloseRequested { .. } = event {
-                let app = window.app_handle();
-                let state = app.state::<AppState>();
-
-                // Stop the sidecar when the window is closed
-                let state_clone = AppState {
-                    sidecar_handle: state.sidecar_handle.clone(),
-                    using_service: state.using_service,
-                    backend_port: state.backend_port,
-                };
-
-                tauri::async_runtime::block_on(async {
-                    if let Err(e) = stop_sidecar(&state_clone).await {
-                        error!("Failed to stop sidecar: {}", e);
-                    }
-                });
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                // Minimize to tray instead of quitting
+                api.prevent_close();
+                let _ = window.hide();
+                info!("Window minimized to tray");
             }
         })
         .run(tauri::generate_context!())
