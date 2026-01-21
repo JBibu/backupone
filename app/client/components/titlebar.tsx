@@ -1,6 +1,7 @@
 import { Minus, Square, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "~/client/lib/utils";
+import { isTauri } from "~/client/lib/tauri";
 
 declare global {
 	interface Window {
@@ -11,6 +12,7 @@ declare global {
 					toggleMaximize: () => Promise<void>;
 					close: () => Promise<void>;
 					onResized: (handler: (event: { payload: { width: number; height: number } }) => void) => Promise<() => void>;
+					isMaximized: () => Promise<boolean>;
 				};
 			};
 		};
@@ -21,15 +23,18 @@ export function Titlebar() {
 	const [isMaximized, setIsMaximized] = useState(false);
 
 	useEffect(() => {
-		if (!window.__TAURI__) return;
+		if (!isTauri() || !window.__TAURI__) return;
 
 		const appWindow = window.__TAURI__.window.getCurrentWindow();
 
+		// Initialize maximize state
+		appWindow.isMaximized().then(setIsMaximized);
+
 		// Listen for resize events to track maximize state
 		let unlisten: (() => void) | undefined;
-		appWindow.onResized(() => {
-			// This is a simple approximation - a proper implementation would check actual maximize state
-			// For now, we'll just track if it's been maximized via our button
+		appWindow.onResized(async () => {
+			const maximized = await appWindow.isMaximized();
+			setIsMaximized(maximized);
 		}).then((fn) => {
 			unlisten = fn;
 		});
@@ -49,7 +54,7 @@ export function Titlebar() {
 		if (!window.__TAURI__) return;
 		const appWindow = window.__TAURI__.window.getCurrentWindow();
 		await appWindow.toggleMaximize();
-		setIsMaximized(!isMaximized);
+		// State will be updated by the onResized event handler
 	};
 
 	const handleClose = async () => {
@@ -59,7 +64,7 @@ export function Titlebar() {
 	};
 
 	// Don't render if not in Tauri
-	if (!window.__TAURI__) {
+	if (!isTauri()) {
 		return null;
 	}
 

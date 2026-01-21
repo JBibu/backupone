@@ -110,7 +110,7 @@ export const useFileBrowser = (props: UseFileBrowserOptions) => {
 
 					setFetchedFolders((prev) => new Set(prev).add(folderPath));
 				} catch (error) {
-					console.error("Failed to fetch folder contents:", error);
+					// Silently fail - folder will remain in loading state until retry
 				} finally {
 					setLoadingFolders((prev) => {
 						const next = new Set(prev);

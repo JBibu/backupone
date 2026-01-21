@@ -1,4 +1,4 @@
-// @ts-nocheck
+// @ts-nocheck - Recharts has complex generic types that cause TS issues with chart composition
 // biome-ignore-all lint: reason
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";

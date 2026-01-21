@@ -145,6 +145,28 @@ export const toForwardSlashes = (p: string): string => {
 };
 
 /**
+ * Normalize a directory path for the current platform.
+ * On Windows, ensures paths have a drive letter if they start with just a backslash.
+ */
+export const normalizeDirectoryPath = (dirPath: string): string => {
+	if (!IS_WINDOWS) {
+		return dirPath;
+	}
+
+	// Normalize the path first
+	const normalized = path.normalize(dirPath);
+
+	// If the path is just a backslash or starts with backslash without drive letter,
+	// prepend the current drive (usually C:)
+	if (normalized === "\\" || (normalized.startsWith("\\") && !/^[A-Za-z]:/.test(normalized))) {
+		const currentDrive = process.cwd().slice(0, 2); // e.g., "C:"
+		return path.join(currentDrive, normalized);
+	}
+
+	return normalized;
+};
+
+/**
  * Get binary name with platform-appropriate extension
  */
 export const getBinaryName = (name: string): string => {

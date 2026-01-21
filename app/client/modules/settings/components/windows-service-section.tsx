@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Button } from "~/client/components/ui/button";
 import { CardContent, CardDescription, CardTitle } from "~/client/components/ui/card";
 import { useSystemInfo } from "~/client/hooks/use-system-info";
+import { isTauri, invoke } from "~/client/lib/tauri";
 
 type ServiceStatusString = "running" | "stopped" | "not_installed" | "unknown";
 
@@ -12,26 +13,6 @@ interface ServiceStatusResponse {
 	running: boolean;
 	start_type: string | null;
 }
-
-interface TauriWindow {
-	__TAURI__?: {
-		core: {
-			invoke: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
-		};
-	};
-}
-
-const isTauri = (): boolean => {
-	return !!(window as unknown as TauriWindow).__TAURI__;
-};
-
-const invoke = async <T,>(cmd: string, args?: Record<string, unknown>): Promise<T> => {
-	const tauri = (window as unknown as TauriWindow).__TAURI__;
-	if (!tauri) {
-		throw new Error("Not running in Tauri environment");
-	}
-	return tauri.core.invoke<T>(cmd, args);
-};
 
 export const WindowsServiceSection = () => {
 	const { platform } = useSystemInfo();
@@ -57,7 +38,6 @@ export const WindowsServiceSection = () => {
 				setServiceStatus("stopped");
 			}
 		} catch (error) {
-			console.error("Failed to get service status:", error);
 			setServiceStatus("unknown");
 		} finally {
 			setIsLoading(false);

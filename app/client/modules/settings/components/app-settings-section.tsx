@@ -4,18 +4,7 @@ import { toast } from "sonner";
 import { CardContent, CardDescription, CardTitle } from "~/client/components/ui/card";
 import { Switch } from "~/client/components/ui/switch";
 import { Label } from "~/client/components/ui/label";
-
-interface TauriWindow {
-	__TAURI__?: {
-		core: {
-			invoke: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
-		};
-	};
-}
-
-const isTauri = (): boolean => {
-	return !!(window as unknown as TauriWindow).__TAURI__;
-};
+import { isTauri } from "~/client/lib/tauri";
 
 export const AppSettingsSection = () => {
 	const [autostartEnabled, setAutostartEnabled] = useState(false);
@@ -33,7 +22,7 @@ export const AppSettingsSection = () => {
 			const enabled = await isEnabled();
 			setAutostartEnabled(enabled);
 		} catch (error) {
-			console.error("Failed to check autostart status:", error);
+			// Silently fail - autostart status will remain false
 		} finally {
 			setIsLoadingAutostart(false);
 		}

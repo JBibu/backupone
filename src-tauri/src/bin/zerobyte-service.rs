@@ -2,6 +2,10 @@
 //!
 //! This binary runs as a Windows Service and manages the zerobyte-server process.
 //! It uses port 4097 (separate from desktop's 4096) and stores data in %PROGRAMDATA%\C3i Backup ONE.
+//!
+//! Note: This service uses println!/eprintln! for logging as output is captured by Windows Service
+//! infrastructure and written to service log files. This is intentional and appropriate for a
+//! Windows Service binary.
 
 #[cfg(windows)]
 mod windows_service {
