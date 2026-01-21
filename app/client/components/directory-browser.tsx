@@ -12,15 +12,19 @@ type Props = {
 
 // Fetch filesystem roots (drive letters on Windows, "/" on Unix)
 const fetchFilesystemRoots = async (): Promise<{ roots: string[] }> => {
-	const response = await client.get<{ roots: string[] }>({
+	const response = await client.get({
 		url: "/api/v1/volumes/filesystem/roots",
 	});
-	const data = response.data;
+	const data = response.data as { roots: string[] } | string[] | undefined;
+
 	// Handle both wrapped { roots: [...] } and unwrapped [...] responses
+	if (!data) {
+		return { roots: ["/"] };
+	}
 	if (Array.isArray(data)) {
 		return { roots: data };
 	}
-	if (data && typeof data === "object" && "roots" in data && Array.isArray(data.roots)) {
+	if (typeof data === "object" && "roots" in data && Array.isArray(data.roots)) {
 		return { roots: data.roots };
 	}
 	return { roots: ["/"] };
