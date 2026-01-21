@@ -1,3 +1,4 @@
+import path from "node:path";
 import { createHonoServer } from "react-router-hono-server/bun";
 import * as schema from "./db/schema";
 import { setSchema, runDbMigrations } from "./db/db";
@@ -8,6 +9,11 @@ import { createApp } from "./app";
 import { config } from "./core/config";
 import { runCLI } from "./cli";
 import { runMigrations } from "./modules/lifecycle/migrations";
+
+// Log startup paths for debugging
+logger.info(`[Startup] process.cwd(): ${process.cwd()}`);
+logger.info(`[Startup] process.execPath: ${process.execPath}`);
+logger.info(`[Startup] execDir: ${path.dirname(process.execPath)}`);
 
 setSchema(schema);
 

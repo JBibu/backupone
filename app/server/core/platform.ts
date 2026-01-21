@@ -153,15 +153,21 @@ export const getBinaryName = (name: string): string => {
 
 /**
  * Get the default PATH environment variable with common binary locations
+ * Includes the directory where the executable is located (for bundled binaries)
  */
 export const getDefaultPath = (): string => {
+	// Get the directory containing the running executable (where restic, rclone, etc. are bundled)
+	const execDir = path.dirname(process.execPath);
+
 	if (IS_WINDOWS) {
 		const systemRoot = process.env.SystemRoot || "C:\\Windows";
 		return [
+			execDir,
+			process.cwd(),
 			process.env.PATH || "",
 			path.join(systemRoot, "System32"),
 			systemRoot,
 		].join(path.delimiter);
 	}
-	return process.env.PATH || "/usr/local/bin:/usr/bin:/bin";
+	return [execDir, process.cwd(), process.env.PATH || "/usr/local/bin:/usr/bin:/bin"].join(path.delimiter);
 };
