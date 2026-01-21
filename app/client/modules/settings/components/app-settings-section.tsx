@@ -6,7 +6,7 @@ import { Switch } from "~/client/components/ui/switch";
 import { Label } from "~/client/components/ui/label";
 import { isTauri } from "~/client/lib/tauri";
 
-export const AppSettingsSection = () => {
+export function AppSettingsSection() {
 	const [autostartEnabled, setAutostartEnabled] = useState(false);
 	const [isLoadingAutostart, setIsLoadingAutostart] = useState(true);
 	const [isTogglingAutostart, setIsTogglingAutostart] = useState(false);
@@ -107,4 +107,4 @@ export const AppSettingsSection = () => {
 			</CardContent>
 		</>
 	);
-};
+}

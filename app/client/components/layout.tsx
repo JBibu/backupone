@@ -43,6 +43,7 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
 		<SidebarProvider defaultOpen={true}>
 			<Titlebar />
 			<AppSidebar />
+			{/* Add top padding when titlebar is present (Tauri desktop mode) */}
 			<div className="w-full relative flex flex-col h-screen overflow-hidden pt-9">
 				<header className="z-40 bg-card-header border-b border-border/50 shrink-0">
 					<div className="flex items-center justify-between py-3 sm:py-4 px-2 sm:px-8 mx-auto container gap-4">

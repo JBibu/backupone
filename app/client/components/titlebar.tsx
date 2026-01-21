@@ -82,9 +82,7 @@ export function Titlebar() {
 				data-tauri-drag-region
 				className="flex-1 h-full flex items-center px-4 cursor-move"
 			>
-				<span className="text-sm font-medium text-foreground">
-					C3i Servicios Informáticos
-				</span>
+				<span className="text-sm font-medium text-foreground">C3i Backup ONE</span>
 			</div>
 
 			{/* Window Controls */}

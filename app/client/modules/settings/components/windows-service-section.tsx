@@ -14,7 +14,7 @@ interface ServiceStatusResponse {
 	start_type: string | null;
 }
 
-export const WindowsServiceSection = () => {
+export function WindowsServiceSection() {
 	const { platform } = useSystemInfo();
 	const [serviceStatus, setServiceStatus] = useState<ServiceStatusString>("unknown");
 	const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +29,7 @@ export const WindowsServiceSection = () => {
 		try {
 			setIsLoading(true);
 			const response = await invoke<ServiceStatusResponse>("get_service_status");
-			// Convert the response to a status string
+
 			if (!response.installed) {
 				setServiceStatus("not_installed");
 			} else if (response.running) {
@@ -225,4 +225,4 @@ export const WindowsServiceSection = () => {
 			</CardContent>
 		</>
 	);
-};
+}
