@@ -312,12 +312,15 @@ const listFiles = async (name: string, subPath?: string) => {
 	// Normalize volume path for consistent comparison (handles Windows trailing slashes)
 	const normalizedVolumePath = path.normalize(volumePath);
 
-	const requestedPath = subPath ? path.join(normalizedVolumePath, subPath) : normalizedVolumePath;
+	// Strip leading slashes from subPath to prevent path.join issues on Windows
+	// On Windows, path.join('C:\\data', '/test') returns 'C:\\test' (wrong!)
+	const cleanSubPath = subPath?.replace(/^[/\\]+/, "");
+	const requestedPath = cleanSubPath ? path.join(normalizedVolumePath, cleanSubPath) : normalizedVolumePath;
 
 	const normalizedPath = path.normalize(requestedPath);
 
 	// Log paths for debugging
-	logger.info(`[listFiles] volumePath: ${volumePath}, normalizedVolumePath: ${normalizedVolumePath}, requestedPath: ${requestedPath}, normalizedPath: ${normalizedPath}`);
+	logger.debug(`[listFiles] volumePath: ${volumePath}, subPath: ${subPath}, cleanSubPath: ${cleanSubPath}, normalizedPath: ${normalizedPath}`);
 
 	if (!normalizedPath.startsWith(normalizedVolumePath)) {
 		logger.warn(`[listFiles] Path validation failed: ${normalizedPath} does not start with ${normalizedVolumePath}`);
