@@ -3,6 +3,9 @@
   "identifier": "default",
   "description": "Default capability for Zerobyte desktop app",
   "windows": ["main"],
+  "remote": {
+    "urls": ["http://localhost:*", "http://127.0.0.1:*"]
+  },
   "permissions": [
     "core:default",
     "shell:allow-open",
