@@ -44,13 +44,13 @@ export const getProgramDataPath = (): string => {
 };
 
 /**
- * Get the Zerobyte data directory based on platform and mode
+ * Get the C3i Backup ONE data directory based on platform and mode
  * - Can be overridden with ZEROBYTE_DATA_DIR environment variable
- * - Desktop mode (Windows): %APPDATA%\Zerobyte
- * - Service mode (Windows): %PROGRAMDATA%\Zerobyte
+ * - Desktop mode (Windows): %APPDATA%\C3i Backup ONE
+ * - Service mode (Windows): %PROGRAMDATA%\C3i Backup ONE
  * - Linux (production/Docker): /var/lib/zerobyte
  * - Linux (development): ~/.local/share/zerobyte
- * - macOS: ~/Library/Application Support/Zerobyte
+ * - macOS: ~/Library/Application Support/C3i Backup ONE
  */
 export const getZerobytePath = (): string => {
 	// Allow override via environment variable
@@ -117,8 +117,8 @@ export const getRcloneConfigPath = (): string => {
 
 /**
  * Get SSH keys directory based on platform
- * - Windows (Desktop): %APPDATA%\Zerobyte\ssh
- * - Windows (Service): %PROGRAMDATA%\Zerobyte\ssh
+ * - Windows (Desktop): %APPDATA%\C3i Backup ONE\ssh
+ * - Windows (Service): %PROGRAMDATA%\C3i Backup ONE\ssh
  * - Linux: /var/lib/zerobyte/ssh
  */
 export const getSshKeysPath = (): string => {

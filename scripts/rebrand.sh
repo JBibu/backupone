@@ -23,15 +23,13 @@ show_help() {
     echo "  --help       Show this help message"
     echo ""
     echo "What this script changes:"
-    echo "  - Documentation files (.md, .html): All visible text"
-    echo "  - Code files (.ts, .tsx, .js): Only quoted strings (user-facing text)"
+    echo "  - 'Zerobyte' (capital Z) -> 'C3i Backup ONE' in docs and code"
+    echo "  - This includes JSX text, quoted strings, and documentation"
     echo ""
     echo "What this script does NOT change:"
-    echo "  - Variable names, function names, identifiers"
+    echo "  - Lowercase 'zerobyte' (function names, variables, paths)"
     echo "  - Package names (package.json)"
-    echo "  - Environment variable names"
-    echo "  - Import statements"
-    echo "  - Config files"
+    echo "  - Config files (Cargo.toml, docker-compose.yml, etc.)"
     echo ""
     echo "Excluded paths:"
     echo "  - node_modules/"
@@ -80,6 +78,7 @@ SKIP_FILES=(
     ".env.example"
     "docker-compose.yml"
     "mutagen.yml"
+    "rebrand.sh"
 )
 
 should_skip_file() {
@@ -92,64 +91,33 @@ should_skip_file() {
     return 1
 }
 
-# Replace in documentation files (all occurrences)
-replace_in_docs() {
-    echo -e "${GREEN}[1/2] Replacing in documentation files...${NC}"
-
-    find "$PROJECT_ROOT" -type f \
-        \( -name "*.md" -o -name "*.html" -o -name "*.txt" \) \
-        -not -path "*/node_modules/*" \
-        -not -path "*/.git/*" \
-        -not -path "*/dist/*" \
-        -print0 2>/dev/null | \
-    while IFS= read -r -d '' file; do
-        if grep -q "Zerobyte\|zerobyte" "$file" 2>/dev/null; then
-            if [[ "$DRY_RUN" == "true" ]]; then
-                echo "  Would modify: ${file#$PROJECT_ROOT/}"
-            else
-                # Replace display name (Zerobyte -> C3i Backup ONE)
-                sed -i "s/Zerobyte/C3i Backup ONE/g" "$file"
-                echo "  Modified: ${file#$PROJECT_ROOT/}"
-            fi
-        fi
-    done
+# Replace "Zerobyte" (capital Z only) in all eligible files
+# This catches: JSX text, quoted strings, comments, documentation
+replace_zerobyte() {
+    echo -e "${GREEN}Replacing 'Zerobyte' -> 'C3i Backup ONE'...${NC}"
     echo ""
-}
-
-# Replace only in quoted strings within code files
-replace_in_code_strings() {
-    echo -e "${GREEN}[2/2] Replacing in code string literals...${NC}"
 
     find "$PROJECT_ROOT" -type f \
-        \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
+        \( -name "*.md" -o -name "*.html" -o -name "*.txt" -o -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
         -not -path "*/node_modules/*" \
         -not -path "*/.git/*" \
         -not -path "*/dist/*" \
-        -not -path "*/scripts/rebrand.sh" \
         -print0 2>/dev/null | \
     while IFS= read -r -d '' file; do
         if should_skip_file "$file"; then
             continue
         fi
 
-        # Check if file contains Zerobyte in a string literal
-        if grep -qE "['\"\`].*Zerobyte.*['\"\`]" "$file" 2>/dev/null; then
+        # Check if file contains "Zerobyte" as a standalone word (not part of identifier)
+        # \b = word boundary, so "getZerobytePath" won't match, but "Zerobyte" will
+        if grep -qE '\bZerobyte\b' "$file" 2>/dev/null; then
             if [[ "$DRY_RUN" == "true" ]]; then
                 echo "  Would modify: ${file#$PROJECT_ROOT/}"
-                # Show which lines would be changed
-                grep -n -E "['\"\`].*Zerobyte.*['\"\`]" "$file" 2>/dev/null | head -5 | sed 's/^/    /'
+                # Show matching lines
+                grep -nE '\bZerobyte\b' "$file" 2>/dev/null | head -5 | sed 's/^/    /'
             else
-                # Replace Zerobyte only within quoted strings
-                # Match strings containing Zerobyte and replace just the brand name
-                # Using perl for better regex support with lookahead/lookbehind
-                perl -i -pe '
-                    # Replace in double-quoted strings
-                    s/(".*?)Zerobyte(.*?")/$1C3i Backup ONE$2/g;
-                    # Replace in single-quoted strings
-                    s/('"'"'.*?)Zerobyte(.*?'"'"')/$1C3i Backup ONE$2/g;
-                    # Replace in template literals
-                    s/(`.*?)Zerobyte(.*?`)/$1C3i Backup ONE$2/g;
-                ' "$file"
+                # Replace only "Zerobyte" as standalone word, not as part of identifiers
+                sed -i 's/\bZerobyte\b/C3i Backup ONE/g' "$file"
                 echo "  Modified: ${file#$PROJECT_ROOT/}"
             fi
         fi
@@ -157,9 +125,8 @@ replace_in_code_strings() {
     echo ""
 }
 
-# Run the replacements
-replace_in_docs
-replace_in_code_strings
+# Run the replacement
+replace_zerobyte
 
 echo -e "${GREEN}Done!${NC}"
 
@@ -169,6 +136,6 @@ if [[ "$DRY_RUN" == "true" ]]; then
 else
     echo ""
     echo -e "${YELLOW}Note:${NC}"
-    echo "  Code identifiers, package names, and config files were NOT modified."
-    echo "  Only user-visible strings have been updated."
+    echo "  Only 'Zerobyte' (capital Z) was replaced."
+    echo "  Lowercase 'zerobyte' (identifiers, paths) were NOT modified."
 fi

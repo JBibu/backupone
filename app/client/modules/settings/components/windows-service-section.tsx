@@ -159,7 +159,7 @@ export const WindowsServiceSection = () => {
 					Windows Service
 				</CardTitle>
 				<CardDescription className="mt-1.5">
-					Run Zerobyte as a Windows Service for background backups
+					Run C3i Backup ONE as a Windows Service for background backups
 				</CardDescription>
 			</div>
 			<CardContent className="p-6 space-y-4">
@@ -170,7 +170,7 @@ export const WindowsServiceSection = () => {
 							<p className="text-sm font-medium">Status: {getStatusText()}</p>
 						</div>
 						<p className="text-xs text-muted-foreground max-w-xl">
-							Installing Zerobyte as a Windows Service allows scheduled backups to run even when the desktop app is
+							Installing C3i Backup ONE as a Windows Service allows scheduled backups to run even when the desktop app is
 							closed. The service runs in the background and uses a separate data location.
 						</p>
 					</div>
@@ -226,7 +226,7 @@ export const WindowsServiceSection = () => {
 				{serviceStatus === "running" && (
 					<p className="text-xs text-muted-foreground">
 						When the service is running, the desktop app connects to it automatically. Service data is stored in{" "}
-						<code className="bg-muted px-1 py-0.5 rounded text-xs">%PROGRAMDATA%\Zerobyte</code>.
+						<code className="bg-muted px-1 py-0.5 rounded text-xs">%PROGRAMDATA%\C3i Backup ONE</code>.
 					</p>
 				)}
 			</CardContent>

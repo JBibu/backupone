@@ -13,7 +13,7 @@ export function AuthLayout({ title, description, children }: AuthLayoutProps) {
 				<div className="w-full max-w-md space-y-8">
 					<div className="flex items-center gap-3">
 						<img src="/images/zerobyte.png" alt="C3i Backup ONE Logo" className="h-5 w-5 object-contain" />
-						<span className="text-lg font-semibold">Zerobyte</span>
+						<span className="text-lg font-semibold">C3i Backup ONE</span>
 					</div>
 
 					<div className="space-y-2">
