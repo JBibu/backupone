@@ -23,10 +23,12 @@ import { AppSettingsSection } from "../components/app-settings-section";
 import { LogViewerSection } from "../components/log-viewer-section";
 import { TwoFactorSection } from "../components/two-factor-section";
 import { WindowsServiceSection } from "../components/windows-service-section";
+import { LanguageSection } from "../components/language-section";
 import type { Route } from "./+types/settings";
+import { useTranslation } from "react-i18next";
 
 export const handle = {
-	breadcrumb: () => [{ label: "Settings" }],
+	breadcrumb: () => [{ label: "Settings" }], // Keep static for now (server-side)
 };
 
 export function meta(_: Route.MetaArgs) {
@@ -45,6 +47,7 @@ export async function clientLoader({ context }: Route.LoaderArgs) {
 }
 
 export default function Settings({ loaderData }: Route.ComponentProps) {
+	const { t } = useTranslation();
 	const [currentPassword, setCurrentPassword] = useState("");
 	const [newPassword, setNewPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
@@ -62,7 +65,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 				},
 				onError: ({ error }) => {
 					console.error(error);
-					toast.error("Logout failed", { description: error.message });
+					toast.error(t("settings.logout.failed"), { description: error.message });
 				},
 			},
 		});
@@ -81,12 +84,12 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 			document.body.removeChild(a);
 			window.URL.revokeObjectURL(url);
 
-			toast.success("Restic password file downloaded successfully");
+			toast.success(t("settings.recoveryKey.dialog.toast.success"));
 			setDownloadDialogOpen(false);
 			setDownloadPassword("");
 		},
 		onError: (error) => {
-			toast.error("Failed to download Restic password", {
+			toast.error(t("settings.recoveryKey.dialog.toast.failed"), {
 				description: error.message,
 			});
 		},
@@ -96,12 +99,12 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 		e.preventDefault();
 
 		if (newPassword !== confirmPassword) {
-			toast.error("Passwords do not match");
+			toast.error(t("settings.changePassword.toast.mismatch"));
 			return;
 		}
 
 		if (newPassword.length < 8) {
-			toast.error("Password must be at least 8 characters long");
+			toast.error(t("settings.changePassword.toast.tooShort"));
 			return;
 		}
 
@@ -111,13 +114,13 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 			revokeOtherSessions: true,
 			fetchOptions: {
 				onSuccess: () => {
-					toast.success("Password changed successfully. You will be logged out.");
+					toast.success(t("settings.changePassword.toast.success"));
 					setTimeout(() => {
 						void handleLogout();
 					}, 1500);
 				},
 				onError: ({ error }) => {
-					toast.error("Failed to change password", {
+					toast.error(t("settings.changePassword.toast.failed"), {
 						description: error.message,
 					});
 				},
@@ -135,7 +138,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 		e.preventDefault();
 
 		if (!downloadPassword) {
-			toast.error("Password is required");
+			toast.error(t("settings.recoveryKey.dialog.toast.passwordRequired"));
 			return;
 		}
 
@@ -151,13 +154,13 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 			<div className="border-b border-border/50 bg-card-header p-6">
 				<CardTitle className="flex items-center gap-2">
 					<User className="size-5" />
-					Account Information
+					{t("settings.account.title")}
 				</CardTitle>
-				<CardDescription className="mt-1.5">Your account details</CardDescription>
+				<CardDescription className="mt-1.5">{t("settings.account.description")}</CardDescription>
 			</div>
 			<CardContent className="p-6 space-y-4">
 				<div className="space-y-2">
-					<Label>Username</Label>
+					<Label>{t("settings.account.username")}</Label>
 					<Input value={loaderData.user?.username || ""} disabled className="max-w-md" />
 				</div>
 				{/* <div className="space-y-2"> */}
@@ -169,14 +172,14 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 			<div className="border-t border-border/50 bg-card-header p-6">
 				<CardTitle className="flex items-center gap-2">
 					<KeyRound className="size-5" />
-					Change Password
+					{t("settings.changePassword.title")}
 				</CardTitle>
-				<CardDescription className="mt-1.5">Update your password to keep your account secure</CardDescription>
+				<CardDescription className="mt-1.5">{t("settings.changePassword.description")}</CardDescription>
 			</div>
 			<CardContent className="p-6">
 				<form onSubmit={handleChangePassword} className="space-y-4">
 					<div className="space-y-2">
-						<Label htmlFor="current-password">Current Password</Label>
+						<Label htmlFor="current-password">{t("settings.changePassword.currentPassword")}</Label>
 						<Input
 							id="current-password"
 							type="password"
@@ -187,7 +190,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 						/>
 					</div>
 					<div className="space-y-2">
-						<Label htmlFor="new-password">New Password</Label>
+						<Label htmlFor="new-password">{t("settings.changePassword.newPassword")}</Label>
 						<Input
 							id="new-password"
 							type="password"
@@ -197,10 +200,10 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 							required
 							minLength={8}
 						/>
-						<p className="text-xs text-muted-foreground">Must be at least 8 characters long</p>
+						<p className="text-xs text-muted-foreground">{t("settings.changePassword.newPasswordHelper")}</p>
 					</div>
 					<div className="space-y-2">
-						<Label htmlFor="confirm-password">Confirm New Password</Label>
+						<Label htmlFor="confirm-password">{t("settings.changePassword.confirmPassword")}</Label>
 						<Input
 							id="confirm-password"
 							type="password"
@@ -213,7 +216,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 					</div>
 					<Button type="submit" loading={isChangingPassword} className="mt-4">
 						<KeyRound className="h-4 w-4 mr-2" />
-						Change Password
+						{t("settings.changePassword.button")}
 					</Button>
 				</form>
 			</CardContent>
@@ -221,41 +224,39 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 			<div className="border-t border-border/50 bg-card-header p-6">
 				<CardTitle className="flex items-center gap-2">
 					<Download className="size-5" />
-					Backup Recovery Key
+					{t("settings.recoveryKey.title")}
 				</CardTitle>
-				<CardDescription className="mt-1.5">Download your recovery key for Restic backups</CardDescription>
+				<CardDescription className="mt-1.5">{t("settings.recoveryKey.description")}</CardDescription>
 			</div>
 			<CardContent className="p-6 space-y-4">
 				<p className="text-sm text-muted-foreground max-w-2xl">
-					This file contains the encryption password used by Restic to secure your backups. Store it in a safe place
-					(like a password manager or encrypted storage). If you lose access to this server, you'll need this file to
-					recover your backup data.
+					{t("settings.recoveryKey.helper")}
 				</p>
 
 				<Dialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen}>
 					<DialogTrigger asChild>
 						<Button variant="outline">
 							<Download size={16} className="mr-2" />
-							Download recovery key
+							{t("settings.recoveryKey.button")}
 						</Button>
 					</DialogTrigger>
 					<DialogContent>
 						<form onSubmit={handleDownloadResticPassword}>
 							<DialogHeader>
-								<DialogTitle>Download Recovery Key</DialogTitle>
+								<DialogTitle>{t("settings.recoveryKey.dialog.title")}</DialogTitle>
 								<DialogDescription>
-									For security reasons, please enter your account password to download the recovery key file.
+									{t("settings.recoveryKey.dialog.description")}
 								</DialogDescription>
 							</DialogHeader>
 							<div className="space-y-4 py-4">
 								<div className="space-y-2">
-									<Label htmlFor="download-password">Your Password</Label>
+									<Label htmlFor="download-password">{t("settings.recoveryKey.dialog.passwordLabel")}</Label>
 									<Input
 										id="download-password"
 										type="password"
 										value={downloadPassword}
 										onChange={(e) => setDownloadPassword(e.target.value)}
-										placeholder="Enter your password"
+										placeholder={t("settings.recoveryKey.dialog.passwordPlaceholder")}
 										required
 									/>
 								</div>
@@ -270,11 +271,11 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 									}}
 								>
 									<X className="h-4 w-4 mr-2" />
-									Cancel
+									{t("settings.recoveryKey.dialog.cancelButton")}
 								</Button>
 								<Button type="submit" loading={downloadResticPassword.isPending}>
 									<Download className="h-4 w-4 mr-2" />
-									Download
+									{t("settings.recoveryKey.dialog.downloadButton")}
 								</Button>
 							</DialogFooter>
 						</form>
@@ -285,6 +286,10 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 			<TwoFactorSection twoFactorEnabled={loaderData.user?.twoFactorEnabled} />
 
 			<AppSettingsSection />
+
+			<div className="border-t border-border/50 p-6">
+				<LanguageSection />
+			</div>
 
 			<WindowsServiceSection />
 

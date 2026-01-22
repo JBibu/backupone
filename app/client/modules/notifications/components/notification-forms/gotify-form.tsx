@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "~/client/components/ui/form";
 import { Input } from "~/client/components/ui/input";
 import { SecretInput } from "~/client/components/ui/secret-input";
@@ -9,6 +10,8 @@ type Props = {
 };
 
 export const GotifyForm = ({ form }: Props) => {
+	const { t } = useTranslation();
+
 	return (
 		<>
 			<FormField
@@ -16,11 +19,11 @@ export const GotifyForm = ({ form }: Props) => {
 				name="serverUrl"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Server URL</FormLabel>
+						<FormLabel>{t("notifications.gotifyForm.serverUrl")}</FormLabel>
 						<FormControl>
-							<Input {...field} placeholder="https://gotify.example.com" />
+							<Input {...field} placeholder={t("notifications.gotifyForm.serverUrlPlaceholder")} />
 						</FormControl>
-						<FormDescription>Your self-hosted Gotify server URL.</FormDescription>
+						<FormDescription>{t("notifications.gotifyForm.serverUrlDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -30,11 +33,11 @@ export const GotifyForm = ({ form }: Props) => {
 				name="token"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>App Token</FormLabel>
+						<FormLabel>{t("notifications.gotifyForm.token")}</FormLabel>
 						<FormControl>
-							<SecretInput {...field} placeholder="••••••••" />
+							<SecretInput {...field} placeholder={t("notifications.gotifyForm.tokenPlaceholder")} />
 						</FormControl>
-						<FormDescription>Application token from Gotify.</FormDescription>
+						<FormDescription>{t("notifications.gotifyForm.tokenDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -44,7 +47,7 @@ export const GotifyForm = ({ form }: Props) => {
 				name="priority"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Priority</FormLabel>
+						<FormLabel>{t("notifications.gotifyForm.priority")}</FormLabel>
 						<FormControl>
 							<Input
 								{...field}
@@ -54,7 +57,7 @@ export const GotifyForm = ({ form }: Props) => {
 								onChange={(e) => field.onChange(Number(e.target.value))}
 							/>
 						</FormControl>
-						<FormDescription>Priority level (0-10, where 10 is highest).</FormDescription>
+						<FormDescription>{t("notifications.gotifyForm.priorityDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -64,11 +67,11 @@ export const GotifyForm = ({ form }: Props) => {
 				name="path"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Path (Optional)</FormLabel>
+						<FormLabel>{t("notifications.gotifyForm.path")}</FormLabel>
 						<FormControl>
-							<Input {...field} placeholder="/custom/path" />
+							<Input {...field} placeholder={t("notifications.gotifyForm.pathPlaceholder")} />
 						</FormControl>
-						<FormDescription>Custom path on the Gotify server, if applicable.</FormDescription>
+						<FormDescription>{t("notifications.gotifyForm.pathDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}

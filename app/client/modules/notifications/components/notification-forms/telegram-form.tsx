@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "~/client/components/ui/form";
 import { Input } from "~/client/components/ui/input";
 import { SecretInput } from "~/client/components/ui/secret-input";
@@ -9,6 +10,8 @@ type Props = {
 };
 
 export const TelegramForm = ({ form }: Props) => {
+	const { t } = useTranslation();
+
 	return (
 		<>
 			<FormField
@@ -16,11 +19,11 @@ export const TelegramForm = ({ form }: Props) => {
 				name="botToken"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Bot Token</FormLabel>
+						<FormLabel>{t("notifications.telegramForm.botToken")}</FormLabel>
 						<FormControl>
-							<SecretInput {...field} placeholder="123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" />
+							<SecretInput {...field} placeholder={t("notifications.telegramForm.botTokenPlaceholder")} />
 						</FormControl>
-						<FormDescription>Telegram bot token. Get this from BotFather when you create your bot.</FormDescription>
+						<FormDescription>{t("notifications.telegramForm.botTokenDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -30,11 +33,11 @@ export const TelegramForm = ({ form }: Props) => {
 				name="chatId"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Chat ID</FormLabel>
+						<FormLabel>{t("notifications.telegramForm.chatId")}</FormLabel>
 						<FormControl>
-							<Input {...field} placeholder="-1231234567890" />
+							<Input {...field} placeholder={t("notifications.telegramForm.chatIdPlaceholder")} />
 						</FormControl>
-						<FormDescription>Telegram chat ID to send notifications to.</FormDescription>
+						<FormDescription>{t("notifications.telegramForm.chatIdDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}

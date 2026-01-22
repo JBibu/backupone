@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { HardDrive, Plus, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { EmptyState } from "~/client/components/empty-state";
 import { StatusDot } from "~/client/components/status-dot";
 import { Button } from "~/client/components/ui/button";
@@ -46,6 +47,7 @@ export const clientLoader = async () => {
 };
 
 export default function Volumes({ loaderData }: Route.ComponentProps) {
+	const { t } = useTranslation();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState("");
 	const [backendFilter, setBackendFilter] = useState("");
@@ -78,12 +80,12 @@ export default function Volumes({ loaderData }: Route.ComponentProps) {
 		return (
 			<EmptyState
 				icon={HardDrive}
-				title="No volume"
-				description="Manage and monitor all your storage backends in one place with advanced features like automatic mounting and health checks."
+				title={t("volumes.empty.title")}
+				description={t("volumes.empty.description")}
 				button={
 					<Button onClick={() => navigate("/volumes/create")}>
 						<Plus size={16} className="mr-2" />
-						Create Volume
+						{t("volumes.createButton")}
 					</Button>
 				}
 			/>
@@ -96,49 +98,49 @@ export default function Volumes({ loaderData }: Route.ComponentProps) {
 				<span className="flex flex-col sm:flex-row items-stretch md:items-center gap-0 flex-wrap ">
 					<Input
 						className="w-full lg:w-[180px] min-w-[180px] -mr-px -mt-px"
-						placeholder="Search volumes…"
+						placeholder={t("volumes.search.placeholder")}
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 					/>
 					<Select value={statusFilter} onValueChange={setStatusFilter}>
 						<SelectTrigger className="w-full lg:w-[180px] min-w-[180px] -mr-px -mt-px">
-							<SelectValue placeholder="All status" />
+							<SelectValue placeholder={t("volumes.filters.allStatus")} />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="mounted">Mounted</SelectItem>
-							<SelectItem value="unmounted">Unmounted</SelectItem>
-							<SelectItem value="error">Error</SelectItem>
+							<SelectItem value="mounted">{t("volumes.filters.mounted")}</SelectItem>
+							<SelectItem value="unmounted">{t("volumes.filters.unmounted")}</SelectItem>
+							<SelectItem value="error">{t("volumes.filters.error")}</SelectItem>
 						</SelectContent>
 					</Select>
 					<Select value={backendFilter} onValueChange={setBackendFilter}>
 						<SelectTrigger className="w-full lg:w-[180px] min-w-[180px] -mt-px">
-							<SelectValue placeholder="All backends" />
+							<SelectValue placeholder={t("volumes.filters.allBackends")} />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="directory">Directory</SelectItem>
-							<SelectItem value="nfs">NFS</SelectItem>
-							<SelectItem value="smb">SMB</SelectItem>
+							<SelectItem value="directory">{t("volumes.filters.directory")}</SelectItem>
+							<SelectItem value="nfs">{t("volumes.filters.nfs")}</SelectItem>
+							<SelectItem value="smb">{t("volumes.filters.smb")}</SelectItem>
 						</SelectContent>
 					</Select>
 					{(searchQuery || statusFilter || backendFilter) && (
 						<Button onClick={clearFilters} className="w-full lg:w-auto mt-2 lg:mt-0 lg:ml-2">
 							<RotateCcw className="h-4 w-4 mr-2" />
-							Clear filters
+							{t("volumes.filters.clearFilters")}
 						</Button>
 					)}
 				</span>
 				<Button onClick={() => navigate("/volumes/create")}>
 					<Plus size={16} className="mr-2" />
-					Create Volume
+					{t("volumes.createButton")}
 				</Button>
 			</div>
 			<div className="overflow-x-auto">
 				<Table className="border-t">
 					<TableHeader className="bg-card-header">
 						<TableRow>
-							<TableHead className="w-[100px] uppercase">Name</TableHead>
-							<TableHead className="uppercase text-left">Backend</TableHead>
-							<TableHead className="uppercase text-center">Status</TableHead>
+							<TableHead className="w-[100px] uppercase">{t("volumes.table.name")}</TableHead>
+							<TableHead className="uppercase text-left">{t("volumes.table.backend")}</TableHead>
+							<TableHead className="uppercase text-center">{t("volumes.table.status")}</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
@@ -146,10 +148,10 @@ export default function Volumes({ loaderData }: Route.ComponentProps) {
 							<TableRow>
 								<TableCell colSpan={4} className="text-center py-12">
 									<div className="flex flex-col items-center gap-3">
-										<p className="text-muted-foreground">No volumes match your filters.</p>
+										<p className="text-muted-foreground">{t("volumes.emptyFilters")}</p>
 										<Button onClick={clearFilters} variant="outline" size="sm">
 											<RotateCcw className="h-4 w-4 mr-2" />
-											Clear filters
+											{t("volumes.filters.clearFilters")}
 										</Button>
 									</div>
 								</TableCell>
@@ -168,7 +170,7 @@ export default function Volumes({ loaderData }: Route.ComponentProps) {
 									<TableCell className="text-center">
 										<StatusDot
 											variant={getVolumeStatusVariant(volume.status)}
-											label={volume.status[0].toUpperCase() + volume.status.slice(1)}
+											label={t(`common.status.${volume.status}`)}
 										/>
 									</TableCell>
 								</TableRow>
@@ -179,11 +181,11 @@ export default function Volumes({ loaderData }: Route.ComponentProps) {
 			</div>
 			<div className="px-4 py-2 text-sm text-muted-foreground bg-card-header flex justify-end border-t">
 				{hasNoFilteredVolumes ? (
-					"No volumes match filters."
+					t("volumes.emptyFilters")
 				) : (
 					<span>
-						<span className="text-strong-accent">{filteredVolumes.length}</span> volume
-						{filteredVolumes.length > 1 ? "s" : ""}
+						<span className="text-strong-accent">{filteredVolumes.length}</span>{" "}
+						{filteredVolumes.length === 1 ? t("volumes.counter.single") : t("volumes.counter.plural")}
 					</span>
 				)}
 			</div>

@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "~/client/components/ui/form";
 import { Input } from "~/client/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/client/components/ui/select";
@@ -12,7 +13,7 @@ type Props = {
 	form: UseFormReturn<NotificationFormValues>;
 };
 
-const WebhookPreview = ({ values }: { values: Partial<NotificationFormValues> }) => {
+const WebhookPreview = ({ values, t }: { values: Partial<NotificationFormValues>; t: (key: string) => string }) => {
 	if (values.type !== "generic") return null;
 
 	const contentType = values.contentType || "application/json";
@@ -25,14 +26,14 @@ const WebhookPreview = ({ values }: { values: Partial<NotificationFormValues> })
 	if (useJson) {
 		body = JSON.stringify(
 			{
-				[titleKey]: "Notification title",
-				[messageKey]: "Notification message",
+				[titleKey]: t("notifications.genericForm.previewTitle"),
+				[messageKey]: t("notifications.genericForm.previewMessage"),
 			},
 			null,
 			2,
 		);
 	} else {
-		body = "Notification message";
+		body = t("notifications.genericForm.previewMessage");
 	}
 
 	const previewCode = `${values.method} ${values.url}\nContent-Type: ${contentType}${headers.length > 0 ? `\n${headers.join("\n")}` : ""}
@@ -41,14 +42,15 @@ ${body}`;
 
 	return (
 		<div className="space-y-2 pt-4 border-t">
-			<Label>Request Preview</Label>
-			<CodeBlock code={previewCode} filename="HTTP Request" />
-			<p className="text-[0.8rem] text-muted-foreground">This is a preview of the HTTP request that will be sent.</p>
+			<Label>{t("notifications.genericForm.requestPreview")}</Label>
+			<CodeBlock code={previewCode} filename={t("notifications.genericForm.httpRequest")} />
+			<p className="text-[0.8rem] text-muted-foreground">{t("notifications.genericForm.previewDescription")}</p>
 		</div>
 	);
 };
 
 export const GenericForm = ({ form }: Props) => {
+	const { t } = useTranslation();
 	const watchedValues = form.watch();
 
 	return (
@@ -58,11 +60,11 @@ export const GenericForm = ({ form }: Props) => {
 				name="url"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Webhook URL</FormLabel>
+						<FormLabel>{t("notifications.genericForm.webhookUrl")}</FormLabel>
 						<FormControl>
-							<Input {...field} placeholder="https://api.example.com/webhook" />
+							<Input {...field} placeholder={t("notifications.genericForm.webhookUrlPlaceholder")} />
 						</FormControl>
-						<FormDescription>The target URL for the webhook.</FormDescription>
+						<FormDescription>{t("notifications.genericForm.webhookUrlDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -72,11 +74,11 @@ export const GenericForm = ({ form }: Props) => {
 				name="method"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Method</FormLabel>
+						<FormLabel>{t("notifications.genericForm.method")}</FormLabel>
 						<Select onValueChange={field.onChange} value={field.value}>
 							<FormControl>
 								<SelectTrigger>
-									<SelectValue placeholder="Select method" />
+									<SelectValue placeholder={t("notifications.genericForm.methodPlaceholder")} />
 								</SelectTrigger>
 							</FormControl>
 							<SelectContent>
@@ -93,9 +95,9 @@ export const GenericForm = ({ form }: Props) => {
 				name="contentType"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Content Type</FormLabel>
+						<FormLabel>{t("notifications.genericForm.contentType")}</FormLabel>
 						<FormControl>
-							<Input {...field} placeholder="application/json" />
+							<Input {...field} placeholder={t("notifications.genericForm.contentTypePlaceholder")} />
 						</FormControl>
 						<FormMessage />
 					</FormItem>
@@ -106,16 +108,16 @@ export const GenericForm = ({ form }: Props) => {
 				name="headers"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Headers</FormLabel>
+						<FormLabel>{t("notifications.genericForm.headers")}</FormLabel>
 						<FormControl>
 							<Textarea
 								{...field}
-								placeholder="Authorization: Bearer token&#10;X-Custom-Header: value"
+								placeholder={t("notifications.genericForm.headersPlaceholder")}
 								value={Array.isArray(field.value) ? field.value.join("\n") : ""}
 								onChange={(e) => field.onChange(e.target.value.split("\n"))}
 							/>
 						</FormControl>
-						<FormDescription>One header per line in Key: Value format.</FormDescription>
+						<FormDescription>{t("notifications.genericForm.headersDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -129,8 +131,8 @@ export const GenericForm = ({ form }: Props) => {
 							<Checkbox checked={field.value} onCheckedChange={field.onChange} />
 						</FormControl>
 						<div className="space-y-1 leading-none">
-							<FormLabel>Use JSON Template</FormLabel>
-							<FormDescription>Send the message as a JSON object.</FormDescription>
+							<FormLabel>{t("notifications.genericForm.useJson")}</FormLabel>
+							<FormDescription>{t("notifications.genericForm.useJsonDescription")}</FormDescription>
 						</div>
 					</FormItem>
 				)}
@@ -142,11 +144,11 @@ export const GenericForm = ({ form }: Props) => {
 						name="titleKey"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Title Key</FormLabel>
+								<FormLabel>{t("notifications.genericForm.titleKey")}</FormLabel>
 								<FormControl>
-									<Input {...field} placeholder="title" />
+									<Input {...field} placeholder={t("notifications.genericForm.titleKeyPlaceholder")} />
 								</FormControl>
-								<FormDescription>The JSON key for the notification title.</FormDescription>
+								<FormDescription>{t("notifications.genericForm.titleKeyDescription")}</FormDescription>
 								<FormMessage />
 							</FormItem>
 						)}
@@ -156,18 +158,18 @@ export const GenericForm = ({ form }: Props) => {
 						name="messageKey"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Message Key</FormLabel>
+								<FormLabel>{t("notifications.genericForm.messageKey")}</FormLabel>
 								<FormControl>
-									<Input {...field} placeholder="message" />
+									<Input {...field} placeholder={t("notifications.genericForm.messageKeyPlaceholder")} />
 								</FormControl>
-								<FormDescription>The JSON key for the notification message.</FormDescription>
+								<FormDescription>{t("notifications.genericForm.messageKeyDescription")}</FormDescription>
 								<FormMessage />
 							</FormItem>
 						)}
 					/>
 				</>
 			)}
-			<WebhookPreview values={watchedValues} />
+			<WebhookPreview values={watchedValues} t={t} />
 		</>
 	);
 };

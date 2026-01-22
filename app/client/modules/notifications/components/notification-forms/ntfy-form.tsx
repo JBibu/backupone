@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "~/client/components/ui/form";
 import { Input } from "~/client/components/ui/input";
 import { SecretInput } from "~/client/components/ui/secret-input";
@@ -10,6 +11,8 @@ type Props = {
 };
 
 export const NtfyForm = ({ form }: Props) => {
+	const { t } = useTranslation();
+
 	return (
 		<>
 			<FormField
@@ -17,11 +20,11 @@ export const NtfyForm = ({ form }: Props) => {
 				name="serverUrl"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Server URL (Optional)</FormLabel>
+						<FormLabel>{t("notifications.ntfyForm.serverUrl")}</FormLabel>
 						<FormControl>
-							<Input {...field} placeholder="https://ntfy.example.com" />
+							<Input {...field} placeholder={t("notifications.ntfyForm.serverUrlPlaceholder")} />
 						</FormControl>
-						<FormDescription>Leave empty to use ntfy.sh public service.</FormDescription>
+						<FormDescription>{t("notifications.ntfyForm.serverUrlDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -31,11 +34,11 @@ export const NtfyForm = ({ form }: Props) => {
 				name="topic"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Topic</FormLabel>
+						<FormLabel>{t("notifications.ntfyForm.topic")}</FormLabel>
 						<FormControl>
-							<Input {...field} placeholder="zerobyte-backups" />
+							<Input {...field} placeholder={t("notifications.ntfyForm.topicPlaceholder")} />
 						</FormControl>
-						<FormDescription>The ntfy topic name to publish to.</FormDescription>
+						<FormDescription>{t("notifications.ntfyForm.topicDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -45,11 +48,11 @@ export const NtfyForm = ({ form }: Props) => {
 				name="username"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Username (Optional)</FormLabel>
+						<FormLabel>{t("notifications.ntfyForm.username")}</FormLabel>
 						<FormControl>
-							<Input {...field} placeholder="username" />
+							<Input {...field} placeholder={t("notifications.ntfyForm.usernamePlaceholder")} />
 						</FormControl>
-						<FormDescription>Username for server authentication, if required.</FormDescription>
+						<FormDescription>{t("notifications.ntfyForm.usernameDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -59,11 +62,11 @@ export const NtfyForm = ({ form }: Props) => {
 				name="password"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Password (Optional)</FormLabel>
+						<FormLabel>{t("notifications.ntfyForm.password")}</FormLabel>
 						<FormControl>
-							<SecretInput {...field} placeholder="••••••••" />
+							<SecretInput {...field} placeholder={t("notifications.ntfyForm.passwordPlaceholder")} />
 						</FormControl>
-						<FormDescription>Password for server authentication, if required.</FormDescription>
+						<FormDescription>{t("notifications.ntfyForm.passwordDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -73,12 +76,12 @@ export const NtfyForm = ({ form }: Props) => {
 				name="accessToken"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Access token (Optional)</FormLabel>
+						<FormLabel>{t("notifications.ntfyForm.accessToken")}</FormLabel>
 						<FormControl>
-							<SecretInput {...field} placeholder="••••••••" />
+							<SecretInput {...field} placeholder={t("notifications.ntfyForm.accessTokenPlaceholder")} />
 						</FormControl>
 						<FormDescription>
-							Access token for server authentication. Will take precedence over username/password if set.
+							{t("notifications.ntfyForm.accessTokenDescription")}
 						</FormDescription>
 						<FormMessage />
 					</FormItem>
@@ -89,19 +92,19 @@ export const NtfyForm = ({ form }: Props) => {
 				name="priority"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Priority</FormLabel>
+						<FormLabel>{t("notifications.ntfyForm.priority")}</FormLabel>
 						<Select onValueChange={field.onChange} defaultValue={String(field.value)} value={String(field.value)}>
 							<FormControl>
 								<SelectTrigger>
-									<SelectValue placeholder="Select priority" />
+									<SelectValue placeholder={t("notifications.ntfyForm.priorityPlaceholder")} />
 								</SelectTrigger>
 							</FormControl>
 							<SelectContent>
-								<SelectItem value="max">Max (5)</SelectItem>
-								<SelectItem value="high">High (4)</SelectItem>
-								<SelectItem value="default">Default (3)</SelectItem>
-								<SelectItem value="low">Low (2)</SelectItem>
-								<SelectItem value="min">Min (1)</SelectItem>
+								<SelectItem value="max">{t("notifications.ntfyForm.priorityMax")}</SelectItem>
+								<SelectItem value="high">{t("notifications.ntfyForm.priorityHigh")}</SelectItem>
+								<SelectItem value="default">{t("notifications.ntfyForm.priorityDefault")}</SelectItem>
+								<SelectItem value="low">{t("notifications.ntfyForm.priorityLow")}</SelectItem>
+								<SelectItem value="min">{t("notifications.ntfyForm.priorityMin")}</SelectItem>
 							</SelectContent>
 						</Select>
 						<FormMessage />

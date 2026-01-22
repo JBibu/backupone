@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "~/client/components/ui/form";
 import { Input } from "~/client/components/ui/input";
 import type { NotificationFormValues } from "../create-notification-form";
@@ -8,6 +9,8 @@ type Props = {
 };
 
 export const DiscordForm = ({ form }: Props) => {
+	const { t } = useTranslation();
+
 	return (
 		<>
 			<FormField
@@ -15,11 +18,11 @@ export const DiscordForm = ({ form }: Props) => {
 				name="webhookUrl"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Webhook URL</FormLabel>
+						<FormLabel>{t("notifications.discordForm.webhookUrl")}</FormLabel>
 						<FormControl>
-							<Input {...field} placeholder="https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN" />
+							<Input {...field} placeholder={t("notifications.discordForm.webhookUrlPlaceholder")} />
 						</FormControl>
-						<FormDescription>Get this from your Discord server's Integrations settings.</FormDescription>
+						<FormDescription>{t("notifications.discordForm.webhookUrlDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -29,9 +32,9 @@ export const DiscordForm = ({ form }: Props) => {
 				name="username"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Bot Username (Optional)</FormLabel>
+						<FormLabel>{t("notifications.discordForm.username")}</FormLabel>
 						<FormControl>
-							<Input {...field} placeholder="C3i Backup ONE" />
+							<Input {...field} placeholder={t("notifications.discordForm.usernamePlaceholder")} />
 						</FormControl>
 						<FormMessage />
 					</FormItem>
@@ -42,9 +45,9 @@ export const DiscordForm = ({ form }: Props) => {
 				name="avatarUrl"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Avatar URL (Optional)</FormLabel>
+						<FormLabel>{t("notifications.discordForm.avatarUrl")}</FormLabel>
 						<FormControl>
-							<Input {...field} placeholder="https://example.com/avatar.png" />
+							<Input {...field} placeholder={t("notifications.discordForm.avatarUrlPlaceholder")} />
 						</FormControl>
 						<FormMessage />
 					</FormItem>
@@ -55,12 +58,12 @@ export const DiscordForm = ({ form }: Props) => {
 				name="threadId"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Thread ID (Optional)</FormLabel>
+						<FormLabel>{t("notifications.discordForm.threadId")}</FormLabel>
 						<FormControl>
 							<Input {...field} />
 						</FormControl>
 						<FormDescription>
-							ID of the thread to post messages in. Leave empty to post in the main channel.
+							{t("notifications.discordForm.threadIdDescription")}
 						</FormDescription>
 						<FormMessage />
 					</FormItem>

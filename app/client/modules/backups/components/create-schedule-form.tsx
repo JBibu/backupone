@@ -5,6 +5,7 @@ import { type } from "arktype";
 import { X } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
+import { Trans, useTranslation } from "react-i18next";
 import { listRepositoriesOptions } from "~/client/api-client/@tanstack/react-query.gen";
 import { CronInput } from "~/client/components/cron-input";
 import { RepositoryIcon } from "~/client/components/repository-icon";
@@ -51,13 +52,13 @@ const internalFormSchema = type({
 const cleanSchema = type.pipe((d) => internalFormSchema(deepClean(d)));
 
 export const weeklyDays = [
-	{ label: "Monday", value: "1" },
-	{ label: "Tuesday", value: "2" },
-	{ label: "Wednesday", value: "3" },
-	{ label: "Thursday", value: "4" },
-	{ label: "Friday", value: "5" },
-	{ label: "Saturday", value: "6" },
-	{ label: "Sunday", value: "0" },
+	{ key: "monday", value: "1" },
+	{ key: "tuesday", value: "2" },
+	{ key: "wednesday", value: "3" },
+	{ key: "thursday", value: "4" },
+	{ key: "friday", value: "5" },
+	{ key: "saturday", value: "6" },
+	{ key: "sunday", value: "0" },
 ];
 
 type InternalFormValues = typeof internalFormSchema.infer;
@@ -105,6 +106,7 @@ const backupScheduleToFormValues = (schedule?: BackupSchedule): InternalFormValu
 };
 
 export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: Props) => {
+	const { t } = useTranslation();
 	const form = useForm<InternalFormValues>({
 		resolver: arktypeResolver(cleanSchema as unknown as typeof internalFormSchema),
 		defaultValues: backupScheduleToFormValues(initialValues),
@@ -190,9 +192,13 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 				<div className="grid gap-4">
 					<Card>
 						<CardHeader>
-							<CardTitle>Backup automation</CardTitle>
+							<CardTitle>{t("backups.scheduleForm.automation.title")}</CardTitle>
 							<CardDescription className="mt-1">
-								Schedule automated backups of <strong>{volume.name}</strong> to a secure repository.
+								<Trans
+									i18nKey="backups.scheduleForm.automation.description"
+									values={{ volumeName: volume.name }}
+									components={{ strong: <strong /> }}
+								/>
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="grid gap-6 @md:grid-cols-2">
@@ -201,11 +207,11 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 								name="name"
 								render={({ field }) => (
 									<FormItem className="@md:col-span-2">
-										<FormLabel>Backup name</FormLabel>
+										<FormLabel>{t("backups.scheduleForm.name.label")}</FormLabel>
 										<FormControl>
-											<Input placeholder="My backup" {...field} />
+											<Input placeholder={t("backups.scheduleForm.name.placeholder")} {...field} />
 										</FormControl>
-										<FormDescription>A unique name to identify this backup schedule.</FormDescription>
+										<FormDescription>{t("backups.scheduleForm.name.description")}</FormDescription>
 										<FormMessage />
 									</FormItem>
 								)}
@@ -216,11 +222,11 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 								name="repositoryId"
 								render={({ field }) => (
 									<FormItem className="@md:col-span-2">
-										<FormLabel>Backup repository</FormLabel>
+										<FormLabel>{t("backups.scheduleForm.repository.label")}</FormLabel>
 										<FormControl>
 											<Select {...field} onValueChange={field.onChange}>
 												<SelectTrigger>
-													<SelectValue placeholder="Select a repository" />
+													<SelectValue placeholder={t("backups.scheduleForm.repository.placeholder")} />
 												</SelectTrigger>
 												<SelectContent>
 													{repositoriesData?.map((repo) => (
@@ -235,7 +241,11 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 											</Select>
 										</FormControl>
 										<FormDescription>
-											Choose where encrypted backups for <strong>{volume.name}</strong> will be stored.
+											<Trans
+												i18nKey="backups.scheduleForm.repository.description"
+												values={{ volumeName: volume.name }}
+												components={{ strong: <strong /> }}
+											/>
 										</FormDescription>
 										<FormMessage />
 									</FormItem>
@@ -247,22 +257,22 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 								name="frequency"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Backup frequency</FormLabel>
+										<FormLabel>{t("backups.scheduleForm.frequency.label")}</FormLabel>
 										<FormControl>
 											<Select {...field} onValueChange={field.onChange}>
 												<SelectTrigger>
-													<SelectValue placeholder="Select frequency" />
+													<SelectValue placeholder={t("backups.scheduleForm.frequency.placeholder")} />
 												</SelectTrigger>
 												<SelectContent>
-													<SelectItem value="hourly">Hourly</SelectItem>
-													<SelectItem value="daily">Daily</SelectItem>
-													<SelectItem value="weekly">Weekly</SelectItem>
-													<SelectItem value="monthly">Specific days</SelectItem>
-													<SelectItem value="cron">Custom (Cron)</SelectItem>
+													<SelectItem value="hourly">{t("backups.scheduleForm.frequency.hourly")}</SelectItem>
+													<SelectItem value="daily">{t("backups.scheduleForm.frequency.daily")}</SelectItem>
+													<SelectItem value="weekly">{t("backups.scheduleForm.frequency.weekly")}</SelectItem>
+													<SelectItem value="monthly">{t("backups.scheduleForm.frequency.monthly")}</SelectItem>
+													<SelectItem value="cron">{t("backups.scheduleForm.frequency.cron")}</SelectItem>
 												</SelectContent>
 											</Select>
 										</FormControl>
-										<FormDescription>Define how often snapshots should be taken.</FormDescription>
+										<FormDescription>{t("backups.scheduleForm.frequency.description")}</FormDescription>
 										<FormMessage />
 									</FormItem>
 								)}
@@ -284,11 +294,11 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 									name="dailyTime"
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>Execution time</FormLabel>
+											<FormLabel>{t("backups.scheduleForm.time.label")}</FormLabel>
 											<FormControl>
 												<Input type="time" {...field} />
 											</FormControl>
-											<FormDescription>Time of day when the backup will run.</FormDescription>
+											<FormDescription>{t("backups.scheduleForm.time.description")}</FormDescription>
 											<FormMessage />
 										</FormItem>
 									)}
@@ -301,22 +311,22 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 									name="weeklyDay"
 									render={({ field }) => (
 										<FormItem className="@md:col-span-2">
-											<FormLabel>Execution day</FormLabel>
+											<FormLabel>{t("backups.scheduleForm.weeklyDay.label")}</FormLabel>
 											<FormControl>
 												<Select {...field} onValueChange={field.onChange}>
 													<SelectTrigger>
-														<SelectValue placeholder="Select a day" />
+														<SelectValue placeholder={t("backups.scheduleForm.weeklyDay.placeholder")} />
 													</SelectTrigger>
 													<SelectContent>
 														{weeklyDays.map((day) => (
 															<SelectItem key={day.value} value={day.value}>
-																{day.label}
+																{t(`backups.schedule.${day.key}`)}
 															</SelectItem>
 														))}
 													</SelectContent>
 												</Select>
 											</FormControl>
-											<FormDescription>Choose which day of the week to run the backup.</FormDescription>
+											<FormDescription>{t("backups.scheduleForm.weeklyDay.description")}</FormDescription>
 											<FormMessage />
 										</FormItem>
 									)}
@@ -328,7 +338,7 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 									name="monthlyDays"
 									render={({ field }) => (
 										<FormItem className="@md:col-span-2">
-											<FormLabel>Days of the month</FormLabel>
+											<FormLabel>{t("backups.scheduleForm.monthlyDays.label")}</FormLabel>
 											<FormControl>
 												<div className="grid grid-cols-7 gap-4 w-max">
 													{Array.from({ length: 31 }, (_, i) => {
@@ -352,7 +362,7 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 													})}
 												</div>
 											</FormControl>
-											<FormDescription>Select one or more days when the backup should run.</FormDescription>
+											<FormDescription>{t("backups.scheduleForm.monthlyDays.description")}</FormDescription>
 											<FormMessage />
 										</FormItem>
 									)}
@@ -363,10 +373,9 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 
 					<Card>
 						<CardHeader>
-							<CardTitle>Backup paths</CardTitle>
+							<CardTitle>{t("backups.scheduleForm.paths.title")}</CardTitle>
 							<CardDescription>
-								Select which folders or files to include in the backup. If no paths are selected, the entire volume will
-								be backed up.
+								{t("backups.scheduleForm.paths.description")}
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
@@ -381,7 +390,7 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 							/>
 							{selectedPaths.size > 0 && (
 								<div className="mt-4">
-									<p className="text-xs text-muted-foreground mb-2">Selected paths:</p>
+									<p className="text-xs text-muted-foreground mb-2">{t("backups.scheduleForm.paths.selectedPaths")}</p>
 									<div className="flex flex-wrap gap-2">
 										{Array.from(selectedPaths).map((path) => (
 											<span
@@ -393,7 +402,7 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 													type="button"
 													onClick={() => handleRemovePath(path)}
 													className="ml-1 hover:bg-destructive/20 rounded p-0.5 transition-colors"
-													aria-label={`Remove ${path}` as string}
+													aria-label={t("backups.scheduleForm.paths.removePath", { path })}
 												>
 													<X className="h-3 w-3" />
 												</button>
@@ -407,7 +416,7 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 								name="includePatternsText"
 								render={({ field }) => (
 									<FormItem className="mt-6">
-										<FormLabel>Additional include patterns</FormLabel>
+										<FormLabel>{t("backups.scheduleForm.includePatterns.label")}</FormLabel>
 										<FormControl>
 											<Textarea
 												{...field}
@@ -416,8 +425,7 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 											/>
 										</FormControl>
 										<FormDescription>
-											Optionally add custom include patterns using glob syntax. Enter one pattern per line. These will
-											be combined with the paths selected above.
+											{t("backups.scheduleForm.includePatterns.description")}
 										</FormDescription>
 										<FormMessage />
 									</FormItem>
@@ -428,10 +436,9 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 
 					<Card>
 						<CardHeader>
-							<CardTitle>Exclude patterns</CardTitle>
+							<CardTitle>{t("backups.scheduleForm.exclude.title")}</CardTitle>
 							<CardDescription>
-								Optionally specify patterns to exclude from backups. Enter one pattern per line (e.g., *.tmp,
-								node_modules/**, .cache/).
+								{t("backups.scheduleForm.exclude.description")}
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
@@ -440,7 +447,7 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 								name="excludePatternsText"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Exclusion patterns</FormLabel>
+										<FormLabel>{t("backups.scheduleForm.excludePatterns.label")}</FormLabel>
 										<FormControl>
 											<Textarea
 												{...field}
@@ -449,16 +456,19 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 											/>
 										</FormControl>
 										<FormDescription>
-											Patterns support glob syntax. See&nbsp;
-											<a
-												href="https://restic.readthedocs.io/en/stable/040_backup.html#excluding-files"
-												target="_blank"
-												rel="noopener noreferrer"
-												className="underline hover:text-foreground"
-											>
-												Restic documentation
-											</a>
-											&nbsp;for more details.
+											<Trans
+												i18nKey="backups.scheduleForm.excludePatterns.description"
+												components={{
+													link: (
+														<a
+															href="https://restic.readthedocs.io/en/stable/040_backup.html#excluding-files"
+															target="_blank"
+															rel="noopener noreferrer"
+															className="underline hover:text-foreground"
+														/>
+													),
+												}}
+											/>
 										</FormDescription>
 										<FormMessage />
 									</FormItem>
@@ -469,7 +479,7 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 								name="excludeIfPresentText"
 								render={({ field }) => (
 									<FormItem className="mt-6">
-										<FormLabel>Exclude if file present</FormLabel>
+										<FormLabel>{t("backups.scheduleForm.excludeIfPresent.label")}</FormLabel>
 										<FormControl>
 											<Textarea
 												{...field}
@@ -478,9 +488,12 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 											/>
 										</FormControl>
 										<FormDescription>
-											Exclude folders containing a file with the specified name. Enter one filename per line. For
-											example, use <code className="bg-muted px-1 rounded">.nobackup</code> to skip any folder
-											containing a <code className="bg-muted px-1 rounded">.nobackup</code> file.
+											<Trans
+												i18nKey="backups.scheduleForm.excludeIfPresent.description"
+												components={{
+													code: <code className="bg-muted px-1 rounded" />,
+												}}
+											/>
 										</FormDescription>
 										<FormMessage />
 									</FormItem>
@@ -495,10 +508,9 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 											<Checkbox checked={field.value} onCheckedChange={field.onChange} />
 										</FormControl>
 										<div className="space-y-1 leading-none">
-											<FormLabel>Stay on one file system</FormLabel>
+											<FormLabel>{t("backups.scheduleForm.oneFileSystem.label")}</FormLabel>
 											<FormDescription>
-												Prevent Restic from crossing file system boundaries. This is useful to avoid backing up network
-												mounts or other partitions that might be mounted inside your backup source.
+												{t("backups.scheduleForm.oneFileSystem.description")}
 											</FormDescription>
 										</div>
 									</FormItem>
@@ -509,8 +521,8 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 
 					<Card>
 						<CardHeader>
-							<CardTitle>Retention policy</CardTitle>
-							<CardDescription>Define how many snapshots to keep. Leave empty to keep all.</CardDescription>
+							<CardTitle>{t("backups.scheduleForm.retention.title")}</CardTitle>
+							<CardDescription>{t("backups.scheduleForm.retention.description")}</CardDescription>
 						</CardHeader>
 						<CardContent className="grid gap-4 @md:grid-cols-2">
 							<FormField
@@ -518,17 +530,17 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 								name="keepLast"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Keep last N snapshots</FormLabel>
+										<FormLabel>{t("backups.scheduleForm.retention.keepLast.label")}</FormLabel>
 										<FormControl>
 											<Input
 												{...field}
 												type="number"
 												min={0}
-												placeholder="Optional"
+												placeholder={t("backups.scheduleForm.retention.keepLast.placeholder")}
 												onChange={(v) => field.onChange(Number(v.target.value))}
 											/>
 										</FormControl>
-										<FormDescription>Keep the N most recent snapshots.</FormDescription>
+										<FormDescription>{t("backups.scheduleForm.retention.keepLast.description")}</FormDescription>
 										<FormMessage />
 									</FormItem>
 								)}
@@ -539,17 +551,17 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 								name="keepHourly"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Keep hourly</FormLabel>
+										<FormLabel>{t("backups.scheduleForm.retention.keepHourly.label")}</FormLabel>
 										<FormControl>
 											<Input
 												type="number"
 												min={0}
-												placeholder="Optional"
+												placeholder={t("backups.scheduleForm.retention.keepHourly.placeholder")}
 												{...field}
 												onChange={(v) => field.onChange(Number(v.target.value))}
 											/>
 										</FormControl>
-										<FormDescription>Keep the last N hourly snapshots.</FormDescription>
+										<FormDescription>{t("backups.scheduleForm.retention.keepHourly.description")}</FormDescription>
 										<FormMessage />
 									</FormItem>
 								)}
@@ -560,17 +572,17 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 								name="keepDaily"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Keep daily</FormLabel>
+										<FormLabel>{t("backups.scheduleForm.retention.keepDaily.label")}</FormLabel>
 										<FormControl>
 											<Input
 												type="number"
 												min={0}
-												placeholder="e.g., 7"
+												placeholder={t("backups.scheduleForm.retention.keepDaily.placeholder")}
 												{...field}
 												onChange={(v) => field.onChange(Number(v.target.value))}
 											/>
 										</FormControl>
-										<FormDescription>Keep the last N daily snapshots.</FormDescription>
+										<FormDescription>{t("backups.scheduleForm.retention.keepDaily.description")}</FormDescription>
 										<FormMessage />
 									</FormItem>
 								)}
@@ -581,17 +593,17 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 								name="keepWeekly"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Keep weekly</FormLabel>
+										<FormLabel>{t("backups.scheduleForm.retention.keepWeekly.label")}</FormLabel>
 										<FormControl>
 											<Input
 												type="number"
 												min={0}
-												placeholder="e.g., 4"
+												placeholder={t("backups.scheduleForm.retention.keepWeekly.placeholder")}
 												{...field}
 												onChange={(v) => field.onChange(Number(v.target.value))}
 											/>
 										</FormControl>
-										<FormDescription>Keep the last N weekly snapshots.</FormDescription>
+										<FormDescription>{t("backups.scheduleForm.retention.keepWeekly.description")}</FormDescription>
 										<FormMessage />
 									</FormItem>
 								)}
@@ -602,17 +614,17 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 								name="keepMonthly"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Keep monthly</FormLabel>
+										<FormLabel>{t("backups.scheduleForm.retention.keepMonthly.label")}</FormLabel>
 										<FormControl>
 											<Input
 												type="number"
 												min={0}
-												placeholder="e.g., 6"
+												placeholder={t("backups.scheduleForm.retention.keepMonthly.placeholder")}
 												{...field}
 												onChange={(v) => field.onChange(Number(v.target.value))}
 											/>
 										</FormControl>
-										<FormDescription>Keep the last N monthly snapshots.</FormDescription>
+										<FormDescription>{t("backups.scheduleForm.retention.keepMonthly.description")}</FormDescription>
 										<FormMessage />
 									</FormItem>
 								)}
@@ -623,17 +635,17 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 								name="keepYearly"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Keep yearly</FormLabel>
+										<FormLabel>{t("backups.scheduleForm.retention.keepYearly.label")}</FormLabel>
 										<FormControl>
 											<Input
 												type="number"
 												min={0}
-												placeholder="Optional"
+												placeholder={t("backups.scheduleForm.retention.keepYearly.placeholder")}
 												{...field}
 												onChange={(v) => field.onChange(Number(v.target.value))}
 											/>
 										</FormControl>
-										<FormDescription>Keep the last N yearly snapshots.</FormDescription>
+										<FormDescription>{t("backups.scheduleForm.retention.keepYearly.description")}</FormDescription>
 										<FormMessage />
 									</FormItem>
 								)}
@@ -645,23 +657,23 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 					<Card>
 						<CardHeader className="flex flex-row items-center justify-between gap-4">
 							<div>
-								<CardTitle>Schedule summary</CardTitle>
-								<CardDescription>Review the backup configuration.</CardDescription>
+								<CardTitle>{t("backups.scheduleForm.summary.title")}</CardTitle>
+								<CardDescription>{t("backups.scheduleForm.summary.description")}</CardDescription>
 							</div>
 						</CardHeader>
 						<CardContent className="flex flex-col gap-4 text-sm">
 							<div>
-								<p className="text-xs uppercase text-muted-foreground">Volume</p>
+								<p className="text-xs uppercase text-muted-foreground">{t("backups.scheduleForm.summary.volume")}</p>
 								<p className="font-medium">{volume.name}</p>
 							</div>
 							<div>
-								<p className="text-xs uppercase text-muted-foreground">Schedule</p>
+								<p className="text-xs uppercase text-muted-foreground">{t("backups.scheduleForm.summary.schedule")}</p>
 								<p className="font-medium">
-									{frequency ? frequency.charAt(0).toUpperCase() + frequency.slice(1) : "-"}
+									{frequency ? t(`backups.scheduleForm.frequency.${frequency}`) : "-"}
 								</p>
 							</div>
 							<div>
-								<p className="text-xs uppercase text-muted-foreground">Repository</p>
+								<p className="text-xs uppercase text-muted-foreground">{t("backups.scheduleForm.summary.repository")}</p>
 								<p className="font-medium">
 									{repositoriesData?.find((r) => r.id === formValues.repositoryId)?.name || "—"}
 								</p>
@@ -669,7 +681,7 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 							{(formValues.includePatterns && formValues.includePatterns.length > 0) ||
 							formValues.includePatternsText ? (
 								<div>
-									<p className="text-xs uppercase text-muted-foreground">Include paths/patterns</p>
+									<p className="text-xs uppercase text-muted-foreground">{t("backups.scheduleForm.summary.includePaths")}</p>
 									<div className="flex flex-col gap-1">
 										{formValues.includePatterns?.map((path) => (
 											<span key={path} className="text-xs font-mono bg-accent px-1.5 py-0.5 rounded">
@@ -689,7 +701,7 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 							) : null}
 							{formValues.excludePatternsText && (
 								<div>
-									<p className="text-xs uppercase text-muted-foreground">Exclude patterns</p>
+									<p className="text-xs uppercase text-muted-foreground">{t("backups.scheduleForm.summary.excludePatterns")}</p>
 									<div className="flex flex-col gap-1">
 										{formValues.excludePatternsText
 											.split("\n")
@@ -704,7 +716,7 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 							)}
 							{formValues.excludeIfPresentText && (
 								<div>
-									<p className="text-xs uppercase text-muted-foreground">Exclude if present</p>
+									<p className="text-xs uppercase text-muted-foreground">{t("backups.scheduleForm.summary.excludeIfPresent")}</p>
 									<div className="flex flex-col gap-1">
 										{formValues.excludeIfPresentText
 											.split("\n")
@@ -718,11 +730,11 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 								</div>
 							)}
 							<div>
-								<p className="text-xs uppercase text-muted-foreground">One file system</p>
-								<p className="font-medium">{formValues.oneFileSystem ? "Enabled" : "Disabled"}</p>
+								<p className="text-xs uppercase text-muted-foreground">{t("backups.scheduleForm.summary.oneFileSystem")}</p>
+								<p className="font-medium">{formValues.oneFileSystem ? t("common.status.enabled") : t("common.status.disabled")}</p>
 							</div>
 							<div>
-								<p className="text-xs uppercase text-muted-foreground">Retention</p>
+								<p className="text-xs uppercase text-muted-foreground">{t("backups.scheduleForm.summary.retention")}</p>
 								<p className="font-medium">
 									{Object.entries(formValues)
 										.filter(([key, value]) => key.startsWith("keep") && Boolean(value))

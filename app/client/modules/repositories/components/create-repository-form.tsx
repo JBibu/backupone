@@ -2,6 +2,7 @@ import { arktypeResolver } from "@hookform/resolvers/arktype";
 import { type } from "arktype";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { Save } from "lucide-react";
 import { cn } from "~/client/lib/utils";
 import { deepClean } from "~/utils/object";
@@ -70,6 +71,7 @@ export const CreateRepositoryForm = ({
 	loading,
 	className,
 }: Props) => {
+	const { t } = useTranslation();
 	const form = useForm<RepositoryFormValues>({
 		resolver: arktypeResolver(cleanSchema as unknown as typeof formSchema),
 		defaultValues: initialValues,
@@ -105,17 +107,17 @@ export const CreateRepositoryForm = ({
 					name="name"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Name</FormLabel>
+							<FormLabel>{t("repositories.createForm.name.label")}</FormLabel>
 							<FormControl>
 								<Input
 									{...field}
-									placeholder="Repository name"
+									placeholder={t("repositories.createForm.name.placeholder")}
 									onChange={(e) => field.onChange(e.target.value)}
 									maxLength={32}
 									minLength={2}
 								/>
 							</FormControl>
-							<FormDescription>Unique identifier for the repository.</FormDescription>
+							<FormDescription>{t("repositories.createForm.name.description")}</FormDescription>
 							<FormMessage />
 						</FormItem>
 					)}
@@ -125,34 +127,34 @@ export const CreateRepositoryForm = ({
 					name="backend"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Backend</FormLabel>
+							<FormLabel>{t("repositories.createForm.backend.label")}</FormLabel>
 							<Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
 								<FormControl>
 									<SelectTrigger>
-										<SelectValue placeholder="Select a backend" />
+										<SelectValue placeholder={t("repositories.createForm.backend.placeholder")} />
 									</SelectTrigger>
 								</FormControl>
 								<SelectContent>
-									<SelectItem value="local">Local</SelectItem>
-									<SelectItem value="s3">S3</SelectItem>
-									<SelectItem value="r2">Cloudflare R2</SelectItem>
-									<SelectItem value="gcs">Google Cloud Storage</SelectItem>
-									<SelectItem value="azure">Azure Blob Storage</SelectItem>
-									<SelectItem value="rest">REST Server</SelectItem>
-									<SelectItem value="sftp">SFTP</SelectItem>
+									<SelectItem value="local">{t("repositories.createForm.backend.local")}</SelectItem>
+									<SelectItem value="s3">{t("repositories.createForm.backend.s3")}</SelectItem>
+									<SelectItem value="r2">{t("repositories.createForm.backend.r2")}</SelectItem>
+									<SelectItem value="gcs">{t("repositories.createForm.backend.gcs")}</SelectItem>
+									<SelectItem value="azure">{t("repositories.createForm.backend.azure")}</SelectItem>
+									<SelectItem value="rest">{t("repositories.createForm.backend.rest")}</SelectItem>
+									<SelectItem value="sftp">{t("repositories.createForm.backend.sftp")}</SelectItem>
 									<Tooltip>
 										<TooltipTrigger>
 											<SelectItem disabled={!capabilities.rclone} value="rclone">
-												rclone (40+ cloud providers)
+												{t("repositories.createForm.backend.rclone")}
 											</SelectItem>
 										</TooltipTrigger>
 										<TooltipContent className={cn({ hidden: capabilities.rclone })}>
-											<p>Setup rclone to use this backend</p>
+											<p>{t("repositories.createForm.backend.rcloneTooltip")}</p>
 										</TooltipContent>
 									</Tooltip>
 								</SelectContent>
 							</Select>
-							<FormDescription>Choose the storage backend for this repository.</FormDescription>
+							<FormDescription>{t("repositories.createForm.backend.description")}</FormDescription>
 							<FormMessage />
 						</FormItem>
 					)}
@@ -163,20 +165,20 @@ export const CreateRepositoryForm = ({
 					name="compressionMode"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Compression Mode</FormLabel>
+							<FormLabel>{t("repositories.createForm.compression.label")}</FormLabel>
 							<Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
 								<FormControl>
 									<SelectTrigger>
-										<SelectValue placeholder="Select compression mode" />
+										<SelectValue placeholder={t("repositories.createForm.compression.placeholder")} />
 									</SelectTrigger>
 								</FormControl>
 								<SelectContent>
-									<SelectItem value="off">Off</SelectItem>
-									<SelectItem value="auto">Auto (fast)</SelectItem>
-									<SelectItem value="max">Max (slower, better compression)</SelectItem>
+									<SelectItem value="off">{t("repositories.createForm.compression.off")}</SelectItem>
+									<SelectItem value="auto">{t("repositories.createForm.compression.auto")}</SelectItem>
+									<SelectItem value="max">{t("repositories.createForm.compression.max")}</SelectItem>
 								</SelectContent>
 							</Select>
-							<FormDescription>Compression mode for backups stored in this repository.</FormDescription>
+							<FormDescription>{t("repositories.createForm.compression.description")}</FormDescription>
 							<FormMessage />
 						</FormItem>
 					)}
@@ -200,8 +202,8 @@ export const CreateRepositoryForm = ({
 								/>
 							</FormControl>
 							<div className="space-y-1">
-								<FormLabel>Import existing repository</FormLabel>
-								<FormDescription>Check this if the repository already exists at the specified location</FormDescription>
+								<FormLabel>{t("repositories.createForm.existingRepository.label")}</FormLabel>
+								<FormDescription>{t("repositories.createForm.existingRepository.description")}</FormDescription>
 							</div>
 						</FormItem>
 					)}
@@ -209,7 +211,7 @@ export const CreateRepositoryForm = ({
 				{watchedIsExistingRepository && (
 					<>
 						<FormItem>
-							<FormLabel>Repository Password</FormLabel>
+							<FormLabel>{t("repositories.createForm.password.label")}</FormLabel>
 							<Select
 								onValueChange={(value) => {
 									setPasswordMode(value as "default" | "custom");
@@ -222,17 +224,16 @@ export const CreateRepositoryForm = ({
 							>
 								<FormControl>
 									<SelectTrigger>
-										<SelectValue placeholder="Select password option" />
+										<SelectValue placeholder={t("repositories.createForm.password.placeholder")} />
 									</SelectTrigger>
 								</FormControl>
 								<SelectContent>
-									<SelectItem value="default">Use the existing recovery key</SelectItem>
-									<SelectItem value="custom">Enter password manually</SelectItem>
+									<SelectItem value="default">{t("repositories.createForm.password.useRecoveryKey")}</SelectItem>
+									<SelectItem value="custom">{t("repositories.createForm.password.enterManually")}</SelectItem>
 								</SelectContent>
 							</Select>
 							<FormDescription>
-								Choose whether to use C3i Backup ONE's recovery key (which you downloaded when creating your account) or enter
-								a custom password for the existing repository.
+								{t("repositories.createForm.password.description")}
 							</FormDescription>
 						</FormItem>
 
@@ -242,16 +243,16 @@ export const CreateRepositoryForm = ({
 								name="customPassword"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Repository Password</FormLabel>
+										<FormLabel>{t("repositories.createForm.password.customLabel")}</FormLabel>
 										<FormControl>
 											<SecretInput
-												placeholder="Enter repository password"
+												placeholder={t("repositories.createForm.password.customPlaceholder")}
 												value={field.value ?? ""}
 												onChange={field.onChange}
 											/>
 										</FormControl>
 										<FormDescription>
-											The password used to encrypt this repository. It will be stored securely.
+											{t("repositories.createForm.password.customDescription")}
 										</FormDescription>
 										<FormMessage />
 									</FormItem>
@@ -275,7 +276,7 @@ export const CreateRepositoryForm = ({
 				{mode === "update" && (
 					<Button type="submit" className="w-full" loading={loading}>
 						<Save className="h-4 w-4 mr-2" />
-						Save Changes
+						{t("repositories.createForm.saveButton")}
 					</Button>
 				)}
 			</form>

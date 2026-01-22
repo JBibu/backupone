@@ -6,6 +6,7 @@ import { Button } from "~/client/components/ui/button";
 import { CardContent, CardDescription, CardTitle } from "~/client/components/ui/card";
 import { useSystemInfo } from "~/client/hooks/use-system-info";
 import { isTauri, invoke } from "~/client/lib/tauri";
+import { useTranslation } from "react-i18next";
 
 type ServiceStatusString = "running" | "stopped" | "not_installed" | "unknown";
 
@@ -22,6 +23,7 @@ interface BackendInfo {
 }
 
 export function WindowsServiceSection() {
+	const { t } = useTranslation();
 	const { platform } = useSystemInfo();
 	const [serviceStatus, setServiceStatus] = useState<ServiceStatusString>("unknown");
 	const [isLoading, setIsLoading] = useState(false);
@@ -79,10 +81,10 @@ export function WindowsServiceSection() {
 		setActionInProgress("install");
 		try {
 			await invoke("install_service");
-			toast.success("Windows Service installed successfully");
+			toast.success(t("settings.windowsService.toast.installSuccess"));
 			await fetchServiceStatus();
 		} catch (error) {
-			toast.error("Failed to install service", {
+			toast.error(t("settings.windowsService.toast.installFailed"), {
 				description: error instanceof Error ? error.message : "An error occurred",
 			});
 		} finally {
@@ -94,10 +96,10 @@ export function WindowsServiceSection() {
 		setActionInProgress("uninstall");
 		try {
 			await invoke("uninstall_service");
-			toast.success("Windows Service uninstalled successfully");
+			toast.success(t("settings.windowsService.toast.uninstallSuccess"));
 			await fetchServiceStatus();
 		} catch (error) {
-			toast.error("Failed to uninstall service", {
+			toast.error(t("settings.windowsService.toast.uninstallFailed"), {
 				description: error instanceof Error ? error.message : "An error occurred",
 			});
 		} finally {
@@ -109,10 +111,10 @@ export function WindowsServiceSection() {
 		setActionInProgress("start");
 		try {
 			await invoke("start_service");
-			toast.success("Windows Service started successfully");
+			toast.success(t("settings.windowsService.toast.startSuccess"));
 			await fetchServiceStatus();
 		} catch (error) {
-			toast.error("Failed to start service", {
+			toast.error(t("settings.windowsService.toast.startFailed"), {
 				description: error instanceof Error ? error.message : "An error occurred",
 			});
 		} finally {
@@ -124,10 +126,10 @@ export function WindowsServiceSection() {
 		setActionInProgress("stop");
 		try {
 			await invoke("stop_service");
-			toast.success("Windows Service stopped successfully");
+			toast.success(t("settings.windowsService.toast.stopSuccess"));
 			await fetchServiceStatus();
 		} catch (error) {
-			toast.error("Failed to stop service", {
+			toast.error(t("settings.windowsService.toast.stopFailed"), {
 				description: error instanceof Error ? error.message : "An error occurred",
 			});
 		} finally {
@@ -144,7 +146,7 @@ export function WindowsServiceSection() {
 		try {
 			await relaunch();
 		} catch (error) {
-			toast.error("Failed to restart app", {
+			toast.error(t("settings.windowsService.toast.restartFailed"), {
 				description: error instanceof Error ? error.message : "An error occurred",
 			});
 			setActionInProgress(null);
@@ -177,13 +179,13 @@ export function WindowsServiceSection() {
 	const getStatusText = () => {
 		switch (serviceStatus) {
 			case "running":
-				return <span className="text-green-500">Running</span>;
+				return <span className="text-green-500">{t("settings.windowsService.statusRunning")}</span>;
 			case "stopped":
-				return <span className="text-yellow-500">Stopped</span>;
+				return <span className="text-yellow-500">{t("settings.windowsService.statusStopped")}</span>;
 			case "not_installed":
-				return <span className="text-muted-foreground">Not Installed</span>;
+				return <span className="text-muted-foreground">{t("settings.windowsService.statusNotInstalled")}</span>;
 			default:
-				return <span className="text-muted-foreground">Unknown</span>;
+				return <span className="text-muted-foreground">{t("settings.windowsService.statusUnknown")}</span>;
 		}
 	};
 
@@ -192,10 +194,10 @@ export function WindowsServiceSection() {
 			<div className="border-t border-border/50 bg-card-header p-6">
 				<CardTitle className="flex items-center gap-2">
 					<Cog className="size-5" />
-					Windows Service
+					{t("settings.windowsService.title")}
 				</CardTitle>
 				<CardDescription className="mt-1.5">
-					Run C3i Backup ONE as a Windows Service for background backups
+					{t("settings.windowsService.description")}
 				</CardDescription>
 			</div>
 			<CardContent className="p-6 space-y-4">
@@ -203,11 +205,10 @@ export function WindowsServiceSection() {
 					<div className="space-y-1 flex-1">
 						<div className="flex items-center gap-2">
 							{getStatusIcon()}
-							<p className="text-sm font-medium">Status: {getStatusText()}</p>
+							<p className="text-sm font-medium">{t("settings.windowsService.statusLabel")} {getStatusText()}</p>
 						</div>
 						<p className="text-xs text-muted-foreground max-w-xl">
-							Installing C3i Backup ONE as a Windows Service allows scheduled backups to run even when the desktop app is
-							closed. The service runs in the background and uses a separate data location.
+							{t("settings.windowsService.helper")}
 						</p>
 					</div>
 				</div>
@@ -220,7 +221,7 @@ export function WindowsServiceSection() {
 							) : (
 								<Download className="h-4 w-4 mr-2" />
 							)}
-							Install Service
+							{t("settings.windowsService.installButton")}
 						</Button>
 					)}
 
@@ -232,7 +233,7 @@ export function WindowsServiceSection() {
 								) : (
 									<Play className="h-4 w-4 mr-2" />
 								)}
-								Start Service
+								{t("settings.windowsService.startButton")}
 							</Button>
 							<Button onClick={handleUninstall} disabled={!!actionInProgress} variant="outline">
 								{actionInProgress === "uninstall" ? (
@@ -240,7 +241,7 @@ export function WindowsServiceSection() {
 								) : (
 									<Trash2 className="h-4 w-4 mr-2" />
 								)}
-								Uninstall
+								{t("settings.windowsService.uninstallButton")}
 							</Button>
 						</>
 					)}
@@ -249,7 +250,7 @@ export function WindowsServiceSection() {
 						<>
 							<Button onClick={handleOpenServiceUI} variant="default">
 								<ExternalLink className="h-4 w-4 mr-2" />
-								Open Service UI
+								{t("settings.windowsService.openUIButton")}
 							</Button>
 							<Button onClick={handleStop} disabled={!!actionInProgress} variant="outline">
 								{actionInProgress === "stop" ? (
@@ -257,7 +258,7 @@ export function WindowsServiceSection() {
 								) : (
 									<Square className="h-4 w-4 mr-2" />
 								)}
-								Stop Service
+								{t("settings.windowsService.stopButton")}
 							</Button>
 						</>
 					)}
@@ -265,8 +266,7 @@ export function WindowsServiceSection() {
 
 				{serviceStatus === "running" && (
 					<p className="text-xs text-muted-foreground">
-						When the service is running, the desktop app connects to it automatically. Service data is stored in{" "}
-						<code className="bg-muted px-1 py-0.5 rounded text-xs">%PROGRAMDATA%\C3i Backup ONE</code>.
+						{t("settings.windowsService.helperRunning")}
 					</p>
 				)}
 
@@ -274,7 +274,7 @@ export function WindowsServiceSection() {
 					<div className="mt-4 p-3 bg-muted/50 rounded-lg border border-border/50">
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-xs font-medium mb-1">Current Connection</p>
+								<p className="text-xs font-medium mb-1">{t("settings.windowsService.currentConnection.title")}</p>
 								<div className="flex items-center gap-2">
 									<span
 										className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
@@ -283,9 +283,9 @@ export function WindowsServiceSection() {
 												: "bg-green-500/20 text-green-400 border border-green-500/30"
 										}`}
 									>
-										{backendInfo.using_service ? "Service Mode" : "Desktop Mode"}
+										{backendInfo.using_service ? t("settings.windowsService.currentConnection.serviceMode") : t("settings.windowsService.currentConnection.desktopMode")}
 									</span>
-									<span className="text-xs text-muted-foreground">Port {backendInfo.port}</span>
+									<span className="text-xs text-muted-foreground">{t("settings.windowsService.currentConnection.port")} {backendInfo.port}</span>
 								</div>
 							</div>
 							{needsRestart && (
@@ -295,14 +295,13 @@ export function WindowsServiceSection() {
 									) : (
 										<RefreshCw className="h-4 w-4 mr-2" />
 									)}
-									Restart to Switch
+									{t("settings.windowsService.currentConnection.restartButton")}
 								</Button>
 							)}
 						</div>
 						{needsRestart && (
 							<p className="text-xs text-yellow-500 mt-2">
-								Service state changed. Restart the app to switch to{" "}
-								{serviceStatus === "running" ? "Service Mode" : "Desktop Mode"}.
+								{serviceStatus === "running" ? t("settings.windowsService.currentConnection.warningService") : t("settings.windowsService.currentConnection.warningDesktop")}
 							</p>
 						)}
 					</div>

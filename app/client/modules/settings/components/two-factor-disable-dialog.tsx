@@ -12,6 +12,7 @@ import {
 import { Input } from "~/client/components/ui/input";
 import { Label } from "~/client/components/ui/label";
 import { authClient } from "~/client/lib/auth-client";
+import { useTranslation } from "react-i18next";
 
 type TwoFactorDisableDialogProps = {
 	open: boolean;
@@ -20,6 +21,7 @@ type TwoFactorDisableDialogProps = {
 };
 
 export const TwoFactorDisableDialog = ({ open, onOpenChange, onSuccess }: TwoFactorDisableDialogProps) => {
+	const { t } = useTranslation();
 	const [password, setPassword] = useState("");
 	const [isDisabling, setIsDisabling] = useState(false);
 
@@ -27,7 +29,7 @@ export const TwoFactorDisableDialog = ({ open, onOpenChange, onSuccess }: TwoFac
 		e.preventDefault();
 
 		if (!password) {
-			toast.error("Password is required");
+			toast.error(t("settings.twoFactor.disable.toast.passwordRequired"));
 			return;
 		}
 
@@ -45,11 +47,11 @@ export const TwoFactorDisableDialog = ({ open, onOpenChange, onSuccess }: TwoFac
 
 		if (error) {
 			console.error(error);
-			toast.error("Failed to disable 2FA", { description: error.message });
+			toast.error(t("settings.twoFactor.disable.toast.failed"), { description: error.message });
 			return;
 		}
 
-		toast.success("Two-factor authentication disabled successfully");
+		toast.success(t("settings.twoFactor.disable.toast.success"));
 		handleClose();
 		onSuccess();
 	};
@@ -64,30 +66,30 @@ export const TwoFactorDisableDialog = ({ open, onOpenChange, onSuccess }: TwoFac
 			<DialogContent>
 				<form onSubmit={handleDisable}>
 					<DialogHeader>
-						<DialogTitle>Disable Two-Factor Authentication</DialogTitle>
+						<DialogTitle>{t("settings.twoFactor.disable.title")}</DialogTitle>
 						<DialogDescription>
-							Are you sure you want to disable 2FA? Your account will be less secure. Enter your password to confirm.
+							{t("settings.twoFactor.disable.description")}
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-4 py-4">
 						<div className="space-y-2">
-							<Label htmlFor="disable-password">Your password</Label>
+							<Label htmlFor="disable-password">{t("settings.twoFactor.disable.passwordLabel")}</Label>
 							<Input
 								id="disable-password"
 								type="password"
 								value={password}
 								onChange={(e) => setPassword(e.target.value)}
-								placeholder="Enter your password"
+								placeholder={t("settings.twoFactor.disable.passwordPlaceholder")}
 								required
 							/>
 						</div>
 					</div>
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={handleClose}>
-							Cancel
+							{t("settings.twoFactor.disable.cancelButton")}
 						</Button>
 						<Button type="submit" variant="destructive" loading={isDisabling}>
-							Disable 2FA
+							{t("settings.twoFactor.disable.disableButton")}
 						</Button>
 					</DialogFooter>
 				</form>

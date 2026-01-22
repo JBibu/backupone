@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "~/client/components/ui/form";
 import { Input } from "~/client/components/ui/input";
 import { SecretInput } from "~/client/components/ui/secret-input";
@@ -10,6 +11,8 @@ type Props = {
 };
 
 export const PushoverForm = ({ form }: Props) => {
+	const { t } = useTranslation();
+
 	return (
 		<>
 			<FormField
@@ -17,11 +20,11 @@ export const PushoverForm = ({ form }: Props) => {
 				name="userKey"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>User Key</FormLabel>
+						<FormLabel>{t("notifications.pushoverForm.userKey")}</FormLabel>
 						<FormControl>
-							<Input {...field} placeholder="uQiRzpo4DXghDmr9QzzfQu27cmVRsG" />
+							<Input {...field} placeholder={t("notifications.pushoverForm.userKeyPlaceholder")} />
 						</FormControl>
-						<FormDescription>Your Pushover user key from the dashboard.</FormDescription>
+						<FormDescription>{t("notifications.pushoverForm.userKeyDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -31,11 +34,11 @@ export const PushoverForm = ({ form }: Props) => {
 				name="apiToken"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>API Token</FormLabel>
+						<FormLabel>{t("notifications.pushoverForm.apiToken")}</FormLabel>
 						<FormControl>
-							<SecretInput {...field} placeholder="••••••••" />
+							<SecretInput {...field} placeholder={t("notifications.pushoverForm.apiTokenPlaceholder")} />
 						</FormControl>
-						<FormDescription>Application API token from your Pushover application.</FormDescription>
+						<FormDescription>{t("notifications.pushoverForm.apiTokenDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -45,11 +48,11 @@ export const PushoverForm = ({ form }: Props) => {
 				name="devices"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Devices (Optional)</FormLabel>
+						<FormLabel>{t("notifications.pushoverForm.devices")}</FormLabel>
 						<FormControl>
-							<Input {...field} placeholder="iphone,android" />
+							<Input {...field} placeholder={t("notifications.pushoverForm.devicesPlaceholder")} />
 						</FormControl>
-						<FormDescription>Comma-separated list of device names. Leave empty for all devices.</FormDescription>
+						<FormDescription>{t("notifications.pushoverForm.devicesDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -59,7 +62,7 @@ export const PushoverForm = ({ form }: Props) => {
 				name="priority"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Priority</FormLabel>
+						<FormLabel>{t("notifications.pushoverForm.priority")}</FormLabel>
 						<Select
 							onValueChange={(value) => field.onChange(Number(value))}
 							defaultValue={String(field.value)}
@@ -67,16 +70,16 @@ export const PushoverForm = ({ form }: Props) => {
 						>
 							<FormControl>
 								<SelectTrigger>
-									<SelectValue placeholder="Select priority" />
+									<SelectValue placeholder={t("notifications.pushoverForm.priorityPlaceholder")} />
 								</SelectTrigger>
 							</FormControl>
 							<SelectContent>
-								<SelectItem value="-1">Low (-1)</SelectItem>
-								<SelectItem value="0">Normal (0)</SelectItem>
-								<SelectItem value="1">High (1)</SelectItem>
+								<SelectItem value="-1">{t("notifications.pushoverForm.priorityLow")}</SelectItem>
+								<SelectItem value="0">{t("notifications.pushoverForm.priorityNormal")}</SelectItem>
+								<SelectItem value="1">{t("notifications.pushoverForm.priorityHigh")}</SelectItem>
 							</SelectContent>
 						</Select>
-						<FormDescription>Message priority level.</FormDescription>
+						<FormDescription>{t("notifications.pushoverForm.priorityDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}

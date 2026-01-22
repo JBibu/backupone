@@ -1,0 +1,1037 @@
+{
+	"auth": {
+		"login": {
+			"pageTitle": "C3i Backup ONE - Login",
+			"pageDescription": "Sign in to your C3i Backup ONE account.",
+			"twoFactor": {
+				"title": "Two-Factor Authentication",
+				"description": "Enter the 6-digit code from your authenticator app",
+				"codeLabel": "Authentication code",
+				"trustDevice": "Trust this device for 30 days",
+				"verifyButton": "Verify",
+				"backButton": "Back to Login"
+			},
+			"form": {
+				"title": "Login to your account",
+				"description": "Enter your credentials below to login to your account",
+				"username": "Username",
+				"usernamePlaceholder": "admin",
+				"password": "Password",
+				"forgotPassword": "Forgot your password?",
+				"loginButton": "Login"
+			},
+			"toast": {
+				"invalidCode": "Please enter a 6-digit code",
+				"verificationFailed": "Verification failed",
+				"loginSuccess": "Login successful"
+			}
+		},
+		"onboarding": {
+			"pageTitle": "C3i Backup ONE - Onboarding",
+			"pageDescription": "Welcome to C3i Backup ONE. Create your admin account to get started.",
+			"title": "Welcome to C3i Backup ONE",
+			"description": "Create the admin user to get started",
+			"form": {
+				"email": "Email",
+				"emailPlaceholder": "you@example.com",
+				"emailDescription": "Enter your email address",
+				"username": "Username",
+				"usernamePlaceholder": "admin",
+				"usernameDescription": "Choose a username for the admin account",
+				"password": "Password",
+				"passwordPlaceholder": "Enter a secure password",
+				"passwordDescription": "Password must be at least 8 characters long.",
+				"confirmPassword": "Confirm Password",
+				"confirmPasswordPlaceholder": "Re-enter your password",
+				"createButton": "Create admin user"
+			},
+			"validation": {
+				"passwordMismatch": "Passwords do not match"
+			},
+			"toast": {
+				"success": "Admin user created successfully!",
+				"failed": "Failed to create admin user"
+			}
+		},
+		"resetPassword": {
+			"title": "Reset your password",
+			"descriptionTauri": "To reset your password, use the CLI tool included with the application.",
+			"descriptionWeb": "To reset your password, run the following command on the server where C3i Backup ONE is installed.",
+			"commandTauri": "zerobyte-cli reset-password",
+			"commandHint": "Open a terminal in the application's installation directory and run this command. It will start an interactive session where you can enter a new password.",
+			"commandDocker": "docker exec -it zerobyte bun run cli reset-password",
+			"commandDockerHint": "This command will start an interactive session where you can enter a new password for your account."
+		}
+	},
+	"volumes": {
+		"pageTitle": "C3i Backup ONE - Volumes",
+		"pageDescription": "Create, manage, monitor, and automate your Docker volumes with ease.",
+		"breadcrumb": "Volumes",
+		"empty": {
+			"title": "No volume",
+			"description": "Manage and monitor all your storage backends in one place with advanced features like automatic mounting and health checks."
+		},
+		"search": {
+			"placeholder": "Search volumes…"
+		},
+		"filters": {
+			"allStatus": "All status",
+			"mounted": "Mounted",
+			"unmounted": "Unmounted",
+			"error": "Error",
+			"allBackends": "All backends",
+			"directory": "Directory",
+			"nfs": "NFS",
+			"smb": "SMB",
+			"clearFilters": "Clear filters"
+		},
+		"table": {
+			"name": "Name",
+			"backend": "Backend",
+			"status": "Status"
+		},
+		"counter": {
+			"single": "volume",
+			"plural": "volumes"
+		},
+		"emptyFilters": "No volumes match your filters.",
+		"createButton": "Create Volume",
+		"directoryForm": {
+			"pathLabel": "Directory Path",
+			"selectedPath": "Selected path:",
+			"changeButton": "Change",
+			"description": "Browse and select a directory on the host filesystem to track."
+		},
+		"nfsForm": {
+			"serverLabel": "Server",
+			"serverDescription": "NFS server IP address or hostname.",
+			"exportPathLabel": "Export Path",
+			"exportPathDescription": "Path to the NFS export on the server.",
+			"portLabel": "Port",
+			"portDescription": "NFS server port (default: 2049).",
+			"versionLabel": "Version",
+			"versionPlaceholder": "Select NFS version",
+			"versionDescription": "NFS protocol version to use.",
+			"readOnlyLabel": "Read-only Mode",
+			"readOnlyCheckbox": "Mount volume as read-only",
+			"readOnlyDescription": "Prevent any modifications to the volume. Recommended for backup sources and sensitive data."
+		},
+		"smbForm": {
+			"serverLabel": "Server",
+			"serverDescription": "SMB server IP address or hostname.",
+			"shareLabel": "Share",
+			"shareDescription": "SMB share name on the server.",
+			"usernameLabel": "Username",
+			"usernameDescription": "Username for SMB authentication.",
+			"passwordLabel": "Password",
+			"passwordDescription": "Password for SMB authentication.",
+			"versionLabel": "SMB Version",
+			"versionPlaceholder": "Select SMB version",
+			"versionDescription": "SMB protocol version to use (default: 3.0).",
+			"domainLabel": "Domain (Optional)",
+			"domainDescription": "Domain or workgroup for authentication (optional).",
+			"portLabel": "Port",
+			"portDescription": "SMB server port (default: 445).",
+			"readOnlyLabel": "Read-only Mode",
+			"readOnlyCheckbox": "Mount volume as read-only",
+			"readOnlyDescription": "Prevent any modifications to the volume. Recommended for backup sources and sensitive data."
+		},
+		"webdavForm": {
+			"serverLabel": "Server",
+			"serverDescription": "WebDAV server hostname or IP address.",
+			"pathLabel": "Path",
+			"pathDescription": "Path to the WebDAV directory on the server.",
+			"usernameLabel": "Username (Optional)",
+			"usernameDescription": "Username for WebDAV authentication (optional).",
+			"passwordLabel": "Password (Optional)",
+			"passwordDescription": "Password for WebDAV authentication (optional).",
+			"portLabel": "Port",
+			"portDescription": "WebDAV server port (default: 80 for HTTP, 443 for HTTPS).",
+			"sslLabel": "Use SSL/HTTPS",
+			"sslCheckbox": "Enable HTTPS for secure connections",
+			"sslDescription": "Use HTTPS instead of HTTP for secure connections.",
+			"readOnlyLabel": "Read-only Mode",
+			"readOnlyCheckbox": "Mount volume as read-only",
+			"readOnlyDescription": "Prevent any modifications to the volume. Recommended for backup sources and sensitive data."
+		},
+		"sftpForm": {
+			"hostLabel": "Host",
+			"hostDescription": "SFTP server hostname or IP address.",
+			"portLabel": "Port",
+			"portDescription": "SFTP server port (default: 22).",
+			"usernameLabel": "Username",
+			"usernameDescription": "Username for SFTP authentication.",
+			"passwordLabel": "Password (Optional)",
+			"passwordDescription": "Password for SFTP authentication (optional if using private key).",
+			"privateKeyLabel": "Private Key (Optional)",
+			"privateKeyDescription": "SSH private key for authentication (optional if using password).",
+			"pathLabel": "Path",
+			"pathDescription": "Path to the directory on the SFTP server.",
+			"skipHostKeyCheckLabel": "Skip Host Key Verification",
+			"skipHostKeyCheckDescription": "Disable SSH host key checking. Useful for servers with dynamic IPs or self-signed keys.",
+			"knownHostsLabel": "Known Hosts",
+			"knownHostsDescription": "The contents of the known_hosts file for this server."
+		},
+		"rcloneForm": {
+			"noRemotesTitle": "No rclone remotes configured",
+			"noRemotesDescription": "To use rclone, you need to configure remotes on your host system",
+			"viewDocumentation": "View rclone documentation",
+			"remoteLabel": "Remote",
+			"remotePlaceholder": "Select an rclone remote",
+			"loadingRemotes": "Loading remotes...",
+			"remoteDescription": "Select the rclone remote configured on your host system.",
+			"pathLabel": "Path",
+			"pathDescription": "Path on the remote to mount. Use \"/\" for the root.",
+			"readOnlyLabel": "Read-only Mode",
+			"readOnlyCheckbox": "Mount volume as read-only",
+			"readOnlyDescription": "Prevent any modifications to the volume. Recommended for backup sources and sensitive data."
+		},
+		"createForm": {
+			"nameLabel": "Name",
+			"namePlaceholder": "Volume name",
+			"nameDescription": "Unique identifier for the volume.",
+			"backendLabel": "Backend",
+			"backendPlaceholder": "Select a backend",
+			"backendDescription": "Choose the storage backend for this volume.",
+			"backends": {
+				"directory": "Directory",
+				"nfs": "NFS",
+				"smb": "SMB",
+				"smbNative": "SMB (Native)",
+				"webdav": "WebDAV",
+				"sftp": "SFTP",
+				"rclone": "rclone"
+			},
+			"tooltips": {
+				"nfsNotSupported": "NFS is not supported on Windows. Use SMB instead.",
+				"sysAdminRequired": "Remote mounts require SYS_ADMIN capability",
+				"webdavNotSupported": "WebDAV mounting is not supported on Windows. Use rclone repository backend instead.",
+				"sftpNotSupported": "SFTP mounting is not supported on Windows. Use SFTP repository backend instead.",
+				"rcloneNotSupported": "rclone mounting is not supported on Windows. Use rclone repository backend instead.",
+				"setupRclone": "Setup rclone to use this backend"
+			},
+			"testConnection": {
+				"testing": "Testing...",
+				"success": "Connection Successful",
+				"failed": "Test Failed",
+				"button": "Test Connection",
+				"errorDefault": "Failed to test connection. Please try again."
+			},
+			"saveButton": "Save changes"
+		}
+	},
+	"repositories": {
+		"pageTitle": "C3i Backup ONE - Repositories",
+		"pageDescription": "Manage your backup repositories with encryption and compression.",
+		"breadcrumb": "Repositories",
+		"empty": {
+			"title": "No repository",
+			"description": "Repositories are remote storage locations where you can backup your volumes securely. Encrypted and optimized for storage efficiency."
+		},
+		"search": {
+			"placeholder": "Search repositories…"
+		},
+		"filters": {
+			"allStatus": "All status",
+			"healthy": "Healthy",
+			"error": "Error",
+			"unknown": "Unknown",
+			"allBackends": "All backends",
+			"local": "Local",
+			"sftp": "SFTP",
+			"s3": "S3",
+			"gcs": "Google Cloud Storage",
+			"clearFilters": "Clear filters"
+		},
+		"table": {
+			"name": "Name",
+			"backend": "Backend",
+			"compression": "Compression",
+			"status": "Status"
+		},
+		"counter": {
+			"single": "repository",
+			"plural": "repositories"
+		},
+		"emptyFilters": "No repositories match your filters.",
+		"createButton": "Create Repository",
+		"s3Form": {
+			"endpoint": "Endpoint",
+			"endpointPlaceholder": "s3.amazonaws.com",
+			"endpointDescription": "S3-compatible endpoint URL.",
+			"bucket": "Bucket",
+			"bucketPlaceholder": "my-backup-bucket",
+			"bucketDescription": "S3 bucket name for storing backups.",
+			"accessKeyId": "Access Key ID",
+			"accessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+			"accessKeyIdDescription": "S3 access key ID for authentication.",
+			"secretAccessKey": "Secret Access Key",
+			"secretAccessKeyPlaceholder": "••••••••",
+			"secretAccessKeyDescription": "S3 secret access key for authentication."
+		},
+		"localForm": {
+			"directory": "Repository Directory",
+			"directoryDescription": "The directory where the repository will be stored.",
+			"warningTitle": "Important: Host mount required",
+			"warningDescription1": "When selecting a custom path, ensure it is mounted from the host machine into the container.",
+			"warningDescription2": "If the path is not a host mount, you will lose your repository data when the container restarts.",
+			"warningDescription3": "The default path is safe to use if you followed the recommended Docker Compose setup.",
+			"warningContinue": "I Understand, Continue",
+			"browserTitle": "Select Repository Directory",
+			"browserDescription": "Choose a directory from the filesystem to store the repository.",
+			"done": "Done"
+		},
+		"sftpForm": {
+			"host": "Host",
+			"hostPlaceholder": "192.168.1.100",
+			"hostDescription": "SFTP server hostname or IP address.",
+			"port": "Port",
+			"portPlaceholder": "22",
+			"portDescription": "SSH port (default: 22).",
+			"user": "User",
+			"userPlaceholder": "backup-user",
+			"userDescription": "SSH username for authentication.",
+			"path": "Path",
+			"pathPlaceholder": "backups/zerobyte",
+			"pathDescription": "Repository path on the SFTP server.",
+			"privateKey": "SSH Private Key",
+			"privateKeyPlaceholder": "-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----",
+			"privateKeyDescription": "Paste the contents of your SSH private key.",
+			"skipHostKeyCheck": "Skip Host Key Verification",
+			"skipHostKeyCheckDescription": "Disable SSH host key checking. Useful for servers with dynamic IPs or self-signed keys.",
+			"knownHosts": "Known Hosts",
+			"knownHostsPlaceholder": "example.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ...",
+			"knownHostsDescription": "The contents of the known_hosts file for this server."
+		},
+		"gcsForm": {
+			"bucket": "Bucket",
+			"bucketPlaceholder": "my-backup-bucket",
+			"bucketDescription": "GCS bucket name for storing backups.",
+			"projectId": "Project ID",
+			"projectIdPlaceholder": "my-gcp-project-123",
+			"projectIdDescription": "Google Cloud project ID.",
+			"credentialsJson": "Service Account JSON",
+			"credentialsJsonPlaceholder": "Paste service account JSON key...",
+			"credentialsJsonDescription": "Service account JSON credentials for authentication."
+		},
+		"azureForm": {
+			"container": "Container",
+			"containerPlaceholder": "my-backup-container",
+			"containerDescription": "Azure Blob Storage container name for storing backups.",
+			"accountName": "Account Name",
+			"accountNamePlaceholder": "mystorageaccount",
+			"accountNameDescription": "Azure Storage account name.",
+			"accountKey": "Account Key",
+			"accountKeyPlaceholder": "••••••••",
+			"accountKeyDescription": "Azure Storage account key for authentication.",
+			"endpointSuffix": "Endpoint Suffix (Optional)",
+			"endpointSuffixPlaceholder": "core.windows.net",
+			"endpointSuffixDescription": "Custom Azure endpoint suffix (defaults to core.windows.net)."
+		},
+		"r2Form": {
+			"endpoint": "Endpoint",
+			"endpointPlaceholder": "<account-id>.r2.cloudflarestorage.com",
+			"endpointDescription": "R2 endpoint (without https://). Find in R2 dashboard under bucket settings.",
+			"bucket": "Bucket",
+			"bucketPlaceholder": "my-backup-bucket",
+			"bucketDescription": "R2 bucket name for storing backups.",
+			"accessKeyId": "Access Key ID",
+			"accessKeyIdPlaceholder": "Access Key ID from R2 API tokens",
+			"accessKeyIdDescription": "R2 API token Access Key ID (create in Cloudflare R2 dashboard).",
+			"secretAccessKey": "Secret Access Key",
+			"secretAccessKeyPlaceholder": "••••••••",
+			"secretAccessKeyDescription": "R2 API token Secret Access Key (shown once when creating token)."
+		},
+		"rcloneForm": {
+			"noRemotes": "No rclone remotes configured",
+			"noRemotesDescription": "To use rclone, you need to configure remotes on your host system",
+			"viewDocs": "View rclone documentation",
+			"remote": "Remote",
+			"remotePlaceholder": "Select an rclone remote",
+			"remoteDescription": "Select the rclone remote configured on your host system.",
+			"loadingRemotes": "Loading remotes...",
+			"path": "Path",
+			"pathPlaceholder": "backups/zerobyte",
+			"pathDescription": "Path within the remote where backups will be stored."
+		},
+		"restForm": {
+			"url": "REST Server URL",
+			"urlPlaceholder": "http://192.168.1.30:8000",
+			"urlDescription": "URL of the REST server.",
+			"path": "Repository Path (Optional)",
+			"pathPlaceholder": "my-backup-repo",
+			"pathDescription": "Path to the repository on the REST server (leave empty for root).",
+			"username": "Username (Optional)",
+			"usernamePlaceholder": "username",
+			"usernameDescription": "Username for REST server authentication.",
+			"password": "Password (Optional)",
+			"passwordPlaceholder": "••••••••",
+			"passwordDescription": "Password for REST server authentication."
+		},
+		"advancedForm": {
+			"title": "Advanced Settings",
+			"uploadLimit": "Enable upload speed limit",
+			"uploadLimitDescription": "Limit upload speed to the repository",
+			"downloadLimit": "Enable download speed limit",
+			"downloadLimitDescription": "Limit download speed from the repository",
+			"insecureTls": "Skip TLS certificate verification",
+			"insecureTlsDescription": "Disable TLS certificate verification for HTTPS connections with self-signed certificates. This is insecure and should only be used for testing.",
+			"insecureTlsDisabledTooltip": "This option is disabled because a CA certificate is provided. Remove the CA certificate to skip TLS validation instead.",
+			"caCertificate": "CA Certificate (Optional)",
+			"caCertificatePlaceholder": "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----",
+			"caCertificateDescription": "Custom CA certificate for self-signed certificates (PEM format). This applies to HTTPS connections.",
+			"caCertificateDisabledTooltip": "CA certificate is disabled because TLS validation is being skipped. Uncheck \"Skip TLS Certificate Verification\" to provide a custom CA certificate.",
+			"learnMore": "Learn more"
+		},
+		"createForm": {
+			"name": {
+				"label": "Name",
+				"placeholder": "Repository name",
+				"description": "Unique identifier for the repository."
+			},
+			"backend": {
+				"label": "Backend",
+				"placeholder": "Select a backend",
+				"description": "Choose the storage backend for this repository.",
+				"local": "Local",
+				"s3": "S3",
+				"r2": "Cloudflare R2",
+				"gcs": "Google Cloud Storage",
+				"azure": "Azure Blob Storage",
+				"rest": "REST Server",
+				"sftp": "SFTP",
+				"rclone": "rclone (40+ cloud providers)",
+				"rcloneTooltip": "Setup rclone to use this backend"
+			},
+			"compression": {
+				"label": "Compression Mode",
+				"placeholder": "Select compression mode",
+				"description": "Compression mode for backups stored in this repository.",
+				"off": "Off",
+				"auto": "Auto (fast)",
+				"max": "Max (slower, better compression)"
+			},
+			"existingRepository": {
+				"label": "Import existing repository",
+				"description": "Check this if the repository already exists at the specified location"
+			},
+			"password": {
+				"label": "Repository Password",
+				"placeholder": "Select password option",
+				"description": "Choose whether to use C3i Backup ONE's recovery key (which you downloaded when creating your account) or enter a custom password for the existing repository.",
+				"useRecoveryKey": "Use the existing recovery key",
+				"enterManually": "Enter password manually",
+				"customLabel": "Repository Password",
+				"customPlaceholder": "Enter repository password",
+				"customDescription": "The password used to encrypt this repository. It will be stored securely."
+			},
+			"saveButton": "Save Changes"
+		}
+	},
+	"backups": {
+		"pageTitle": "C3i Backup ONE - Backup Jobs",
+		"pageDescription": "Automate volume backups with scheduled jobs and retention policies.",
+		"breadcrumb": "Backups",
+		"empty": {
+			"title": "No backup job",
+			"description": "Backup jobs help you automate the process of backing up your volumes on a regular schedule to ensure your data is safe and secure."
+		},
+		"loading": "Loading backup schedules...",
+		"createButton": "Create a backup job",
+		"create": {
+			"pageTitle": "C3i Backup ONE - Create Backup Job",
+			"pageDescription": "Create a new automated backup job for your volumes.",
+			"breadcrumb": "Create",
+			"loading": "Loading...",
+			"empty": {
+				"title": "No volume to backup",
+				"description": "To create a backup job, you need to create a volume first. Volumes are the data sources that will be backed up."
+			},
+			"emptyRepository": {
+				"title": "No repository",
+				"description": "To create a backup job, you need to set up a backup repository first. Backup repositories are the destinations where your backups will be stored."
+			},
+			"selectVolume": {
+				"placeholder": "Choose a volume to backup",
+				"title": "Select a volume",
+				"description": "Choose a volume from the dropdown above to configure its backup schedule."
+			},
+			"goToVolumes": "Go to volumes",
+			"goToRepositories": "Go to repositories",
+			"createButton": "Create",
+			"toast": {
+				"success": "Backup job created successfully",
+				"failed": "Failed to create backup job"
+			}
+		},
+		"details": {
+			"pageTitle": "C3i Backup ONE - Backup Job Details",
+			"pageDescription": "View and manage backup job configuration, schedule, and snapshots."
+		},
+		"card": {
+			"schedule": "Schedule",
+			"lastBackup": "Last backup",
+			"nextBackup": "Next backup"
+		},
+		"schedule": {
+			"monday": "Monday",
+			"tuesday": "Tuesday",
+			"wednesday": "Wednesday",
+			"thursday": "Thursday",
+			"friday": "Friday",
+			"saturday": "Saturday",
+			"sunday": "Sunday"
+		},
+		"scheduleForm": {
+			"automation": {
+				"title": "Backup automation",
+				"description": "Schedule automated backups of <strong>{{volumeName}}</strong> to a secure repository."
+			},
+			"name": {
+				"label": "Backup name",
+				"placeholder": "My backup",
+				"description": "A unique name to identify this backup schedule."
+			},
+			"repository": {
+				"label": "Backup repository",
+				"placeholder": "Select a repository",
+				"description": "Choose where encrypted backups for <strong>{{volumeName}}</strong> will be stored."
+			},
+			"frequency": {
+				"label": "Backup frequency",
+				"placeholder": "Select frequency",
+				"description": "Define how often snapshots should be taken.",
+				"hourly": "Hourly",
+				"daily": "Daily",
+				"weekly": "Weekly",
+				"monthly": "Specific days",
+				"cron": "Custom (Cron)"
+			},
+			"time": {
+				"label": "Execution time",
+				"description": "Time of day when the backup will run."
+			},
+			"weeklyDay": {
+				"label": "Execution day",
+				"placeholder": "Select a day",
+				"description": "Choose which day of the week to run the backup."
+			},
+			"monthlyDays": {
+				"label": "Days of the month",
+				"description": "Select one or more days when the backup should run."
+			},
+			"paths": {
+				"title": "Backup paths",
+				"description": "Select which folders or files to include in the backup. If no paths are selected, the entire volume will be backed up.",
+				"selectedPaths": "Selected paths:",
+				"removePath": "Remove {{path}}"
+			},
+			"includePatterns": {
+				"label": "Additional include patterns",
+				"placeholder": "/data/**\n/config/*.json\n*.db",
+				"description": "Optionally add custom include patterns using glob syntax. Enter one pattern per line. These will be combined with the paths selected above."
+			},
+			"exclude": {
+				"title": "Exclude patterns",
+				"description": "Optionally specify patterns to exclude from backups. Enter one pattern per line (e.g., *.tmp, node_modules/**, .cache/)."
+			},
+			"excludePatterns": {
+				"label": "Exclusion patterns",
+				"placeholder": "*.tmp\nnode_modules/**\n.cache/\n*.log",
+				"description": "Patterns support glob syntax. See <link>Restic documentation</link> for more details."
+			},
+			"excludeIfPresent": {
+				"label": "Exclude if file present",
+				"placeholder": ".nobackup\n.exclude-from-backup\nCACHEDIR.TAG",
+				"description": "Exclude folders containing a file with the specified name. Enter one filename per line. For example, use <code>.nobackup</code> to skip any folder containing a <code>.nobackup</code> file."
+			},
+			"oneFileSystem": {
+				"label": "Stay on one file system",
+				"description": "Prevent Restic from crossing file system boundaries. This is useful to avoid backing up network mounts or other partitions that might be mounted inside your backup source."
+			},
+			"retention": {
+				"title": "Retention policy",
+				"description": "Define how many snapshots to keep. Leave empty to keep all.",
+				"keepLast": {
+					"label": "Keep last N snapshots",
+					"placeholder": "Optional",
+					"description": "Keep the N most recent snapshots."
+				},
+				"keepHourly": {
+					"label": "Keep hourly",
+					"placeholder": "Optional",
+					"description": "Keep the last N hourly snapshots."
+				},
+				"keepDaily": {
+					"label": "Keep daily",
+					"placeholder": "e.g., 7",
+					"description": "Keep the last N daily snapshots."
+				},
+				"keepWeekly": {
+					"label": "Keep weekly",
+					"placeholder": "e.g., 4",
+					"description": "Keep the last N weekly snapshots."
+				},
+				"keepMonthly": {
+					"label": "Keep monthly",
+					"placeholder": "e.g., 6",
+					"description": "Keep the last N monthly snapshots."
+				},
+				"keepYearly": {
+					"label": "Keep yearly",
+					"placeholder": "Optional",
+					"description": "Keep the last N yearly snapshots."
+				}
+			},
+			"summary": {
+				"title": "Schedule summary",
+				"description": "Review the backup configuration.",
+				"volume": "Volume",
+				"schedule": "Schedule",
+				"repository": "Repository",
+				"includePaths": "Include paths/patterns",
+				"excludePatterns": "Exclude patterns",
+				"excludeIfPresent": "Exclude if present",
+				"oneFileSystem": "One file system",
+				"retention": "Retention"
+			}
+		}
+	},
+	"notifications": {
+		"pageTitle": "C3i Backup ONE - Notifications",
+		"pageDescription": "Manage notification destinations for backup alerts.",
+		"breadcrumb": "Notifications",
+		"empty": {
+			"title": "No notification destinations",
+			"description": "Set up notification channels to receive alerts when your backups complete or fail."
+		},
+		"search": {
+			"placeholder": "Search destinations…"
+		},
+		"filters": {
+			"allTypes": "All types",
+			"email": "Email",
+			"slack": "Slack",
+			"discord": "Discord",
+			"gotify": "Gotify",
+			"ntfy": "Ntfy",
+			"pushover": "Pushover",
+			"telegram": "Telegram",
+			"custom": "Custom",
+			"allStatus": "All status",
+			"enabled": "Enabled",
+			"disabled": "Disabled",
+			"clearFilters": "Clear filters"
+		},
+		"table": {
+			"name": "Name",
+			"type": "Type",
+			"status": "Status"
+		},
+		"counter": {
+			"single": "destination",
+			"plural": "destinations"
+		},
+		"emptyFilters": "No destinations match your filters.",
+		"createButton": "Create Destination",
+		"emailForm": {
+			"smtpHost": "SMTP Host",
+			"smtpHostPlaceholder": "smtp.example.com",
+			"smtpPort": "SMTP Port",
+			"smtpPortPlaceholder": "587",
+			"username": "Username (Optional)",
+			"usernamePlaceholder": "user@example.com",
+			"password": "Password (Optional)",
+			"passwordPlaceholder": "••••••••",
+			"fromAddress": "From Address",
+			"fromAddressPlaceholder": "noreply@example.com",
+			"toAddresses": "To Addresses",
+			"toAddressesPlaceholder": "user@example.com, admin@example.com",
+			"toAddressesDescription": "Comma-separated list of recipient email addresses.",
+			"useTLS": "Use TLS",
+			"useTLSDescription": "Enable TLS encryption for SMTP connection (recommended)."
+		},
+		"discordForm": {
+			"webhookUrl": "Webhook URL",
+			"webhookUrlPlaceholder": "https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN",
+			"webhookUrlDescription": "Get this from your Discord server's Integrations settings.",
+			"username": "Bot Username (Optional)",
+			"usernamePlaceholder": "C3i Backup ONE",
+			"avatarUrl": "Avatar URL (Optional)",
+			"avatarUrlPlaceholder": "https://example.com/avatar.png",
+			"threadId": "Thread ID (Optional)",
+			"threadIdDescription": "ID of the thread to post messages in. Leave empty to post in the main channel."
+		},
+		"slackForm": {
+			"webhookUrl": "Webhook URL",
+			"webhookUrlPlaceholder": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX",
+			"webhookUrlDescription": "Get this from your Slack app's Incoming Webhooks settings.",
+			"channel": "Channel (Optional)",
+			"channelPlaceholder": "#backups",
+			"channelDescription": "Override the default channel (use # for channels, @ for users).",
+			"username": "Bot Username (Optional)",
+			"usernamePlaceholder": "C3i Backup ONE",
+			"iconEmoji": "Icon Emoji (Optional)",
+			"iconEmojiPlaceholder": ":floppy_disk:"
+		},
+		"gotifyForm": {
+			"serverUrl": "Server URL",
+			"serverUrlPlaceholder": "https://gotify.example.com",
+			"serverUrlDescription": "Your self-hosted Gotify server URL.",
+			"token": "App Token",
+			"tokenPlaceholder": "••••••••",
+			"tokenDescription": "Application token from Gotify.",
+			"priority": "Priority",
+			"priorityDescription": "Priority level (0-10, where 10 is highest).",
+			"path": "Path (Optional)",
+			"pathPlaceholder": "/custom/path",
+			"pathDescription": "Custom path on the Gotify server, if applicable."
+		},
+		"ntfyForm": {
+			"serverUrl": "Server URL (Optional)",
+			"serverUrlPlaceholder": "https://ntfy.example.com",
+			"serverUrlDescription": "Leave empty to use ntfy.sh public service.",
+			"topic": "Topic",
+			"topicPlaceholder": "zerobyte-backups",
+			"topicDescription": "The ntfy topic name to publish to.",
+			"username": "Username (Optional)",
+			"usernamePlaceholder": "username",
+			"usernameDescription": "Username for server authentication, if required.",
+			"password": "Password (Optional)",
+			"passwordPlaceholder": "••••••••",
+			"passwordDescription": "Password for server authentication, if required.",
+			"accessToken": "Access Token (Optional)",
+			"accessTokenPlaceholder": "••••••••",
+			"accessTokenDescription": "Access token for server authentication. Will take precedence over username/password if set.",
+			"priority": "Priority",
+			"priorityPlaceholder": "Select priority",
+			"priorityMax": "Max (5)",
+			"priorityHigh": "High (4)",
+			"priorityDefault": "Default (3)",
+			"priorityLow": "Low (2)",
+			"priorityMin": "Min (1)"
+		},
+		"pushoverForm": {
+			"userKey": "User Key",
+			"userKeyPlaceholder": "uQiRzpo4DXghDmr9QzzfQu27cmVRsG",
+			"userKeyDescription": "Your Pushover user key from the dashboard.",
+			"apiToken": "API Token",
+			"apiTokenPlaceholder": "••••••••",
+			"apiTokenDescription": "Application API token from your Pushover application.",
+			"devices": "Devices (Optional)",
+			"devicesPlaceholder": "iphone,android",
+			"devicesDescription": "Comma-separated list of device names. Leave empty for all devices.",
+			"priority": "Priority",
+			"priorityPlaceholder": "Select priority",
+			"priorityLow": "Low (-1)",
+			"priorityNormal": "Normal (0)",
+			"priorityHigh": "High (1)",
+			"priorityDescription": "Message priority level."
+		},
+		"telegramForm": {
+			"botToken": "Bot Token",
+			"botTokenPlaceholder": "123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11",
+			"botTokenDescription": "Telegram bot token. Get this from BotFather when you create your bot.",
+			"chatId": "Chat ID",
+			"chatIdPlaceholder": "-1231234567890",
+			"chatIdDescription": "Telegram chat ID to send notifications to."
+		},
+		"genericForm": {
+			"webhookUrl": "Webhook URL",
+			"webhookUrlPlaceholder": "https://api.example.com/webhook",
+			"webhookUrlDescription": "The target URL for the webhook.",
+			"method": "Method",
+			"methodPlaceholder": "Select method",
+			"contentType": "Content Type",
+			"contentTypePlaceholder": "application/json",
+			"headers": "Headers",
+			"headersPlaceholder": "Authorization: Bearer token\nX-Custom-Header: value",
+			"headersDescription": "One header per line in Key: Value format.",
+			"useJson": "Use JSON Template",
+			"useJsonDescription": "Send the message as a JSON object.",
+			"titleKey": "Title Key",
+			"titleKeyPlaceholder": "title",
+			"titleKeyDescription": "The JSON key for the notification title.",
+			"messageKey": "Message Key",
+			"messageKeyPlaceholder": "message",
+			"messageKeyDescription": "The JSON key for the notification message.",
+			"requestPreview": "Request Preview",
+			"httpRequest": "HTTP Request",
+			"previewTitle": "Notification title",
+			"previewMessage": "Notification message",
+			"previewDescription": "This is a preview of the HTTP request that will be sent."
+		},
+		"customForm": {
+			"shoutrrrUrl": "Shoutrrr URL",
+			"shoutrrrUrlPlaceholder": "smtp://user:pass@smtp.gmail.com:587/?from=you@gmail.com&to=recipient@example.com",
+			"shoutrrrUrlDescription": "Direct Shoutrrr URL for power users. See <link>Shoutrrr documentation</link> for supported services and URL formats."
+		},
+		"createForm": {
+			"name": {
+				"label": "Name",
+				"placeholder": "My notification",
+				"description": "Unique identifier for this notification destination."
+			},
+			"type": {
+				"label": "Type",
+				"placeholder": "Select notification type",
+				"description": "Choose the notification delivery method.",
+				"email": "Email (SMTP)",
+				"slack": "Slack",
+				"discord": "Discord",
+				"gotify": "Gotify",
+				"ntfy": "Ntfy",
+				"pushover": "Pushover",
+				"telegram": "Telegram",
+				"generic": "Generic Webhook",
+				"custom": "Custom (Shoutrrr URL)"
+			}
+		}
+	},
+	"settings": {
+		"pageTitle": "C3i Backup ONE - Settings",
+		"pageDescription": "Manage your account settings and preferences.",
+		"breadcrumb": "Settings",
+		"logout": {
+			"failed": "Logout failed"
+		},
+		"account": {
+			"title": "Account Information",
+			"description": "Your account details",
+			"username": "Username"
+		},
+		"changePassword": {
+			"title": "Change Password",
+			"description": "Update your password to keep your account secure",
+			"currentPassword": "Current Password",
+			"newPassword": "New Password",
+			"newPasswordHelper": "Must be at least 8 characters long",
+			"confirmPassword": "Confirm New Password",
+			"button": "Change Password",
+			"toast": {
+				"mismatch": "Passwords do not match",
+				"tooShort": "Password must be at least 8 characters long",
+				"success": "Password changed successfully. You will be logged out.",
+				"failed": "Failed to change password"
+			}
+		},
+		"recoveryKey": {
+			"title": "Backup Recovery Key",
+			"description": "Download your recovery key for Restic backups",
+			"helper": "This file contains the encryption password used by Restic to secure your backups. Store it in a safe place (like a password manager or encrypted storage). If you lose access to this server, you'll need this file to recover your backup data.",
+			"button": "Download recovery key",
+			"dialog": {
+				"title": "Download Recovery Key",
+				"description": "For security reasons, please enter your account password to download the recovery key file.",
+				"passwordLabel": "Your Password",
+				"passwordPlaceholder": "Enter your password",
+				"cancelButton": "Cancel",
+				"downloadButton": "Download",
+				"toast": {
+					"passwordRequired": "Password is required",
+					"success": "Restic password file downloaded successfully",
+					"failed": "Failed to download Restic password"
+				}
+			}
+		},
+		"appSettings": {
+			"title": "Application Settings",
+			"description": "Configure how C3i Backup ONE behaves on your system",
+			"autostart": {
+				"label": "Launch at startup",
+				"description": "Automatically start C3i Backup ONE when you log in to your computer. The app will start minimized in the system tray."
+			},
+			"notifications": {
+				"label": "Desktop notifications",
+				"description": "Show desktop notifications for backup events and other important updates."
+			},
+			"tip": "Tip: Closing the window minimizes the app to the system tray. Use the tray icon to access the app or select "Quit" to fully exit.",
+			"toast": {
+				"autostartEnabled": "C3i Backup ONE will now start automatically on login",
+				"autostartDisabled": "Automatic startup disabled",
+				"autostartFailed": "Failed to change autostart setting",
+				"notificationsEnabled": "Desktop notifications enabled",
+				"notificationsDisabled": "Desktop notifications disabled"
+			}
+		},
+		"twoFactor": {
+			"title": "Two-Factor Authentication",
+			"description": "Add an extra layer of security to your account",
+			"statusLabel": "Status:",
+			"statusEnabled": "Enabled",
+			"statusDisabled": "Disabled",
+			"helper": "Two-factor authentication adds an extra layer of security by requiring a code from your authenticator app in addition to your password.",
+			"enableButton": "Enable 2FA",
+			"backupCodesButton": "Backup Codes",
+			"disableButton": "Disable 2FA",
+			"setup": {
+				"passwordStep": {
+					"title": "Enable Two-Factor Authentication",
+					"description": "Enter your password to generate a QR code for your authenticator app",
+					"passwordLabel": "Your password",
+					"passwordPlaceholder": "Enter your password",
+					"cancelButton": "Cancel",
+					"continueButton": "Continue"
+				},
+				"qrStep": {
+					"title": "Scan QR Code",
+					"description": "Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)",
+					"manualEntryLabel": "Manual entry code",
+					"backupCodesLabel": "Backup codes (save these securely)",
+					"continueButton": "Continue"
+				},
+				"verifyStep": {
+					"title": "Verify setup",
+					"description": "Enter the 6-digit code from your authenticator app to complete setup",
+					"backButton": "Back",
+					"verifyButton": "Verify"
+				},
+				"toast": {
+					"passwordRequired": "Password is required",
+					"enableFailed": "Failed to enable 2FA",
+					"invalidCode": "Please enter a 6-digit code",
+					"verificationFailed": "Verification failed",
+					"success": "Two-factor authentication enabled successfully"
+				}
+			},
+			"disable": {
+				"title": "Disable Two-Factor Authentication",
+				"description": "Are you sure you want to disable 2FA? Your account will be less secure. Enter your password to confirm.",
+				"passwordLabel": "Your password",
+				"passwordPlaceholder": "Enter your password",
+				"cancelButton": "Cancel",
+				"disableButton": "Disable 2FA",
+				"toast": {
+					"passwordRequired": "Password is required",
+					"failed": "Failed to disable 2FA",
+					"success": "Two-factor authentication disabled successfully"
+				}
+			},
+			"backupCodes": {
+				"title": "Backup Codes",
+				"description": "Use these codes to access your account if you lose access to your authenticator app. Each code can only be used once.",
+				"passwordLabel": "Your password",
+				"passwordPlaceholder": "Enter your password",
+				"generateButton": "Generate new codes",
+				"closeButton": "Close",
+				"toast": {
+					"passwordRequired": "Password is required",
+					"generateFailed": "Failed to generate backup codes",
+					"success": "New backup codes generated successfully"
+				}
+			}
+		},
+		"windowsService": {
+			"title": "Windows Service",
+			"description": "Run C3i Backup ONE as a Windows Service for background backups",
+			"statusLabel": "Status:",
+			"statusRunning": "Running",
+			"statusStopped": "Stopped",
+			"statusNotInstalled": "Not Installed",
+			"statusUnknown": "Unknown",
+			"helper": "Installing C3i Backup ONE as a Windows Service allows scheduled backups to run even when the desktop app is closed. The service runs in the background and uses a separate data location.",
+			"installButton": "Install Service",
+			"startButton": "Start Service",
+			"stopButton": "Stop Service",
+			"uninstallButton": "Uninstall",
+			"openUIButton": "Open Service UI",
+			"helperRunning": "When the service is running, the desktop app connects to it automatically. Service data is stored in %PROGRAMDATA%\\C3i Backup ONE.",
+			"currentConnection": {
+				"title": "Current Connection",
+				"serviceMode": "Service Mode",
+				"desktopMode": "Desktop Mode",
+				"port": "Port",
+				"restartButton": "Restart to Switch",
+				"warningService": "Service state changed. Restart the app to switch to Service Mode.",
+				"warningDesktop": "Service state changed. Restart the app to switch to Desktop Mode."
+			},
+			"toast": {
+				"installSuccess": "Windows Service installed successfully",
+				"installFailed": "Failed to install service",
+				"uninstallSuccess": "Windows Service uninstalled successfully",
+				"uninstallFailed": "Failed to uninstall service",
+				"startSuccess": "Windows Service started successfully",
+				"startFailed": "Failed to start service",
+				"stopSuccess": "Windows Service stopped successfully",
+				"stopFailed": "Failed to stop service",
+				"restartFailed": "Failed to restart app"
+			}
+		},
+		"logs": {
+			"title": "Application Logs",
+			"description": "View recent application logs",
+			"refreshButton": "Refresh",
+			"openFolderButton": "Open Folder",
+			"loading": "Loading logs...",
+			"noLogs": "No logs available.",
+			"lines": {
+				"50": "Last 50 lines",
+				"100": "Last 100 lines",
+				"200": "Last 200 lines",
+				"500": "Last 500 lines",
+				"1000": "Last 1000 lines"
+			}
+		}
+	},
+	"layout": {
+		"welcome": "Welcome,",
+		"logoutButton": "Logout"
+	},
+	"sidebar": {
+		"logoAlt": "C3i Backup ONE Logo",
+		"title": "C3i Backup ONE",
+		"nav": {
+			"volumes": "Volumes",
+			"repositories": "Repositories",
+			"backups": "Backups",
+			"notifications": "Notifications",
+			"settings": "Settings"
+		},
+		"version": {
+			"restic": "Restic:",
+			"rclone": "Rclone:",
+			"shoutrrr": "Shoutrrr:"
+		},
+		"updateAvailable": "Update available"
+	},
+	"titlebar": {
+		"title": "C3i Servicios Informáticos",
+		"minimize": "Minimize",
+		"restore": "Restore",
+		"maximize": "Maximize",
+		"close": "Close"
+	},
+	"common": {
+		"buttons": {
+			"cancel": "Cancel",
+			"download": "Download",
+			"change": "Change",
+			"save": "Save",
+			"delete": "Delete",
+			"edit": "Edit",
+			"create": "Create",
+			"enable": "Enable",
+			"disable": "Disable",
+			"refresh": "Refresh",
+			"clearFilters": "Clear filters",
+			"openFolder": "Open Folder"
+		},
+		"status": {
+			"enabled": "Enabled",
+			"disabled": "Disabled",
+			"running": "Running",
+			"stopped": "Stopped",
+			"healthy": "Healthy",
+			"error": "Error",
+			"unknown": "Unknown",
+			"mounted": "Mounted",
+			"unmounted": "Unmounted"
+		},
+		"language": {
+			"title": "Language",
+			"description": "Select your preferred language",
+			"english": "English",
+			"spanish": "Español (Spanish)"
+		}
+	}
+}

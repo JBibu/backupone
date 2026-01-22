@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import {
 	FormControl,
 	FormDescription,
@@ -16,6 +17,8 @@ type Props = {
 };
 
 export const R2RepositoryForm = ({ form }: Props) => {
+	const { t } = useTranslation();
+
 	return (
 		<>
 			<FormField
@@ -23,12 +26,12 @@ export const R2RepositoryForm = ({ form }: Props) => {
 				name="endpoint"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Endpoint</FormLabel>
+						<FormLabel>{t("repositories.r2Form.endpoint")}</FormLabel>
 						<FormControl>
-							<Input placeholder="<account-id>.r2.cloudflarestorage.com" {...field} />
+							<Input placeholder={t("repositories.r2Form.endpointPlaceholder")} {...field} />
 						</FormControl>
 						<FormDescription>
-							R2 endpoint (without https://). Find in R2 dashboard under bucket settings.
+							{t("repositories.r2Form.endpointDescription")}
 						</FormDescription>
 						<FormMessage />
 					</FormItem>
@@ -39,11 +42,11 @@ export const R2RepositoryForm = ({ form }: Props) => {
 				name="bucket"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Bucket</FormLabel>
+						<FormLabel>{t("repositories.r2Form.bucket")}</FormLabel>
 						<FormControl>
-							<Input placeholder="my-backup-bucket" {...field} />
+							<Input placeholder={t("repositories.r2Form.bucketPlaceholder")} {...field} />
 						</FormControl>
-						<FormDescription>R2 bucket name for storing backups.</FormDescription>
+						<FormDescription>{t("repositories.r2Form.bucketDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -53,11 +56,11 @@ export const R2RepositoryForm = ({ form }: Props) => {
 				name="accessKeyId"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Access Key ID</FormLabel>
+						<FormLabel>{t("repositories.r2Form.accessKeyId")}</FormLabel>
 						<FormControl>
-							<Input placeholder="Access Key ID from R2 API tokens" {...field} />
+							<Input placeholder={t("repositories.r2Form.accessKeyIdPlaceholder")} {...field} />
 						</FormControl>
-						<FormDescription>R2 API token Access Key ID (create in Cloudflare R2 dashboard).</FormDescription>
+						<FormDescription>{t("repositories.r2Form.accessKeyIdDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -67,11 +70,11 @@ export const R2RepositoryForm = ({ form }: Props) => {
 				name="secretAccessKey"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Secret Access Key</FormLabel>
+						<FormLabel>{t("repositories.r2Form.secretAccessKey")}</FormLabel>
 						<FormControl>
-							<SecretInput placeholder="••••••••" value={field.value ?? ""} onChange={field.onChange} />
+							<SecretInput placeholder={t("repositories.r2Form.secretAccessKeyPlaceholder")} value={field.value ?? ""} onChange={field.onChange} />
 						</FormControl>
-						<FormDescription>R2 API token Secret Access Key (shown once when creating token).</FormDescription>
+						<FormDescription>{t("repositories.r2Form.secretAccessKeyDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}

@@ -1,11 +1,14 @@
 import { CalendarClock, Database, HardDrive } from "lucide-react";
 import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/client/components/ui/card";
 import type { BackupSchedule } from "~/client/lib/types";
 import { BackupStatusDot } from "./backup-status-dot";
 import { formatShortDateTime, formatTimeAgo } from "~/client/lib/datetime";
 
 export const BackupCard = ({ schedule }: { schedule: BackupSchedule }) => {
+	const { t } = useTranslation();
+
 	return (
 		<Link key={schedule.id} to={`/backups/${schedule.id}`}>
 			<Card key={schedule.id} className="flex flex-col h-full">
@@ -32,15 +35,15 @@ export const BackupCard = ({ schedule }: { schedule: BackupSchedule }) => {
 				<CardContent className="flex-1 space-y-4">
 					<div className="space-y-2">
 						<div className="flex items-center justify-between text-sm">
-							<span className="text-muted-foreground">Schedule</span>
+							<span className="text-muted-foreground">{t("backups.card.schedule")}</span>
 							<code className="text-xs bg-muted px-2 py-1 rounded">{schedule.cronExpression}</code>
 						</div>
 						<div className="flex items-center justify-between text-sm">
-							<span className="text-muted-foreground">Last backup</span>
+							<span className="text-muted-foreground">{t("backups.card.lastBackup")}</span>
 							<span className="font-medium">{formatTimeAgo(schedule.lastBackupAt)}</span>
 						</div>
 						<div className="flex items-center justify-between text-sm">
-							<span className="text-muted-foreground">Next backup</span>
+							<span className="text-muted-foreground">{t("backups.card.nextBackup")}</span>
 							<span className="font-medium">{formatShortDateTime(schedule.nextBackupAt)}</span>
 						</div>
 					</div>

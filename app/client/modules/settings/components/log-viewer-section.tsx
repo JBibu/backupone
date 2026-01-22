@@ -5,6 +5,7 @@ import { client } from "~/client/api-client/client.gen";
 import { Button } from "~/client/components/ui/button";
 import { CardContent, CardDescription, CardTitle } from "~/client/components/ui/card";
 import { isTauri } from "~/client/lib/tauri";
+import { useTranslation } from "react-i18next";
 
 type LogsResponse = {
 	logs: string;
@@ -12,6 +13,7 @@ type LogsResponse = {
 };
 
 export function LogViewerSection() {
+	const { t } = useTranslation();
 	const [lines, setLines] = useState(200);
 
 	const { data, isLoading, refetch, isFetching } = useQuery({
@@ -45,31 +47,31 @@ export function LogViewerSection() {
 			<div className="border-t border-border/50 bg-card-header p-6">
 				<CardTitle className="flex items-center gap-2">
 					<FileText className="size-5" />
-					Application Logs
+					{t("settings.logs.title")}
 				</CardTitle>
-				<CardDescription className="mt-1.5">View recent application logs</CardDescription>
+				<CardDescription className="mt-1.5">{t("settings.logs.description")}</CardDescription>
 			</div>
 			<CardContent className="p-6 space-y-4">
 				<div className="flex items-center gap-2 flex-wrap">
 					<Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
 						<RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
-						Refresh
+						{t("settings.logs.refreshButton")}
 					</Button>
 					<select
 						className="h-9 rounded-md border border-input bg-background px-3 text-sm"
 						value={lines}
 						onChange={(e) => setLines(Number(e.target.value))}
 					>
-						<option value={50}>Last 50 lines</option>
-						<option value={100}>Last 100 lines</option>
-						<option value={200}>Last 200 lines</option>
-						<option value={500}>Last 500 lines</option>
-						<option value={1000}>Last 1000 lines</option>
+						<option value={50}>{t("settings.logs.lines.50")}</option>
+						<option value={100}>{t("settings.logs.lines.100")}</option>
+						<option value={200}>{t("settings.logs.lines.200")}</option>
+						<option value={500}>{t("settings.logs.lines.500")}</option>
+						<option value={1000}>{t("settings.logs.lines.1000")}</option>
 					</select>
 					{isTauri() && data?.path && (
 						<Button variant="outline" size="sm" onClick={handleOpenFolder}>
 							<FolderOpen className="h-4 w-4 mr-2" />
-							Open Folder
+							{t("settings.logs.openFolderButton")}
 						</Button>
 					)}
 				</div>
@@ -80,7 +82,7 @@ export function LogViewerSection() {
 
 				<div className="relative">
 					<pre className="bg-muted rounded-md p-4 text-xs font-mono overflow-auto max-h-96 whitespace-pre-wrap break-all">
-						{isLoading ? "Loading logs..." : data?.logs || "No logs available."}
+						{isLoading ? t("settings.logs.loading") : data?.logs || t("settings.logs.noLogs")}
 					</pre>
 				</div>
 			</CardContent>

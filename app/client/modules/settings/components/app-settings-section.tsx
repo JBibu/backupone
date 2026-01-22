@@ -6,8 +6,10 @@ import { Switch } from "~/client/components/ui/switch";
 import { Label } from "~/client/components/ui/label";
 import { areDesktopNotificationsEnabled, setDesktopNotificationsEnabled } from "~/client/lib/notifications";
 import { isTauri } from "~/client/lib/tauri";
+import { useTranslation } from "react-i18next";
 
 export function AppSettingsSection() {
+	const { t } = useTranslation();
 	const [autostartEnabled, setAutostartEnabled] = useState(false);
 	const [isLoadingAutostart, setIsLoadingAutostart] = useState(true);
 	const [isTogglingAutostart, setIsTogglingAutostart] = useState(false);
@@ -53,15 +55,15 @@ export function AppSettingsSection() {
 
 			if (enabled) {
 				await enable();
-				toast.success("C3i Backup ONE will now start automatically on login");
+				toast.success(t("settings.appSettings.toast.autostartEnabled"));
 			} else {
 				await disable();
-				toast.success("Automatic startup disabled");
+				toast.success(t("settings.appSettings.toast.autostartDisabled"));
 			}
 
 			setAutostartEnabled(enabled);
 		} catch (error) {
-			toast.error("Failed to change autostart setting", {
+			toast.error(t("settings.appSettings.toast.autostartFailed"), {
 				description: error instanceof Error ? error.message : "An error occurred",
 			});
 		} finally {
@@ -73,9 +75,9 @@ export function AppSettingsSection() {
 		setDesktopNotificationsEnabled(enabled);
 		setNotificationsEnabled(enabled);
 		if (enabled) {
-			toast.success("Desktop notifications enabled");
+			toast.success(t("settings.appSettings.toast.notificationsEnabled"));
 		} else {
-			toast.success("Desktop notifications disabled");
+			toast.success(t("settings.appSettings.toast.notificationsDisabled"));
 		}
 	};
 
@@ -84,9 +86,9 @@ export function AppSettingsSection() {
 			<div className="border-t border-border/50 bg-card-header p-6">
 				<CardTitle className="flex items-center gap-2">
 					<Monitor className="size-5" />
-					Application Settings
+					{t("settings.appSettings.title")}
 				</CardTitle>
-				<CardDescription className="mt-1.5">Configure how C3i Backup ONE behaves on your system</CardDescription>
+				<CardDescription className="mt-1.5">{t("settings.appSettings.description")}</CardDescription>
 			</div>
 			<CardContent className="p-6 space-y-6">
 				<div className="flex items-center justify-between gap-4">
@@ -94,12 +96,11 @@ export function AppSettingsSection() {
 						<div className="flex items-center gap-2">
 							<Power className="h-4 w-4 text-muted-foreground" />
 							<Label htmlFor="autostart" className="text-sm font-medium cursor-pointer">
-								Launch at startup
+								{t("settings.appSettings.autostart.label")}
 							</Label>
 						</div>
 						<p className="text-xs text-muted-foreground max-w-xl">
-							Automatically start C3i Backup ONE when you log in to your computer. The app will start minimized in the
-							system tray.
+							{t("settings.appSettings.autostart.description")}
 						</p>
 					</div>
 					<div className="flex items-center gap-2">
@@ -120,11 +121,11 @@ export function AppSettingsSection() {
 						<div className="flex items-center gap-2">
 							<Bell className="h-4 w-4 text-muted-foreground" />
 							<Label htmlFor="notifications" className="text-sm font-medium cursor-pointer">
-								Desktop notifications
+								{t("settings.appSettings.notifications.label")}
 							</Label>
 						</div>
 						<p className="text-xs text-muted-foreground max-w-xl">
-							Show desktop notifications for backup events and other important updates.
+							{t("settings.appSettings.notifications.description")}
 						</p>
 					</div>
 					<div className="flex items-center gap-2">
@@ -138,8 +139,7 @@ export function AppSettingsSection() {
 
 				<div className="border-t border-border/30 pt-4">
 					<p className="text-xs text-muted-foreground">
-						<strong>Tip:</strong> Closing the window minimizes the app to the system tray. Use the tray icon to access
-						the app or select "Quit" to fully exit.
+						{t("settings.appSettings.tip")}
 					</p>
 				</div>
 			</CardContent>

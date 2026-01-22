@@ -12,6 +12,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStr
 import { CalendarClock, Plus } from "lucide-react";
 import { Link } from "react-router";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { EmptyState } from "~/client/components/empty-state";
 import { Button } from "~/client/components/ui/button";
 import { Card, CardContent } from "~/client/components/ui/card";
@@ -45,6 +46,7 @@ export const clientLoader = async () => {
 };
 
 export default function Backups({ loaderData }: Route.ComponentProps) {
+	const { t } = useTranslation();
 	const { data: schedules, isLoading } = useQuery({
 		...listBackupSchedulesOptions(),
 		initialData: loaderData,
@@ -88,7 +90,7 @@ export default function Backups({ loaderData }: Route.ComponentProps) {
 	if (isLoading) {
 		return (
 			<div className="flex items-center justify-center h-full">
-				<p className="text-muted-foreground">Loading backup schedules...</p>
+				<p className="text-muted-foreground">{t("backups.loading")}</p>
 			</div>
 		);
 	}
@@ -97,13 +99,13 @@ export default function Backups({ loaderData }: Route.ComponentProps) {
 		return (
 			<EmptyState
 				icon={CalendarClock}
-				title="No backup job"
-				description="Backup jobs help you automate the process of backing up your volumes on a regular schedule to ensure your data is safe and secure."
+				title={t("backups.empty.title")}
+				description={t("backups.empty.description")}
 				button={
 					<Button>
 						<Link to="/backups/create" className="flex items-center">
 							<Plus className="h-4 w-4 mr-2" />
-							Create a backup job
+							{t("backups.createButton")}
 						</Link>
 					</Button>
 				}
@@ -131,7 +133,7 @@ export default function Backups({ loaderData }: Route.ComponentProps) {
 							<Card className="flex flex-col items-center justify-center h-full hover:bg-muted/50 transition-colors cursor-pointer">
 								<CardContent className="flex flex-col items-center justify-center gap-2">
 									<Plus className="h-8 w-8 text-muted-foreground" />
-									<span className="text-sm font-medium text-muted-foreground">Create a backup job</span>
+									<span className="text-sm font-medium text-muted-foreground">{t("backups.createButton")}</span>
 								</CardContent>
 							</Card>
 						</Link>

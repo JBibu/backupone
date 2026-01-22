@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import type { FormValues } from "../create-volume-form";
 import {
 	FormControl,
@@ -17,6 +18,8 @@ type Props = {
 };
 
 export const SMBForm = ({ form }: Props) => {
+	const { t } = useTranslation();
+
 	return (
 		<>
 			<FormField
@@ -24,11 +27,11 @@ export const SMBForm = ({ form }: Props) => {
 				name="server"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Server</FormLabel>
+						<FormLabel>{t("volumes.smbForm.serverLabel")}</FormLabel>
 						<FormControl>
 							<Input placeholder="192.168.1.100" value={field.value} onChange={field.onChange} />
 						</FormControl>
-						<FormDescription>SMB server IP address or hostname.</FormDescription>
+						<FormDescription>{t("volumes.smbForm.serverDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -38,11 +41,11 @@ export const SMBForm = ({ form }: Props) => {
 				name="share"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Share</FormLabel>
+						<FormLabel>{t("volumes.smbForm.shareLabel")}</FormLabel>
 						<FormControl>
 							<Input placeholder="myshare" value={field.value} onChange={field.onChange} />
 						</FormControl>
-						<FormDescription>SMB share name on the server.</FormDescription>
+						<FormDescription>{t("volumes.smbForm.shareDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -52,11 +55,11 @@ export const SMBForm = ({ form }: Props) => {
 				name="username"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Username</FormLabel>
+						<FormLabel>{t("volumes.smbForm.usernameLabel")}</FormLabel>
 						<FormControl>
 							<Input placeholder="admin" value={field.value} onChange={field.onChange} />
 						</FormControl>
-						<FormDescription>Username for SMB authentication.</FormDescription>
+						<FormDescription>{t("volumes.smbForm.usernameDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -66,11 +69,11 @@ export const SMBForm = ({ form }: Props) => {
 				name="password"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Password</FormLabel>
+						<FormLabel>{t("volumes.smbForm.passwordLabel")}</FormLabel>
 						<FormControl>
 							<SecretInput placeholder="••••••••" value={field.value ?? ""} onChange={field.onChange} />
 						</FormControl>
-						<FormDescription>Password for SMB authentication.</FormDescription>
+						<FormDescription>{t("volumes.smbForm.passwordDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -81,11 +84,11 @@ export const SMBForm = ({ form }: Props) => {
 				defaultValue="3.0"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>SMB Version</FormLabel>
+						<FormLabel>{t("volumes.smbForm.versionLabel")}</FormLabel>
 						<Select onValueChange={field.onChange} value={field.value}>
 							<FormControl>
 								<SelectTrigger>
-									<SelectValue placeholder="Select SMB version" />
+									<SelectValue placeholder={t("volumes.smbForm.versionPlaceholder")} />
 								</SelectTrigger>
 							</FormControl>
 							<SelectContent>
@@ -95,7 +98,7 @@ export const SMBForm = ({ form }: Props) => {
 								<SelectItem value="3.0">SMB v3.0</SelectItem>
 							</SelectContent>
 						</Select>
-						<FormDescription>SMB protocol version to use (default: 3.0).</FormDescription>
+						<FormDescription>{t("volumes.smbForm.versionDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -105,11 +108,11 @@ export const SMBForm = ({ form }: Props) => {
 				name="domain"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Domain (Optional)</FormLabel>
+						<FormLabel>{t("volumes.smbForm.domainLabel")}</FormLabel>
 						<FormControl>
 							<Input placeholder="WORKGROUP" value={field.value} onChange={field.onChange} />
 						</FormControl>
-						<FormDescription>Domain or workgroup for authentication (optional).</FormDescription>
+						<FormDescription>{t("volumes.smbForm.domainDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -120,7 +123,7 @@ export const SMBForm = ({ form }: Props) => {
 				defaultValue={445}
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Port</FormLabel>
+						<FormLabel>{t("volumes.smbForm.portLabel")}</FormLabel>
 						<FormControl>
 							<Input
 								type="number"
@@ -129,7 +132,7 @@ export const SMBForm = ({ form }: Props) => {
 								onChange={(e) => field.onChange(parseInt(e.target.value, 10) || undefined)}
 							/>
 						</FormControl>
-						<FormDescription>SMB server port (default: 445).</FormDescription>
+						<FormDescription>{t("volumes.smbForm.portDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -140,7 +143,7 @@ export const SMBForm = ({ form }: Props) => {
 				defaultValue={false}
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Read-only Mode</FormLabel>
+						<FormLabel>{t("volumes.smbForm.readOnlyLabel")}</FormLabel>
 						<FormControl>
 							<div className="flex items-center space-x-2">
 								<input
@@ -149,12 +152,10 @@ export const SMBForm = ({ form }: Props) => {
 									onChange={(e) => field.onChange(e.target.checked)}
 									className="rounded border-gray-300"
 								/>
-								<span className="text-sm">Mount volume as read-only</span>
+								<span className="text-sm">{t("volumes.smbForm.readOnlyCheckbox")}</span>
 							</div>
 						</FormControl>
-						<FormDescription>
-							Prevent any modifications to the volume. Recommended for backup sources and sensitive data.
-						</FormDescription>
+						<FormDescription>{t("volumes.smbForm.readOnlyDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}

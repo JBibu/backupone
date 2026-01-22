@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import {
 	FormControl,
 	FormDescription,
@@ -16,6 +17,8 @@ type Props = {
 };
 
 export const RestRepositoryForm = ({ form }: Props) => {
+	const { t } = useTranslation();
+
 	return (
 		<>
 			<FormField
@@ -23,11 +26,11 @@ export const RestRepositoryForm = ({ form }: Props) => {
 				name="url"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>REST Server URL</FormLabel>
+						<FormLabel>{t("repositories.restForm.url")}</FormLabel>
 						<FormControl>
-							<Input placeholder="http://192.168.1.30:8000" {...field} />
+							<Input placeholder={t("repositories.restForm.urlPlaceholder")} {...field} />
 						</FormControl>
-						<FormDescription>URL of the REST server.</FormDescription>
+						<FormDescription>{t("repositories.restForm.urlDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -37,11 +40,11 @@ export const RestRepositoryForm = ({ form }: Props) => {
 				name="path"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Repository Path (Optional)</FormLabel>
+						<FormLabel>{t("repositories.restForm.path")}</FormLabel>
 						<FormControl>
-							<Input placeholder="my-backup-repo" {...field} />
+							<Input placeholder={t("repositories.restForm.pathPlaceholder")} {...field} />
 						</FormControl>
-						<FormDescription>Path to the repository on the REST server (leave empty for root).</FormDescription>
+						<FormDescription>{t("repositories.restForm.pathDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -51,11 +54,11 @@ export const RestRepositoryForm = ({ form }: Props) => {
 				name="username"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Username (Optional)</FormLabel>
+						<FormLabel>{t("repositories.restForm.username")}</FormLabel>
 						<FormControl>
-							<Input placeholder="username" {...field} />
+							<Input placeholder={t("repositories.restForm.usernamePlaceholder")} {...field} />
 						</FormControl>
-						<FormDescription>Username for REST server authentication.</FormDescription>
+						<FormDescription>{t("repositories.restForm.usernameDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -65,11 +68,11 @@ export const RestRepositoryForm = ({ form }: Props) => {
 				name="password"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Password (Optional)</FormLabel>
+						<FormLabel>{t("repositories.restForm.password")}</FormLabel>
 						<FormControl>
-							<SecretInput placeholder="••••••••" value={field.value ?? ""} onChange={field.onChange} />
+							<SecretInput placeholder={t("repositories.restForm.passwordPlaceholder")} value={field.value ?? ""} onChange={field.onChange} />
 						</FormControl>
-						<FormDescription>Password for REST server authentication.</FormDescription>
+						<FormDescription>{t("repositories.restForm.passwordDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}

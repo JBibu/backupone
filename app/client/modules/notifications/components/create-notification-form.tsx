@@ -2,6 +2,7 @@ import { arktypeResolver } from "@hookform/resolvers/arktype";
 import { type } from "arktype";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { cn, slugify } from "~/client/lib/utils";
 import { deepClean } from "~/utils/object";
 import {
@@ -104,6 +105,7 @@ const defaultValuesForType = {
 };
 
 export const CreateNotificationForm = ({ onSubmit, mode = "create", initialValues, formId, className }: Props) => {
+	const { t } = useTranslation();
 	const form = useForm<NotificationFormValues>({
 		resolver: arktypeResolver(cleanSchema as unknown as typeof formSchema),
 		defaultValues: initialValues || {
@@ -135,17 +137,17 @@ export const CreateNotificationForm = ({ onSubmit, mode = "create", initialValue
 					name="name"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Name</FormLabel>
+							<FormLabel>{t("notifications.createForm.name.label")}</FormLabel>
 							<FormControl>
 								<Input
 									{...field}
-									placeholder="My notification"
+									placeholder={t("notifications.createForm.name.placeholder")}
 									onChange={(e) => field.onChange(slugify(e.target.value))}
 									max={32}
 									min={2}
 								/>
 							</FormControl>
-							<FormDescription>Unique identifier for this notification destination.</FormDescription>
+							<FormDescription>{t("notifications.createForm.name.description")}</FormDescription>
 							<FormMessage />
 						</FormItem>
 					)}
@@ -156,7 +158,7 @@ export const CreateNotificationForm = ({ onSubmit, mode = "create", initialValue
 					name="type"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Type</FormLabel>
+							<FormLabel>{t("notifications.createForm.type.label")}</FormLabel>
 							<Select
 								onValueChange={field.onChange}
 								defaultValue={field.value}
@@ -165,22 +167,22 @@ export const CreateNotificationForm = ({ onSubmit, mode = "create", initialValue
 							>
 								<FormControl>
 									<SelectTrigger className={mode === "update" ? "bg-gray-50" : ""}>
-										<SelectValue placeholder="Select notification type" />
+										<SelectValue placeholder={t("notifications.createForm.type.placeholder")} />
 									</SelectTrigger>
 								</FormControl>
 								<SelectContent>
-									<SelectItem value="email">Email (SMTP)</SelectItem>
-									<SelectItem value="slack">Slack</SelectItem>
-									<SelectItem value="discord">Discord</SelectItem>
-									<SelectItem value="gotify">Gotify</SelectItem>
-									<SelectItem value="ntfy">Ntfy</SelectItem>
-									<SelectItem value="pushover">Pushover</SelectItem>
-									<SelectItem value="telegram">Telegram</SelectItem>
-									<SelectItem value="generic">Generic Webhook</SelectItem>
-									<SelectItem value="custom">Custom (Shoutrrr URL)</SelectItem>
+									<SelectItem value="email">{t("notifications.createForm.type.email")}</SelectItem>
+									<SelectItem value="slack">{t("notifications.createForm.type.slack")}</SelectItem>
+									<SelectItem value="discord">{t("notifications.createForm.type.discord")}</SelectItem>
+									<SelectItem value="gotify">{t("notifications.createForm.type.gotify")}</SelectItem>
+									<SelectItem value="ntfy">{t("notifications.createForm.type.ntfy")}</SelectItem>
+									<SelectItem value="pushover">{t("notifications.createForm.type.pushover")}</SelectItem>
+									<SelectItem value="telegram">{t("notifications.createForm.type.telegram")}</SelectItem>
+									<SelectItem value="generic">{t("notifications.createForm.type.generic")}</SelectItem>
+									<SelectItem value="custom">{t("notifications.createForm.type.custom")}</SelectItem>
 								</SelectContent>
 							</Select>
-							<FormDescription>Choose the notification delivery method.</FormDescription>
+							<FormDescription>{t("notifications.createForm.type.description")}</FormDescription>
 							<FormMessage />
 						</FormItem>
 					)}

@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import type { FormValues } from "../create-volume-form";
 import {
 	FormControl,
@@ -18,6 +19,8 @@ type Props = {
 };
 
 export const SFTPForm = ({ form }: Props) => {
+	const { t } = useTranslation();
+
 	return (
 		<>
 			<FormField
@@ -25,11 +28,11 @@ export const SFTPForm = ({ form }: Props) => {
 				name="host"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Host</FormLabel>
+						<FormLabel>{t("volumes.sftpForm.hostLabel")}</FormLabel>
 						<FormControl>
 							<Input placeholder="example.com" {...field} />
 						</FormControl>
-						<FormDescription>SFTP server hostname or IP address.</FormDescription>
+						<FormDescription>{t("volumes.sftpForm.hostDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -39,7 +42,7 @@ export const SFTPForm = ({ form }: Props) => {
 				name="port"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Port</FormLabel>
+						<FormLabel>{t("volumes.sftpForm.portLabel")}</FormLabel>
 						<FormControl>
 							<Input
 								type="number"
@@ -48,7 +51,7 @@ export const SFTPForm = ({ form }: Props) => {
 								onChange={(e) => field.onChange(parseInt(e.target.value, 10) || undefined)}
 							/>
 						</FormControl>
-						<FormDescription>SFTP server port (default: 22).</FormDescription>
+						<FormDescription>{t("volumes.sftpForm.portDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -58,11 +61,11 @@ export const SFTPForm = ({ form }: Props) => {
 				name="username"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Username</FormLabel>
+						<FormLabel>{t("volumes.sftpForm.usernameLabel")}</FormLabel>
 						<FormControl>
 							<Input placeholder="root" {...field} />
 						</FormControl>
-						<FormDescription>Username for SFTP authentication.</FormDescription>
+						<FormDescription>{t("volumes.sftpForm.usernameDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -72,11 +75,11 @@ export const SFTPForm = ({ form }: Props) => {
 				name="password"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Password (Optional)</FormLabel>
+						<FormLabel>{t("volumes.sftpForm.passwordLabel")}</FormLabel>
 						<FormControl>
 							<SecretInput placeholder="••••••••" value={field.value ?? ""} onChange={field.onChange} />
 						</FormControl>
-						<FormDescription>Password for SFTP authentication (optional if using private key).</FormDescription>
+						<FormDescription>{t("volumes.sftpForm.passwordDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -86,7 +89,7 @@ export const SFTPForm = ({ form }: Props) => {
 				name="privateKey"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Private Key (Optional)</FormLabel>
+						<FormLabel>{t("volumes.sftpForm.privateKeyLabel")}</FormLabel>
 						<FormControl>
 							<Textarea
 								placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"
@@ -96,7 +99,7 @@ export const SFTPForm = ({ form }: Props) => {
 								value={field.value ?? ""}
 							/>
 						</FormControl>
-						<FormDescription>SSH private key for authentication (optional if using password).</FormDescription>
+						<FormDescription>{t("volumes.sftpForm.privateKeyDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -106,11 +109,11 @@ export const SFTPForm = ({ form }: Props) => {
 				name="path"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Path</FormLabel>
+						<FormLabel>{t("volumes.sftpForm.pathLabel")}</FormLabel>
 						<FormControl>
 							<Input placeholder="/backups" {...field} />
 						</FormControl>
-						<FormDescription>Path to the directory on the SFTP server.</FormDescription>
+						<FormDescription>{t("volumes.sftpForm.pathDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -121,10 +124,8 @@ export const SFTPForm = ({ form }: Props) => {
 				render={({ field }) => (
 					<FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
 						<div className="space-y-0.5">
-							<FormLabel>Skip Host Key Verification</FormLabel>
-							<FormDescription>
-								Disable SSH host key checking. Useful for servers with dynamic IPs or self-signed keys.
-							</FormDescription>
+							<FormLabel>{t("volumes.sftpForm.skipHostKeyCheckLabel")}</FormLabel>
+							<FormDescription>{t("volumes.sftpForm.skipHostKeyCheckDescription")}</FormDescription>
 						</div>
 						<FormControl>
 							<Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -138,7 +139,7 @@ export const SFTPForm = ({ form }: Props) => {
 					name="knownHosts"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Known Hosts</FormLabel>
+							<FormLabel>{t("volumes.sftpForm.knownHostsLabel")}</FormLabel>
 							<FormControl>
 								<Textarea
 									placeholder="example.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ..."
@@ -148,9 +149,7 @@ export const SFTPForm = ({ form }: Props) => {
 									value={field.value ?? ""}
 								/>
 							</FormControl>
-							<FormDescription>
-								The contents of the <code>known_hosts</code> file for this server.
-							</FormDescription>
+							<FormDescription>{t("volumes.sftpForm.knownHostsDescription")}</FormDescription>
 							<FormMessage />
 						</FormItem>
 					)}

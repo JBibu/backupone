@@ -4,6 +4,7 @@ import { type } from "arktype";
 import { CheckCircle, Loader2, Plug, Save, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { getDefaultVolumePath } from "~/client/lib/constants";
 import { cn, slugify } from "~/client/lib/utils";
 import { deepClean } from "~/utils/object";
@@ -51,6 +52,7 @@ const defaultValuesForType = {
 };
 
 export const CreateVolumeForm = ({ onSubmit, mode = "create", initialValues, formId, loading, className }: Props) => {
+	const { t } = useTranslation();
 	const form = useForm<FormValues>({
 		resolver: arktypeResolver(cleanSchema as unknown as typeof formSchema),
 		defaultValues: initialValues || {
@@ -97,7 +99,7 @@ export const CreateVolumeForm = ({ onSubmit, mode = "create", initialValues, for
 		onError: (error) => {
 			setTestMessage({
 				success: false,
-				message: error?.message || "Failed to test connection. Please try again.",
+				message: error?.message || t("volumes.createForm.testConnection.errorDefault"),
 			});
 		},
 		onSuccess: (data) => {
@@ -128,17 +130,17 @@ export const CreateVolumeForm = ({ onSubmit, mode = "create", initialValues, for
 					name="name"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Name</FormLabel>
+							<FormLabel>{t("volumes.createForm.nameLabel")}</FormLabel>
 							<FormControl>
 								<Input
 									{...field}
-									placeholder="Volume name"
+									placeholder={t("volumes.createForm.namePlaceholder")}
 									onChange={(e) => field.onChange(slugify(e.target.value))}
 									maxLength={32}
 									minLength={2}
 								/>
 							</FormControl>
-							<FormDescription>Unique identifier for the volume.</FormDescription>
+							<FormDescription>{t("volumes.createForm.nameDescription")}</FormDescription>
 							<FormMessage />
 						</FormItem>
 					)}
@@ -149,28 +151,28 @@ export const CreateVolumeForm = ({ onSubmit, mode = "create", initialValues, for
 					defaultValue="directory"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>Backend</FormLabel>
+							<FormLabel>{t("volumes.createForm.backendLabel")}</FormLabel>
 							<Select onValueChange={field.onChange} value={field.value}>
 								<FormControl>
 									<SelectTrigger>
-										<SelectValue placeholder="Select a backend" />
+										<SelectValue placeholder={t("volumes.createForm.backendPlaceholder")} />
 									</SelectTrigger>
 								</FormControl>
 								<SelectContent>
-									<SelectItem value="directory">Directory</SelectItem>
+									<SelectItem value="directory">{t("volumes.createForm.backends.directory")}</SelectItem>
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<div>
 												<SelectItem disabled={!isNfsAvailable} value="nfs">
-													NFS
+													{t("volumes.createForm.backends.nfs")}
 												</SelectItem>
 											</div>
 										</TooltipTrigger>
 										<TooltipContent className={cn({ hidden: isNfsAvailable })}>
 											{isWindows ? (
-												<p>NFS is not supported on Windows. Use SMB instead.</p>
+												<p>{t("volumes.createForm.tooltips.nfsNotSupported")}</p>
 											) : (
-												<p>Remote mounts require SYS_ADMIN capability</p>
+												<p>{t("volumes.createForm.tooltips.sysAdminRequired")}</p>
 											)}
 										</TooltipContent>
 									</Tooltip>
@@ -178,27 +180,27 @@ export const CreateVolumeForm = ({ onSubmit, mode = "create", initialValues, for
 										<TooltipTrigger asChild>
 											<div>
 												<SelectItem disabled={!isSmbAvailable} value="smb">
-													SMB {isWindows && "(Native)"}
+													{isWindows ? t("volumes.createForm.backends.smbNative") : t("volumes.createForm.backends.smb")}
 												</SelectItem>
 											</div>
 										</TooltipTrigger>
 										<TooltipContent className={cn({ hidden: isSmbAvailable })}>
-											<p>Remote mounts require SYS_ADMIN capability</p>
+											<p>{t("volumes.createForm.tooltips.sysAdminRequired")}</p>
 										</TooltipContent>
 									</Tooltip>
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<div>
 												<SelectItem disabled={!isWebdavAvailable} value="webdav">
-													WebDAV
+													{t("volumes.createForm.backends.webdav")}
 												</SelectItem>
 											</div>
 										</TooltipTrigger>
 										<TooltipContent className={cn({ hidden: isWebdavAvailable })}>
 											{isWindows ? (
-												<p>WebDAV mounting is not supported on Windows. Use rclone repository backend instead.</p>
+												<p>{t("volumes.createForm.tooltips.webdavNotSupported")}</p>
 											) : (
-												<p>Remote mounts require SYS_ADMIN capability</p>
+												<p>{t("volumes.createForm.tooltips.sysAdminRequired")}</p>
 											)}
 										</TooltipContent>
 									</Tooltip>
@@ -206,15 +208,15 @@ export const CreateVolumeForm = ({ onSubmit, mode = "create", initialValues, for
 										<TooltipTrigger asChild>
 											<div>
 												<SelectItem disabled={!isSftpAvailable} value="sftp">
-													SFTP
+													{t("volumes.createForm.backends.sftp")}
 												</SelectItem>
 											</div>
 										</TooltipTrigger>
 										<TooltipContent className={cn({ hidden: isSftpAvailable })}>
 											{isWindows ? (
-												<p>SFTP mounting is not supported on Windows. Use SFTP repository backend instead.</p>
+												<p>{t("volumes.createForm.tooltips.sftpNotSupported")}</p>
 											) : (
-												<p>Remote mounts require SYS_ADMIN capability</p>
+												<p>{t("volumes.createForm.tooltips.sysAdminRequired")}</p>
 											)}
 										</TooltipContent>
 									</Tooltip>
@@ -222,23 +224,23 @@ export const CreateVolumeForm = ({ onSubmit, mode = "create", initialValues, for
 										<TooltipTrigger asChild>
 											<div>
 												<SelectItem disabled={!isRcloneAvailable} value="rclone">
-													rclone
+													{t("volumes.createForm.backends.rclone")}
 												</SelectItem>
 											</div>
 										</TooltipTrigger>
 										<TooltipContent className={cn({ hidden: isRcloneAvailable })}>
 											{isWindows ? (
-												<p>rclone mounting is not supported on Windows. Use rclone repository backend instead.</p>
+												<p>{t("volumes.createForm.tooltips.rcloneNotSupported")}</p>
 											) : !capabilities.sysAdmin ? (
-												<p>Remote mounts require SYS_ADMIN capability</p>
+												<p>{t("volumes.createForm.tooltips.sysAdminRequired")}</p>
 											) : (
-												<p>Setup rclone to use this backend</p>
+												<p>{t("volumes.createForm.tooltips.setupRclone")}</p>
 											)}
 										</TooltipContent>
 									</Tooltip>
 								</SelectContent>
 							</Select>
-							<FormDescription>Choose the storage backend for this volume.</FormDescription>
+							<FormDescription>{t("volumes.createForm.backendDescription")}</FormDescription>
 							<FormMessage />
 						</FormItem>
 					)}
@@ -268,12 +270,12 @@ export const CreateVolumeForm = ({ onSubmit, mode = "create", initialValues, for
 								)}
 								{!testBackendConnection.isPending && !testMessage && <Plug className="mr-2 h-4 w-4" />}
 								{testBackendConnection.isPending
-									? "Testing..."
+									? t("volumes.createForm.testConnection.testing")
 									: testMessage
 										? testMessage.success
-											? "Connection Successful"
-											: "Test Failed"
-										: "Test Connection"}
+											? t("volumes.createForm.testConnection.success")
+											: t("volumes.createForm.testConnection.failed")
+										: t("volumes.createForm.testConnection.button")}
 							</Button>
 						</div>
 						{testMessage && (
@@ -291,7 +293,7 @@ export const CreateVolumeForm = ({ onSubmit, mode = "create", initialValues, for
 				{mode === "update" && (
 					<Button type="submit" className="w-full" loading={loading}>
 						<Save className="h-4 w-4 mr-2" />
-						Save changes
+						{t("volumes.createForm.saveButton")}
 					</Button>
 				)}
 			</form>

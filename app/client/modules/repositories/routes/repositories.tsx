@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Database, Plus, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { listRepositories } from "~/client/api-client/sdk.gen";
 import { listRepositoriesOptions } from "~/client/api-client/@tanstack/react-query.gen";
 import { RepositoryIcon } from "~/client/components/repository-icon";
@@ -35,6 +36,7 @@ export const clientLoader = async () => {
 };
 
 export default function Repositories({ loaderData }: Route.ComponentProps) {
+	const { t } = useTranslation();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState("");
 	const [backendFilter, setBackendFilter] = useState("");
@@ -67,12 +69,12 @@ export default function Repositories({ loaderData }: Route.ComponentProps) {
 		return (
 			<EmptyState
 				icon={Database}
-				title="No repository"
-				description="Repositories are remote storage locations where you can backup your volumes securely. Encrypted and optimized for storage efficiency."
+				title={t("repositories.empty.title")}
+				description={t("repositories.empty.description")}
 				button={
 					<Button onClick={() => navigate("/repositories/create")}>
 						<Plus size={16} className="mr-2" />
-						Create repository
+						{t("repositories.createButton")}
 					</Button>
 				}
 			/>
@@ -85,51 +87,51 @@ export default function Repositories({ loaderData }: Route.ComponentProps) {
 				<span className="flex flex-col sm:flex-row items-stretch md:items-center gap-0 flex-wrap ">
 					<Input
 						className="w-full lg:w-[180px] min-w-[180px] -mr-px -mt-px"
-						placeholder="Search repositories…"
+						placeholder={t("repositories.search.placeholder")}
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 					/>
 					<Select value={statusFilter} onValueChange={setStatusFilter}>
 						<SelectTrigger className="w-full lg:w-[180px] min-w-[180px] -mr-px -mt-px">
-							<SelectValue placeholder="All status" />
+							<SelectValue placeholder={t("repositories.filters.allStatus")} />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="healthy">Healthy</SelectItem>
-							<SelectItem value="error">Error</SelectItem>
-							<SelectItem value="unknown">Unknown</SelectItem>
+							<SelectItem value="healthy">{t("repositories.filters.healthy")}</SelectItem>
+							<SelectItem value="error">{t("repositories.filters.error")}</SelectItem>
+							<SelectItem value="unknown">{t("repositories.filters.unknown")}</SelectItem>
 						</SelectContent>
 					</Select>
 					<Select value={backendFilter} onValueChange={setBackendFilter}>
 						<SelectTrigger className="w-full lg:w-[180px] min-w-[180px] -mt-px">
-							<SelectValue placeholder="All backends" />
+							<SelectValue placeholder={t("repositories.filters.allBackends")} />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="local">Local</SelectItem>
-							<SelectItem value="sftp">SFTP</SelectItem>
-							<SelectItem value="s3">S3</SelectItem>
-							<SelectItem value="gcs">Google Cloud Storage</SelectItem>
+							<SelectItem value="local">{t("repositories.filters.local")}</SelectItem>
+							<SelectItem value="sftp">{t("repositories.filters.sftp")}</SelectItem>
+							<SelectItem value="s3">{t("repositories.filters.s3")}</SelectItem>
+							<SelectItem value="gcs">{t("repositories.filters.gcs")}</SelectItem>
 						</SelectContent>
 					</Select>
 					{(searchQuery || statusFilter || backendFilter) && (
 						<Button onClick={clearFilters} className="w-full lg:w-auto mt-2 lg:mt-0 lg:ml-2">
 							<RotateCcw className="h-4 w-4 mr-2" />
-							Clear filters
+							{t("repositories.filters.clearFilters")}
 						</Button>
 					)}
 				</span>
 				<Button onClick={() => navigate("/repositories/create")}>
 					<Plus size={16} className="mr-2" />
-					Create Repository
+					{t("repositories.createButton")}
 				</Button>
 			</div>
 			<div className="overflow-x-auto">
 				<Table className="border-t">
 					<TableHeader className="bg-card-header">
 						<TableRow>
-							<TableHead className="w-[100px] uppercase">Name</TableHead>
-							<TableHead className="uppercase text-left">Backend</TableHead>
-							<TableHead className="uppercase hidden sm:table-cell">Compression</TableHead>
-							<TableHead className="uppercase text-center">Status</TableHead>
+							<TableHead className="w-[100px] uppercase">{t("repositories.table.name")}</TableHead>
+							<TableHead className="uppercase text-left">{t("repositories.table.backend")}</TableHead>
+							<TableHead className="uppercase hidden sm:table-cell">{t("repositories.table.compression")}</TableHead>
+							<TableHead className="uppercase text-center">{t("repositories.table.status")}</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
@@ -137,10 +139,10 @@ export default function Repositories({ loaderData }: Route.ComponentProps) {
 							<TableRow>
 								<TableCell colSpan={4} className="text-center py-12">
 									<div className="flex flex-col items-center gap-3">
-										<p className="text-muted-foreground">No repositories match your filters.</p>
+										<p className="text-muted-foreground">{t("repositories.emptyFilters")}</p>
 										<Button onClick={clearFilters} variant="outline" size="sm">
 											<RotateCcw className="h-4 w-4 mr-2" />
-											Clear filters
+											{t("repositories.filters.clearFilters")}
 										</Button>
 									</div>
 								</TableCell>
@@ -174,7 +176,7 @@ export default function Repositories({ loaderData }: Route.ComponentProps) {
 												},
 											)}
 										>
-											{repository.status || "unknown"}
+											{t(`common.status.${repository.status || "unknown"}`)}
 										</span>
 									</TableCell>
 								</TableRow>
@@ -185,11 +187,11 @@ export default function Repositories({ loaderData }: Route.ComponentProps) {
 			</div>
 			<div className="px-4 py-2 text-sm text-muted-foreground bg-card-header flex justify-end border-t">
 				{hasNoFilteredRepositories ? (
-					"No repositories match filters."
+					t("repositories.emptyFilters")
 				) : (
 					<span>
-						<span className="text-strong-accent">{filteredRepositories.length}</span> repositor
-						{filteredRepositories.length === 1 ? "y" : "ies"}
+						<span className="text-strong-accent">{filteredRepositories.length}</span>{" "}
+						{filteredRepositories.length === 1 ? t("repositories.counter.single") : t("repositories.counter.plural")}
 					</span>
 				)}
 			</div>

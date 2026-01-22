@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "~/client/components/ui/form";
 import { Input } from "~/client/components/ui/input";
 import type { NotificationFormValues } from "../create-notification-form";
@@ -8,6 +9,8 @@ type Props = {
 };
 
 export const SlackForm = ({ form }: Props) => {
+	const { t } = useTranslation();
+
 	return (
 		<>
 			<FormField
@@ -15,14 +18,14 @@ export const SlackForm = ({ form }: Props) => {
 				name="webhookUrl"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Webhook URL</FormLabel>
+						<FormLabel>{t("notifications.slackForm.webhookUrl")}</FormLabel>
 						<FormControl>
 							<Input
 								{...field}
-								placeholder="https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX"
+								placeholder={t("notifications.slackForm.webhookUrlPlaceholder")}
 							/>
 						</FormControl>
-						<FormDescription>Get this from your Slack app's Incoming Webhooks settings.</FormDescription>
+						<FormDescription>{t("notifications.slackForm.webhookUrlDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -32,11 +35,11 @@ export const SlackForm = ({ form }: Props) => {
 				name="channel"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Channel (Optional)</FormLabel>
+						<FormLabel>{t("notifications.slackForm.channel")}</FormLabel>
 						<FormControl>
-							<Input {...field} placeholder="#backups" />
+							<Input {...field} placeholder={t("notifications.slackForm.channelPlaceholder")} />
 						</FormControl>
-						<FormDescription>Override the default channel (use # for channels, @ for users).</FormDescription>
+						<FormDescription>{t("notifications.slackForm.channelDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -46,9 +49,9 @@ export const SlackForm = ({ form }: Props) => {
 				name="username"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Bot Username (Optional)</FormLabel>
+						<FormLabel>{t("notifications.slackForm.username")}</FormLabel>
 						<FormControl>
-							<Input {...field} placeholder="C3i Backup ONE" />
+							<Input {...field} placeholder={t("notifications.slackForm.usernamePlaceholder")} />
 						</FormControl>
 						<FormMessage />
 					</FormItem>
@@ -59,9 +62,9 @@ export const SlackForm = ({ form }: Props) => {
 				name="iconEmoji"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Icon Emoji (Optional)</FormLabel>
+						<FormLabel>{t("notifications.slackForm.iconEmoji")}</FormLabel>
 						<FormControl>
-							<Input {...field} placeholder=":floppy_disk:" />
+							<Input {...field} placeholder={t("notifications.slackForm.iconEmojiPlaceholder")} />
 						</FormControl>
 						<FormMessage />
 					</FormItem>

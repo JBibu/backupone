@@ -1,0 +1,1037 @@
+{
+	"auth": {
+		"login": {
+			"pageTitle": "C3i Backup ONE - Inicio de sesión",
+			"pageDescription": "Inicie sesión en su cuenta de C3i Backup ONE.",
+			"twoFactor": {
+				"title": "Autenticación de dos factores",
+				"description": "Introduzca el código de 6 dígitos de su aplicación de autenticación",
+				"codeLabel": "Código de autenticación",
+				"trustDevice": "Confiar en este dispositivo durante 30 días",
+				"verifyButton": "Verificar",
+				"backButton": "Volver al inicio de sesión"
+			},
+			"form": {
+				"title": "Iniciar sesión en su cuenta",
+				"description": "Introduzca sus credenciales a continuación para iniciar sesión en su cuenta",
+				"username": "Nombre de usuario",
+				"usernamePlaceholder": "admin",
+				"password": "Contraseña",
+				"forgotPassword": "¿Olvidó su contraseña?",
+				"loginButton": "Iniciar sesión"
+			},
+			"toast": {
+				"invalidCode": "Por favor, introduzca un código de 6 dígitos",
+				"verificationFailed": "Error en la verificación",
+				"loginSuccess": "Inicio de sesión exitoso"
+			}
+		},
+		"onboarding": {
+			"pageTitle": "C3i Backup ONE - Configuración inicial",
+			"pageDescription": "Bienvenido a C3i Backup ONE. Cree su cuenta de administrador para comenzar.",
+			"title": "Bienvenido a C3i Backup ONE",
+			"description": "Cree el usuario administrador para comenzar",
+			"form": {
+				"email": "Correo electrónico",
+				"emailPlaceholder": "tu@ejemplo.com",
+				"emailDescription": "Introduzca su dirección de correo electrónico",
+				"username": "Nombre de usuario",
+				"usernamePlaceholder": "admin",
+				"usernameDescription": "Elija un nombre de usuario para la cuenta de administrador",
+				"password": "Contraseña",
+				"passwordPlaceholder": "Introduzca una contraseña segura",
+				"passwordDescription": "La contraseña debe tener al menos 8 caracteres.",
+				"confirmPassword": "Confirmar contraseña",
+				"confirmPasswordPlaceholder": "Vuelva a introducir su contraseña",
+				"createButton": "Crear usuario administrador"
+			},
+			"validation": {
+				"passwordMismatch": "Las contraseñas no coinciden"
+			},
+			"toast": {
+				"success": "¡Usuario administrador creado correctamente!",
+				"failed": "Error al crear el usuario administrador"
+			}
+		},
+		"resetPassword": {
+			"title": "Restablecer su contraseña",
+			"descriptionTauri": "Para restablecer su contraseña, utilice la herramienta CLI incluida con la aplicación.",
+			"descriptionWeb": "Para restablecer su contraseña, ejecute el siguiente comando en el servidor donde está instalado C3i Backup ONE.",
+			"commandTauri": "zerobyte-cli reset-password",
+			"commandHint": "Abra un terminal en el directorio de instalación de la aplicación y ejecute este comando. Iniciará una sesión interactiva donde podrá introducir una nueva contraseña.",
+			"commandDocker": "docker exec -it zerobyte bun run cli reset-password",
+			"commandDockerHint": "Este comando iniciará una sesión interactiva donde podrá introducir una nueva contraseña para su cuenta."
+		}
+	},
+	"volumes": {
+		"pageTitle": "C3i Backup ONE - Volúmenes",
+		"pageDescription": "Cree, gestione, monitorice y automatice sus volúmenes Docker con facilidad.",
+		"breadcrumb": "Volúmenes",
+		"empty": {
+			"title": "Sin volúmenes",
+			"description": "Gestione y monitorice todos sus sistemas de almacenamiento en un solo lugar con funciones avanzadas como montaje automático y comprobaciones de estado."
+		},
+		"search": {
+			"placeholder": "Buscar volúmenes…"
+		},
+		"filters": {
+			"allStatus": "Todos los estados",
+			"mounted": "Montado",
+			"unmounted": "Desmontado",
+			"error": "Error",
+			"allBackends": "Todos los sistemas",
+			"directory": "Directorio",
+			"nfs": "NFS",
+			"smb": "SMB",
+			"clearFilters": "Limpiar filtros"
+		},
+		"table": {
+			"name": "Nombre",
+			"backend": "Sistema",
+			"status": "Estado"
+		},
+		"counter": {
+			"single": "volumen",
+			"plural": "volúmenes"
+		},
+		"emptyFilters": "No hay volúmenes que coincidan con sus filtros.",
+		"createButton": "Crear volumen",
+		"directoryForm": {
+			"pathLabel": "Ruta del directorio",
+			"selectedPath": "Ruta seleccionada:",
+			"changeButton": "Cambiar",
+			"description": "Explore y seleccione un directorio en el sistema de archivos del host para realizar el seguimiento."
+		},
+		"nfsForm": {
+			"serverLabel": "Servidor",
+			"serverDescription": "Dirección IP o nombre de host del servidor NFS.",
+			"exportPathLabel": "Ruta de exportación",
+			"exportPathDescription": "Ruta a la exportación NFS en el servidor.",
+			"portLabel": "Puerto",
+			"portDescription": "Puerto del servidor NFS (predeterminado: 2049).",
+			"versionLabel": "Versión",
+			"versionPlaceholder": "Seleccione versión NFS",
+			"versionDescription": "Versión del protocolo NFS a utilizar.",
+			"readOnlyLabel": "Modo solo lectura",
+			"readOnlyCheckbox": "Montar volumen como solo lectura",
+			"readOnlyDescription": "Prevenir cualquier modificación al volumen. Recomendado para fuentes de respaldo y datos sensibles."
+		},
+		"smbForm": {
+			"serverLabel": "Servidor",
+			"serverDescription": "Dirección IP o nombre de host del servidor SMB.",
+			"shareLabel": "Recurso compartido",
+			"shareDescription": "Nombre del recurso compartido SMB en el servidor.",
+			"usernameLabel": "Nombre de usuario",
+			"usernameDescription": "Nombre de usuario para la autenticación SMB.",
+			"passwordLabel": "Contraseña",
+			"passwordDescription": "Contraseña para la autenticación SMB.",
+			"versionLabel": "Versión SMB",
+			"versionPlaceholder": "Seleccione versión SMB",
+			"versionDescription": "Versión del protocolo SMB a utilizar (predeterminado: 3.0).",
+			"domainLabel": "Dominio (Opcional)",
+			"domainDescription": "Dominio o grupo de trabajo para autenticación (opcional).",
+			"portLabel": "Puerto",
+			"portDescription": "Puerto del servidor SMB (predeterminado: 445).",
+			"readOnlyLabel": "Modo solo lectura",
+			"readOnlyCheckbox": "Montar volumen como solo lectura",
+			"readOnlyDescription": "Prevenir cualquier modificación al volumen. Recomendado para fuentes de respaldo y datos sensibles."
+		},
+		"webdavForm": {
+			"serverLabel": "Servidor",
+			"serverDescription": "Nombre de host o dirección IP del servidor WebDAV.",
+			"pathLabel": "Ruta",
+			"pathDescription": "Ruta al directorio WebDAV en el servidor.",
+			"usernameLabel": "Nombre de usuario (Opcional)",
+			"usernameDescription": "Nombre de usuario para la autenticación WebDAV (opcional).",
+			"passwordLabel": "Contraseña (Opcional)",
+			"passwordDescription": "Contraseña para la autenticación WebDAV (opcional).",
+			"portLabel": "Puerto",
+			"portDescription": "Puerto del servidor WebDAV (predeterminado: 80 para HTTP, 443 para HTTPS).",
+			"sslLabel": "Usar SSL/HTTPS",
+			"sslCheckbox": "Habilitar HTTPS para conexiones seguras",
+			"sslDescription": "Usar HTTPS en lugar de HTTP para conexiones seguras.",
+			"readOnlyLabel": "Modo solo lectura",
+			"readOnlyCheckbox": "Montar volumen como solo lectura",
+			"readOnlyDescription": "Prevenir cualquier modificación al volumen. Recomendado para fuentes de respaldo y datos sensibles."
+		},
+		"sftpForm": {
+			"hostLabel": "Host",
+			"hostDescription": "Nombre de host o dirección IP del servidor SFTP.",
+			"portLabel": "Puerto",
+			"portDescription": "Puerto del servidor SFTP (predeterminado: 22).",
+			"usernameLabel": "Nombre de usuario",
+			"usernameDescription": "Nombre de usuario para la autenticación SFTP.",
+			"passwordLabel": "Contraseña (Opcional)",
+			"passwordDescription": "Contraseña para la autenticación SFTP (opcional si usa clave privada).",
+			"privateKeyLabel": "Clave privada (Opcional)",
+			"privateKeyDescription": "Clave privada SSH para autenticación (opcional si usa contraseña).",
+			"pathLabel": "Ruta",
+			"pathDescription": "Ruta al directorio en el servidor SFTP.",
+			"skipHostKeyCheckLabel": "Omitir verificación de clave de host",
+			"skipHostKeyCheckDescription": "Deshabilitar la verificación de clave de host SSH. Útil para servidores con IPs dinámicas o claves autofirmadas.",
+			"knownHostsLabel": "Hosts conocidos",
+			"knownHostsDescription": "El contenido del archivo known_hosts para este servidor."
+		},
+		"rcloneForm": {
+			"noRemotesTitle": "No hay remotos de rclone configurados",
+			"noRemotesDescription": "Para usar rclone, necesita configurar remotos en su sistema host",
+			"viewDocumentation": "Ver documentación de rclone",
+			"remoteLabel": "Remoto",
+			"remotePlaceholder": "Seleccione un remoto de rclone",
+			"loadingRemotes": "Cargando remotos...",
+			"remoteDescription": "Seleccione el remoto de rclone configurado en su sistema host.",
+			"pathLabel": "Ruta",
+			"pathDescription": "Ruta en el remoto a montar. Use \"/\" para la raíz.",
+			"readOnlyLabel": "Modo solo lectura",
+			"readOnlyCheckbox": "Montar volumen como solo lectura",
+			"readOnlyDescription": "Prevenir cualquier modificación al volumen. Recomendado para fuentes de respaldo y datos sensibles."
+		},
+		"createForm": {
+			"nameLabel": "Nombre",
+			"namePlaceholder": "Nombre del volumen",
+			"nameDescription": "Identificador único para el volumen.",
+			"backendLabel": "Sistema",
+			"backendPlaceholder": "Seleccione un sistema",
+			"backendDescription": "Elija el sistema de almacenamiento para este volumen.",
+			"backends": {
+				"directory": "Directorio",
+				"nfs": "NFS",
+				"smb": "SMB",
+				"smbNative": "SMB (Nativo)",
+				"webdav": "WebDAV",
+				"sftp": "SFTP",
+				"rclone": "rclone"
+			},
+			"tooltips": {
+				"nfsNotSupported": "NFS no es compatible con Windows. Use SMB en su lugar.",
+				"sysAdminRequired": "Los montajes remotos requieren la capacidad SYS_ADMIN",
+				"webdavNotSupported": "El montaje WebDAV no es compatible con Windows. Use el sistema de repositorio rclone en su lugar.",
+				"sftpNotSupported": "El montaje SFTP no es compatible con Windows. Use el sistema de repositorio SFTP en su lugar.",
+				"rcloneNotSupported": "El montaje rclone no es compatible con Windows. Use el sistema de repositorio rclone en su lugar.",
+				"setupRclone": "Configure rclone para usar este sistema"
+			},
+			"testConnection": {
+				"testing": "Probando...",
+				"success": "Conexión exitosa",
+				"failed": "Prueba fallida",
+				"button": "Probar conexión",
+				"errorDefault": "Error al probar la conexión. Por favor, inténtelo de nuevo."
+			},
+			"saveButton": "Guardar cambios"
+		}
+	},
+	"repositories": {
+		"pageTitle": "C3i Backup ONE - Repositorios",
+		"pageDescription": "Gestione sus repositorios de copias de seguridad con cifrado y compresión.",
+		"breadcrumb": "Repositorios",
+		"empty": {
+			"title": "Sin repositorios",
+			"description": "Los repositorios son ubicaciones de almacenamiento remoto donde puede realizar copias de seguridad de sus volúmenes de forma segura. Cifrados y optimizados para la eficiencia del almacenamiento."
+		},
+		"search": {
+			"placeholder": "Buscar repositorios…"
+		},
+		"filters": {
+			"allStatus": "Todos los estados",
+			"healthy": "Saludable",
+			"error": "Error",
+			"unknown": "Desconocido",
+			"allBackends": "Todos los sistemas",
+			"local": "Local",
+			"sftp": "SFTP",
+			"s3": "S3",
+			"gcs": "Google Cloud Storage",
+			"clearFilters": "Limpiar filtros"
+		},
+		"table": {
+			"name": "Nombre",
+			"backend": "Sistema",
+			"compression": "Compresión",
+			"status": "Estado"
+		},
+		"counter": {
+			"single": "repositorio",
+			"plural": "repositorios"
+		},
+		"emptyFilters": "No hay repositorios que coincidan con sus filtros.",
+		"createButton": "Crear repositorio",
+		"s3Form": {
+			"endpoint": "Endpoint",
+			"endpointPlaceholder": "s3.amazonaws.com",
+			"endpointDescription": "URL del endpoint compatible con S3.",
+			"bucket": "Bucket",
+			"bucketPlaceholder": "mi-bucket-backup",
+			"bucketDescription": "Nombre del bucket S3 para almacenar copias de seguridad.",
+			"accessKeyId": "ID de clave de acceso",
+			"accessKeyIdPlaceholder": "AKIAIOSFODNN7EXAMPLE",
+			"accessKeyIdDescription": "ID de clave de acceso S3 para autenticación.",
+			"secretAccessKey": "Clave de acceso secreta",
+			"secretAccessKeyPlaceholder": "••••••••",
+			"secretAccessKeyDescription": "Clave de acceso secreta S3 para autenticación."
+		},
+		"localForm": {
+			"directory": "Directorio del repositorio",
+			"directoryDescription": "El directorio donde se almacenará el repositorio.",
+			"warningTitle": "Importante: Se requiere montaje del host",
+			"warningDescription1": "Al seleccionar una ruta personalizada, asegúrese de que esté montada desde la máquina host en el contenedor.",
+			"warningDescription2": "Si la ruta no es un montaje del host, perderá los datos del repositorio cuando el contenedor se reinicie.",
+			"warningDescription3": "La ruta predeterminada es segura de usar si siguió la configuración recomendada de Docker Compose.",
+			"warningContinue": "Entiendo, Continuar",
+			"browserTitle": "Seleccionar directorio del repositorio",
+			"browserDescription": "Elija un directorio del sistema de archivos para almacenar el repositorio.",
+			"done": "Hecho"
+		},
+		"sftpForm": {
+			"host": "Host",
+			"hostPlaceholder": "192.168.1.100",
+			"hostDescription": "Nombre de host o dirección IP del servidor SFTP.",
+			"port": "Puerto",
+			"portPlaceholder": "22",
+			"portDescription": "Puerto SSH (predeterminado: 22).",
+			"user": "Usuario",
+			"userPlaceholder": "usuario-backup",
+			"userDescription": "Nombre de usuario SSH para autenticación.",
+			"path": "Ruta",
+			"pathPlaceholder": "backups/zerobyte",
+			"pathDescription": "Ruta del repositorio en el servidor SFTP.",
+			"privateKey": "Clave privada SSH",
+			"privateKeyPlaceholder": "-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----",
+			"privateKeyDescription": "Pegue el contenido de su clave privada SSH.",
+			"skipHostKeyCheck": "Omitir verificación de clave de host",
+			"skipHostKeyCheckDescription": "Deshabilitar la verificación de clave de host SSH. Útil para servidores con IPs dinámicas o claves autofirmadas.",
+			"knownHosts": "Hosts conocidos",
+			"knownHostsPlaceholder": "ejemplo.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ...",
+			"knownHostsDescription": "El contenido del archivo known_hosts para este servidor."
+		},
+		"gcsForm": {
+			"bucket": "Bucket",
+			"bucketPlaceholder": "mi-bucket-backup",
+			"bucketDescription": "Nombre del bucket GCS para almacenar copias de seguridad.",
+			"projectId": "ID del proyecto",
+			"projectIdPlaceholder": "mi-proyecto-gcp-123",
+			"projectIdDescription": "ID del proyecto de Google Cloud.",
+			"credentialsJson": "JSON de cuenta de servicio",
+			"credentialsJsonPlaceholder": "Pegue el JSON de la clave de cuenta de servicio...",
+			"credentialsJsonDescription": "Credenciales JSON de la cuenta de servicio para autenticación."
+		},
+		"azureForm": {
+			"container": "Contenedor",
+			"containerPlaceholder": "mi-contenedor-backup",
+			"containerDescription": "Nombre del contenedor de Azure Blob Storage para almacenar copias de seguridad.",
+			"accountName": "Nombre de cuenta",
+			"accountNamePlaceholder": "micuentadealmacenamiento",
+			"accountNameDescription": "Nombre de la cuenta de Azure Storage.",
+			"accountKey": "Clave de cuenta",
+			"accountKeyPlaceholder": "••••••••",
+			"accountKeyDescription": "Clave de la cuenta de Azure Storage para autenticación.",
+			"endpointSuffix": "Sufijo de endpoint (Opcional)",
+			"endpointSuffixPlaceholder": "core.windows.net",
+			"endpointSuffixDescription": "Sufijo de endpoint personalizado de Azure (predeterminado: core.windows.net)."
+		},
+		"r2Form": {
+			"endpoint": "Endpoint",
+			"endpointPlaceholder": "<id-cuenta>.r2.cloudflarestorage.com",
+			"endpointDescription": "Endpoint de R2 (sin https://). Encuéntrelo en el panel de R2 bajo configuración del bucket.",
+			"bucket": "Bucket",
+			"bucketPlaceholder": "mi-bucket-backup",
+			"bucketDescription": "Nombre del bucket R2 para almacenar copias de seguridad.",
+			"accessKeyId": "ID de clave de acceso",
+			"accessKeyIdPlaceholder": "ID de clave de acceso de tokens API de R2",
+			"accessKeyIdDescription": "ID de clave de acceso del token API de R2 (crear en el panel de Cloudflare R2).",
+			"secretAccessKey": "Clave de acceso secreta",
+			"secretAccessKeyPlaceholder": "••••••••",
+			"secretAccessKeyDescription": "Clave de acceso secreta del token API de R2 (se muestra una vez al crear el token)."
+		},
+		"rcloneForm": {
+			"noRemotes": "No hay remotos de rclone configurados",
+			"noRemotesDescription": "Para usar rclone, necesita configurar remotos en su sistema host",
+			"viewDocs": "Ver documentación de rclone",
+			"remote": "Remoto",
+			"remotePlaceholder": "Seleccione un remoto de rclone",
+			"remoteDescription": "Seleccione el remoto de rclone configurado en su sistema host.",
+			"loadingRemotes": "Cargando remotos...",
+			"path": "Ruta",
+			"pathPlaceholder": "backups/zerobyte",
+			"pathDescription": "Ruta dentro del remoto donde se almacenarán las copias de seguridad."
+		},
+		"restForm": {
+			"url": "URL del servidor REST",
+			"urlPlaceholder": "http://192.168.1.30:8000",
+			"urlDescription": "URL del servidor REST.",
+			"path": "Ruta del repositorio (Opcional)",
+			"pathPlaceholder": "mi-repo-backup",
+			"pathDescription": "Ruta al repositorio en el servidor REST (dejar vacío para la raíz).",
+			"username": "Nombre de usuario (Opcional)",
+			"usernamePlaceholder": "usuario",
+			"usernameDescription": "Nombre de usuario para autenticación del servidor REST.",
+			"password": "Contraseña (Opcional)",
+			"passwordPlaceholder": "••••••••",
+			"passwordDescription": "Contraseña para autenticación del servidor REST."
+		},
+		"advancedForm": {
+			"title": "Configuración avanzada",
+			"uploadLimit": "Habilitar límite de velocidad de subida",
+			"uploadLimitDescription": "Limitar la velocidad de subida al repositorio",
+			"downloadLimit": "Habilitar límite de velocidad de descarga",
+			"downloadLimitDescription": "Limitar la velocidad de descarga desde el repositorio",
+			"insecureTls": "Omitir verificación de certificado TLS",
+			"insecureTlsDescription": "Deshabilitar la verificación de certificado TLS para conexiones HTTPS con certificados autofirmados. Esto es inseguro y solo debe usarse para pruebas.",
+			"insecureTlsDisabledTooltip": "Esta opción está deshabilitada porque se ha proporcionado un certificado CA. Elimine el certificado CA para omitir la validación TLS en su lugar.",
+			"caCertificate": "Certificado CA (Opcional)",
+			"caCertificatePlaceholder": "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----",
+			"caCertificateDescription": "Certificado CA personalizado para certificados autofirmados (formato PEM). Esto aplica a conexiones HTTPS.",
+			"caCertificateDisabledTooltip": "El certificado CA está deshabilitado porque se está omitiendo la validación TLS. Desmarque \"Omitir verificación de certificado TLS\" para proporcionar un certificado CA personalizado.",
+			"learnMore": "Más información"
+		},
+		"createForm": {
+			"name": {
+				"label": "Nombre",
+				"placeholder": "Nombre del repositorio",
+				"description": "Identificador único para el repositorio."
+			},
+			"backend": {
+				"label": "Sistema",
+				"placeholder": "Seleccione un sistema",
+				"description": "Elija el sistema de almacenamiento para este repositorio.",
+				"local": "Local",
+				"s3": "S3",
+				"r2": "Cloudflare R2",
+				"gcs": "Google Cloud Storage",
+				"azure": "Azure Blob Storage",
+				"rest": "Servidor REST",
+				"sftp": "SFTP",
+				"rclone": "rclone (más de 40 proveedores en la nube)",
+				"rcloneTooltip": "Configure rclone para usar este sistema"
+			},
+			"compression": {
+				"label": "Modo de compresión",
+				"placeholder": "Seleccione modo de compresión",
+				"description": "Modo de compresión para las copias de seguridad almacenadas en este repositorio.",
+				"off": "Desactivado",
+				"auto": "Auto (rápido)",
+				"max": "Máximo (más lento, mejor compresión)"
+			},
+			"existingRepository": {
+				"label": "Importar repositorio existente",
+				"description": "Marque esto si el repositorio ya existe en la ubicación especificada"
+			},
+			"password": {
+				"label": "Contraseña del repositorio",
+				"placeholder": "Seleccione opción de contraseña",
+				"description": "Elija si usar la clave de recuperación de C3i Backup ONE (que descargó al crear su cuenta) o introducir una contraseña personalizada para el repositorio existente.",
+				"useRecoveryKey": "Usar la clave de recuperación existente",
+				"enterManually": "Introducir contraseña manualmente",
+				"customLabel": "Contraseña del repositorio",
+				"customPlaceholder": "Introduzca la contraseña del repositorio",
+				"customDescription": "La contraseña utilizada para cifrar este repositorio. Se almacenará de forma segura."
+			},
+			"saveButton": "Guardar cambios"
+		}
+	},
+	"backups": {
+		"pageTitle": "C3i Backup ONE - Tareas de copia de seguridad",
+		"pageDescription": "Automatice las copias de seguridad de volúmenes con tareas programadas y políticas de retención.",
+		"breadcrumb": "Copias de seguridad",
+		"empty": {
+			"title": "Sin tareas de copia de seguridad",
+			"description": "Las tareas de copia de seguridad le ayudan a automatizar el proceso de realizar copias de seguridad de sus volúmenes con una programación regular para garantizar que sus datos estén seguros y protegidos."
+		},
+		"loading": "Cargando programaciones de copias de seguridad...",
+		"createButton": "Crear una tarea de copia de seguridad",
+		"create": {
+			"pageTitle": "C3i Backup ONE - Crear tarea de copia de seguridad",
+			"pageDescription": "Cree una nueva tarea automatizada de copia de seguridad para sus volúmenes.",
+			"breadcrumb": "Crear",
+			"loading": "Cargando...",
+			"empty": {
+				"title": "Sin volúmenes para respaldar",
+				"description": "Para crear una tarea de copia de seguridad, primero necesita crear un volumen. Los volúmenes son las fuentes de datos que se respaldarán."
+			},
+			"emptyRepository": {
+				"title": "Sin repositorio",
+				"description": "Para crear una tarea de copia de seguridad, primero necesita configurar un repositorio de copias de seguridad. Los repositorios de copias de seguridad son los destinos donde se almacenarán sus copias de seguridad."
+			},
+			"selectVolume": {
+				"placeholder": "Elija un volumen para respaldar",
+				"title": "Seleccione un volumen",
+				"description": "Elija un volumen del menú desplegable de arriba para configurar su programación de copias de seguridad."
+			},
+			"goToVolumes": "Ir a volúmenes",
+			"goToRepositories": "Ir a repositorios",
+			"createButton": "Crear",
+			"toast": {
+				"success": "Tarea de copia de seguridad creada correctamente",
+				"failed": "Error al crear la tarea de copia de seguridad"
+			}
+		},
+		"details": {
+			"pageTitle": "C3i Backup ONE - Detalles de la tarea de copia de seguridad",
+			"pageDescription": "Vea y gestione la configuración, programación e instantáneas de la tarea de copia de seguridad."
+		},
+		"card": {
+			"schedule": "Programación",
+			"lastBackup": "Última copia de seguridad",
+			"nextBackup": "Próxima copia de seguridad"
+		},
+		"schedule": {
+			"monday": "Lunes",
+			"tuesday": "Martes",
+			"wednesday": "Miércoles",
+			"thursday": "Jueves",
+			"friday": "Viernes",
+			"saturday": "Sábado",
+			"sunday": "Domingo"
+		},
+		"scheduleForm": {
+			"automation": {
+				"title": "Automatización de copias de seguridad",
+				"description": "Programe copias de seguridad automatizadas de <strong>{{volumeName}}</strong> a un repositorio seguro."
+			},
+			"name": {
+				"label": "Nombre de la copia de seguridad",
+				"placeholder": "Mi copia de seguridad",
+				"description": "Un nombre único para identificar esta programación de copia de seguridad."
+			},
+			"repository": {
+				"label": "Repositorio de copias de seguridad",
+				"placeholder": "Seleccione un repositorio",
+				"description": "Elija dónde se almacenarán las copias de seguridad cifradas de <strong>{{volumeName}}</strong>."
+			},
+			"frequency": {
+				"label": "Frecuencia de copia de seguridad",
+				"placeholder": "Seleccione frecuencia",
+				"description": "Defina con qué frecuencia se deben tomar instantáneas.",
+				"hourly": "Cada hora",
+				"daily": "Diaria",
+				"weekly": "Semanal",
+				"monthly": "Días específicos",
+				"cron": "Personalizado (Cron)"
+			},
+			"time": {
+				"label": "Hora de ejecución",
+				"description": "Hora del día en que se ejecutará la copia de seguridad."
+			},
+			"weeklyDay": {
+				"label": "Día de ejecución",
+				"placeholder": "Seleccione un día",
+				"description": "Elija qué día de la semana ejecutar la copia de seguridad."
+			},
+			"monthlyDays": {
+				"label": "Días del mes",
+				"description": "Seleccione uno o más días en los que se debe ejecutar la copia de seguridad."
+			},
+			"paths": {
+				"title": "Rutas de copia de seguridad",
+				"description": "Seleccione qué carpetas o archivos incluir en la copia de seguridad. Si no se seleccionan rutas, se respaldará todo el volumen.",
+				"selectedPaths": "Rutas seleccionadas:",
+				"removePath": "Eliminar {{path}}"
+			},
+			"includePatterns": {
+				"label": "Patrones de inclusión adicionales",
+				"placeholder": "/data/**\n/config/*.json\n*.db",
+				"description": "Opcionalmente agregue patrones de inclusión personalizados usando sintaxis glob. Introduzca un patrón por línea. Estos se combinarán con las rutas seleccionadas arriba."
+			},
+			"exclude": {
+				"title": "Patrones de exclusión",
+				"description": "Opcionalmente especifique patrones para excluir de las copias de seguridad. Introduzca un patrón por línea (ej., *.tmp, node_modules/**, .cache/)."
+			},
+			"excludePatterns": {
+				"label": "Patrones de exclusión",
+				"placeholder": "*.tmp\nnode_modules/**\n.cache/\n*.log",
+				"description": "Los patrones admiten sintaxis glob. Consulte la <link>documentación de Restic</link> para más detalles."
+			},
+			"excludeIfPresent": {
+				"label": "Excluir si el archivo está presente",
+				"placeholder": ".nobackup\n.exclude-from-backup\nCACHEDIR.TAG",
+				"description": "Excluir carpetas que contengan un archivo con el nombre especificado. Introduzca un nombre de archivo por línea. Por ejemplo, use <code>.nobackup</code> para omitir cualquier carpeta que contenga un archivo <code>.nobackup</code>."
+			},
+			"oneFileSystem": {
+				"label": "Permanecer en un sistema de archivos",
+				"description": "Evita que Restic cruce límites del sistema de archivos. Esto es útil para evitar respaldar montajes de red u otras particiones que podrían estar montadas dentro de su origen de copia de seguridad."
+			},
+			"retention": {
+				"title": "Política de retención",
+				"description": "Defina cuántas instantáneas conservar. Deje vacío para conservar todas.",
+				"keepLast": {
+					"label": "Conservar últimas N instantáneas",
+					"placeholder": "Opcional",
+					"description": "Conservar las N instantáneas más recientes."
+				},
+				"keepHourly": {
+					"label": "Conservar por hora",
+					"placeholder": "Opcional",
+					"description": "Conservar las últimas N instantáneas por hora."
+				},
+				"keepDaily": {
+					"label": "Conservar diarias",
+					"placeholder": "ej., 7",
+					"description": "Conservar las últimas N instantáneas diarias."
+				},
+				"keepWeekly": {
+					"label": "Conservar semanales",
+					"placeholder": "ej., 4",
+					"description": "Conservar las últimas N instantáneas semanales."
+				},
+				"keepMonthly": {
+					"label": "Conservar mensuales",
+					"placeholder": "ej., 6",
+					"description": "Conservar las últimas N instantáneas mensuales."
+				},
+				"keepYearly": {
+					"label": "Conservar anuales",
+					"placeholder": "Opcional",
+					"description": "Conservar las últimas N instantáneas anuales."
+				}
+			},
+			"summary": {
+				"title": "Resumen de programación",
+				"description": "Revise la configuración de la copia de seguridad.",
+				"volume": "Volumen",
+				"schedule": "Programación",
+				"repository": "Repositorio",
+				"includePaths": "Rutas/patrones de inclusión",
+				"excludePatterns": "Patrones de exclusión",
+				"excludeIfPresent": "Excluir si está presente",
+				"oneFileSystem": "Un sistema de archivos",
+				"retention": "Retención"
+			}
+		}
+	},
+	"notifications": {
+		"pageTitle": "C3i Backup ONE - Notificaciones",
+		"pageDescription": "Gestione los destinos de notificación para alertas de copias de seguridad.",
+		"breadcrumb": "Notificaciones",
+		"empty": {
+			"title": "Sin destinos de notificación",
+			"description": "Configure canales de notificación para recibir alertas cuando sus copias de seguridad se completen o fallen."
+		},
+		"search": {
+			"placeholder": "Buscar destinos…"
+		},
+		"filters": {
+			"allTypes": "Todos los tipos",
+			"email": "Correo electrónico",
+			"slack": "Slack",
+			"discord": "Discord",
+			"gotify": "Gotify",
+			"ntfy": "Ntfy",
+			"pushover": "Pushover",
+			"telegram": "Telegram",
+			"custom": "Personalizado",
+			"allStatus": "Todos los estados",
+			"enabled": "Habilitado",
+			"disabled": "Deshabilitado",
+			"clearFilters": "Limpiar filtros"
+		},
+		"table": {
+			"name": "Nombre",
+			"type": "Tipo",
+			"status": "Estado"
+		},
+		"counter": {
+			"single": "destino",
+			"plural": "destinos"
+		},
+		"emptyFilters": "No hay destinos que coincidan con sus filtros.",
+		"createButton": "Crear destino",
+		"emailForm": {
+			"smtpHost": "Servidor SMTP",
+			"smtpHostPlaceholder": "smtp.ejemplo.com",
+			"smtpPort": "Puerto SMTP",
+			"smtpPortPlaceholder": "587",
+			"username": "Nombre de usuario (Opcional)",
+			"usernamePlaceholder": "usuario@ejemplo.com",
+			"password": "Contraseña (Opcional)",
+			"passwordPlaceholder": "••••••••",
+			"fromAddress": "Dirección de remitente",
+			"fromAddressPlaceholder": "noreply@ejemplo.com",
+			"toAddresses": "Direcciones de destino",
+			"toAddressesPlaceholder": "usuario@ejemplo.com, admin@ejemplo.com",
+			"toAddressesDescription": "Lista de direcciones de correo electrónico de destinatarios separadas por comas.",
+			"useTLS": "Usar TLS",
+			"useTLSDescription": "Habilitar cifrado TLS para la conexión SMTP (recomendado)."
+		},
+		"discordForm": {
+			"webhookUrl": "URL del Webhook",
+			"webhookUrlPlaceholder": "https://discord.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN",
+			"webhookUrlDescription": "Obténgalo de la configuración de Integraciones de su servidor de Discord.",
+			"username": "Nombre del bot (Opcional)",
+			"usernamePlaceholder": "C3i Backup ONE",
+			"avatarUrl": "URL del avatar (Opcional)",
+			"avatarUrlPlaceholder": "https://ejemplo.com/avatar.png",
+			"threadId": "ID del hilo (Opcional)",
+			"threadIdDescription": "ID del hilo donde publicar mensajes. Deje vacío para publicar en el canal principal."
+		},
+		"slackForm": {
+			"webhookUrl": "URL del Webhook",
+			"webhookUrlPlaceholder": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX",
+			"webhookUrlDescription": "Obténgalo de la configuración de Webhooks entrantes de su aplicación de Slack.",
+			"channel": "Canal (Opcional)",
+			"channelPlaceholder": "#backups",
+			"channelDescription": "Anular el canal predeterminado (use # para canales, @ para usuarios).",
+			"username": "Nombre del bot (Opcional)",
+			"usernamePlaceholder": "C3i Backup ONE",
+			"iconEmoji": "Emoji del icono (Opcional)",
+			"iconEmojiPlaceholder": ":floppy_disk:"
+		},
+		"gotifyForm": {
+			"serverUrl": "URL del servidor",
+			"serverUrlPlaceholder": "https://gotify.ejemplo.com",
+			"serverUrlDescription": "URL de su servidor Gotify autoalojado.",
+			"token": "Token de la aplicación",
+			"tokenPlaceholder": "••••••••",
+			"tokenDescription": "Token de la aplicación de Gotify.",
+			"priority": "Prioridad",
+			"priorityDescription": "Nivel de prioridad (0-10, donde 10 es el más alto).",
+			"path": "Ruta (Opcional)",
+			"pathPlaceholder": "/ruta/personalizada",
+			"pathDescription": "Ruta personalizada en el servidor Gotify, si corresponde."
+		},
+		"ntfyForm": {
+			"serverUrl": "URL del servidor (Opcional)",
+			"serverUrlPlaceholder": "https://ntfy.ejemplo.com",
+			"serverUrlDescription": "Deje vacío para usar el servicio público ntfy.sh.",
+			"topic": "Tema",
+			"topicPlaceholder": "zerobyte-backups",
+			"topicDescription": "Nombre del tema de ntfy donde publicar.",
+			"username": "Nombre de usuario (Opcional)",
+			"usernamePlaceholder": "usuario",
+			"usernameDescription": "Nombre de usuario para autenticación del servidor, si es necesario.",
+			"password": "Contraseña (Opcional)",
+			"passwordPlaceholder": "••••••••",
+			"passwordDescription": "Contraseña para autenticación del servidor, si es necesario.",
+			"accessToken": "Token de acceso (Opcional)",
+			"accessTokenPlaceholder": "••••••••",
+			"accessTokenDescription": "Token de acceso para autenticación del servidor. Tendrá prioridad sobre usuario/contraseña si está configurado.",
+			"priority": "Prioridad",
+			"priorityPlaceholder": "Seleccionar prioridad",
+			"priorityMax": "Máxima (5)",
+			"priorityHigh": "Alta (4)",
+			"priorityDefault": "Predeterminada (3)",
+			"priorityLow": "Baja (2)",
+			"priorityMin": "Mínima (1)"
+		},
+		"pushoverForm": {
+			"userKey": "Clave de usuario",
+			"userKeyPlaceholder": "uQiRzpo4DXghDmr9QzzfQu27cmVRsG",
+			"userKeyDescription": "Su clave de usuario de Pushover desde el panel de control.",
+			"apiToken": "Token de API",
+			"apiTokenPlaceholder": "••••••••",
+			"apiTokenDescription": "Token de API de la aplicación desde su aplicación de Pushover.",
+			"devices": "Dispositivos (Opcional)",
+			"devicesPlaceholder": "iphone,android",
+			"devicesDescription": "Lista de nombres de dispositivos separados por comas. Deje vacío para todos los dispositivos.",
+			"priority": "Prioridad",
+			"priorityPlaceholder": "Seleccionar prioridad",
+			"priorityLow": "Baja (-1)",
+			"priorityNormal": "Normal (0)",
+			"priorityHigh": "Alta (1)",
+			"priorityDescription": "Nivel de prioridad del mensaje."
+		},
+		"telegramForm": {
+			"botToken": "Token del bot",
+			"botTokenPlaceholder": "123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11",
+			"botTokenDescription": "Token del bot de Telegram. Obténgalo de BotFather cuando cree su bot.",
+			"chatId": "ID del chat",
+			"chatIdPlaceholder": "-1231234567890",
+			"chatIdDescription": "ID del chat de Telegram donde enviar notificaciones."
+		},
+		"genericForm": {
+			"webhookUrl": "URL del Webhook",
+			"webhookUrlPlaceholder": "https://api.ejemplo.com/webhook",
+			"webhookUrlDescription": "URL de destino para el webhook.",
+			"method": "Método",
+			"methodPlaceholder": "Seleccionar método",
+			"contentType": "Tipo de contenido",
+			"contentTypePlaceholder": "application/json",
+			"headers": "Encabezados",
+			"headersPlaceholder": "Authorization: Bearer token\nX-Custom-Header: valor",
+			"headersDescription": "Un encabezado por línea en formato Clave: Valor.",
+			"useJson": "Usar plantilla JSON",
+			"useJsonDescription": "Enviar el mensaje como un objeto JSON.",
+			"titleKey": "Clave del título",
+			"titleKeyPlaceholder": "title",
+			"titleKeyDescription": "La clave JSON para el título de la notificación.",
+			"messageKey": "Clave del mensaje",
+			"messageKeyPlaceholder": "message",
+			"messageKeyDescription": "La clave JSON para el mensaje de la notificación.",
+			"requestPreview": "Vista previa de la solicitud",
+			"httpRequest": "Solicitud HTTP",
+			"previewTitle": "Título de la notificación",
+			"previewMessage": "Mensaje de la notificación",
+			"previewDescription": "Esta es una vista previa de la solicitud HTTP que se enviará."
+		},
+		"customForm": {
+			"shoutrrrUrl": "URL de Shoutrrr",
+			"shoutrrrUrlPlaceholder": "smtp://usuario:contraseña@smtp.gmail.com:587/?from=tu@gmail.com&to=destinatario@ejemplo.com",
+			"shoutrrrUrlDescription": "URL directa de Shoutrrr para usuarios avanzados. Consulte la <link>documentación de Shoutrrr</link> para ver los servicios compatibles y formatos de URL."
+		},
+		"createForm": {
+			"name": {
+				"label": "Nombre",
+				"placeholder": "Mi notificación",
+				"description": "Identificador único para este destino de notificación."
+			},
+			"type": {
+				"label": "Tipo",
+				"placeholder": "Seleccione tipo de notificación",
+				"description": "Elija el método de entrega de notificación.",
+				"email": "Correo electrónico (SMTP)",
+				"slack": "Slack",
+				"discord": "Discord",
+				"gotify": "Gotify",
+				"ntfy": "Ntfy",
+				"pushover": "Pushover",
+				"telegram": "Telegram",
+				"generic": "Webhook genérico",
+				"custom": "Personalizado (URL Shoutrrr)"
+			}
+		}
+	},
+	"settings": {
+		"pageTitle": "C3i Backup ONE - Configuración",
+		"pageDescription": "Gestione la configuración y preferencias de su cuenta.",
+		"breadcrumb": "Configuración",
+		"logout": {
+			"failed": "Error al cerrar sesión"
+		},
+		"account": {
+			"title": "Información de la cuenta",
+			"description": "Los detalles de su cuenta",
+			"username": "Nombre de usuario"
+		},
+		"changePassword": {
+			"title": "Cambiar contraseña",
+			"description": "Actualice su contraseña para mantener su cuenta segura",
+			"currentPassword": "Contraseña actual",
+			"newPassword": "Nueva contraseña",
+			"newPasswordHelper": "Debe tener al menos 8 caracteres",
+			"confirmPassword": "Confirmar nueva contraseña",
+			"button": "Cambiar contraseña",
+			"toast": {
+				"mismatch": "Las contraseñas no coinciden",
+				"tooShort": "La contraseña debe tener al menos 8 caracteres",
+				"success": "Contraseña cambiada correctamente. Se cerrará su sesión.",
+				"failed": "Error al cambiar la contraseña"
+			}
+		},
+		"recoveryKey": {
+			"title": "Clave de recuperación de copias de seguridad",
+			"description": "Descargue su clave de recuperación para las copias de seguridad de Restic",
+			"helper": "Este archivo contiene la contraseña de cifrado utilizada por Restic para proteger sus copias de seguridad. Guárdelo en un lugar seguro (como un gestor de contraseñas o almacenamiento cifrado). Si pierde el acceso a este servidor, necesitará este archivo para recuperar sus datos de copia de seguridad.",
+			"button": "Descargar clave de recuperación",
+			"dialog": {
+				"title": "Descargar clave de recuperación",
+				"description": "Por razones de seguridad, introduzca la contraseña de su cuenta para descargar el archivo de clave de recuperación.",
+				"passwordLabel": "Su contraseña",
+				"passwordPlaceholder": "Introduzca su contraseña",
+				"cancelButton": "Cancelar",
+				"downloadButton": "Descargar",
+				"toast": {
+					"passwordRequired": "La contraseña es obligatoria",
+					"success": "Archivo de contraseña de Restic descargado correctamente",
+					"failed": "Error al descargar la contraseña de Restic"
+				}
+			}
+		},
+		"appSettings": {
+			"title": "Configuración de la aplicación",
+			"description": "Configure el comportamiento de C3i Backup ONE en su sistema",
+			"autostart": {
+				"label": "Iniciar al arranque",
+				"description": "Iniciar automáticamente C3i Backup ONE cuando inicie sesión en su ordenador. La aplicación se iniciará minimizada en la bandeja del sistema."
+			},
+			"notifications": {
+				"label": "Notificaciones de escritorio",
+				"description": "Mostrar notificaciones de escritorio para eventos de copias de seguridad y otras actualizaciones importantes."
+			},
+			"tip": "Consejo: Al cerrar la ventana se minimiza la aplicación a la bandeja del sistema. Use el icono de la bandeja para acceder a la aplicación o seleccione "Salir" para cerrarla completamente.",
+			"toast": {
+				"autostartEnabled": "C3i Backup ONE ahora se iniciará automáticamente al iniciar sesión",
+				"autostartDisabled": "Inicio automático deshabilitado",
+				"autostartFailed": "Error al cambiar la configuración de inicio automático",
+				"notificationsEnabled": "Notificaciones de escritorio habilitadas",
+				"notificationsDisabled": "Notificaciones de escritorio deshabilitadas"
+			}
+		},
+		"twoFactor": {
+			"title": "Autenticación de dos factores",
+			"description": "Añada una capa adicional de seguridad a su cuenta",
+			"statusLabel": "Estado:",
+			"statusEnabled": "Habilitado",
+			"statusDisabled": "Deshabilitado",
+			"helper": "La autenticación de dos factores añade una capa adicional de seguridad al requerir un código de su aplicación de autenticación además de su contraseña.",
+			"enableButton": "Habilitar 2FA",
+			"backupCodesButton": "Códigos de respaldo",
+			"disableButton": "Deshabilitar 2FA",
+			"setup": {
+				"passwordStep": {
+					"title": "Habilitar autenticación de dos factores",
+					"description": "Introduzca su contraseña para generar un código QR para su aplicación de autenticación",
+					"passwordLabel": "Su contraseña",
+					"passwordPlaceholder": "Introduzca su contraseña",
+					"cancelButton": "Cancelar",
+					"continueButton": "Continuar"
+				},
+				"qrStep": {
+					"title": "Escanear código QR",
+					"description": "Escanee este código QR con su aplicación de autenticación (Google Authenticator, Authy, etc.)",
+					"manualEntryLabel": "Código de entrada manual",
+					"backupCodesLabel": "Códigos de respaldo (guárdelos de forma segura)",
+					"continueButton": "Continuar"
+				},
+				"verifyStep": {
+					"title": "Verificar configuración",
+					"description": "Introduzca el código de 6 dígitos de su aplicación de autenticación para completar la configuración",
+					"backButton": "Atrás",
+					"verifyButton": "Verificar"
+				},
+				"toast": {
+					"passwordRequired": "La contraseña es obligatoria",
+					"enableFailed": "Error al habilitar 2FA",
+					"invalidCode": "Por favor, introduzca un código de 6 dígitos",
+					"verificationFailed": "Error en la verificación",
+					"success": "Autenticación de dos factores habilitada correctamente"
+				}
+			},
+			"disable": {
+				"title": "Deshabilitar autenticación de dos factores",
+				"description": "¿Está seguro de que desea deshabilitar 2FA? Su cuenta será menos segura. Introduzca su contraseña para confirmar.",
+				"passwordLabel": "Su contraseña",
+				"passwordPlaceholder": "Introduzca su contraseña",
+				"cancelButton": "Cancelar",
+				"disableButton": "Deshabilitar 2FA",
+				"toast": {
+					"passwordRequired": "La contraseña es obligatoria",
+					"failed": "Error al deshabilitar 2FA",
+					"success": "Autenticación de dos factores deshabilitada correctamente"
+				}
+			},
+			"backupCodes": {
+				"title": "Códigos de respaldo",
+				"description": "Use estos códigos para acceder a su cuenta si pierde el acceso a su aplicación de autenticación. Cada código solo se puede usar una vez.",
+				"passwordLabel": "Su contraseña",
+				"passwordPlaceholder": "Introduzca su contraseña",
+				"generateButton": "Generar nuevos códigos",
+				"closeButton": "Cerrar",
+				"toast": {
+					"passwordRequired": "La contraseña es obligatoria",
+					"generateFailed": "Error al generar códigos de respaldo",
+					"success": "Nuevos códigos de respaldo generados correctamente"
+				}
+			}
+		},
+		"windowsService": {
+			"title": "Servicio de Windows",
+			"description": "Ejecute C3i Backup ONE como un servicio de Windows para copias de seguridad en segundo plano",
+			"statusLabel": "Estado:",
+			"statusRunning": "En ejecución",
+			"statusStopped": "Detenido",
+			"statusNotInstalled": "No instalado",
+			"statusUnknown": "Desconocido",
+			"helper": "Instalar C3i Backup ONE como un servicio de Windows permite que las copias de seguridad programadas se ejecuten incluso cuando la aplicación de escritorio está cerrada. El servicio se ejecuta en segundo plano y utiliza una ubicación de datos separada.",
+			"installButton": "Instalar servicio",
+			"startButton": "Iniciar servicio",
+			"stopButton": "Detener servicio",
+			"uninstallButton": "Desinstalar",
+			"openUIButton": "Abrir interfaz del servicio",
+			"helperRunning": "Cuando el servicio está en ejecución, la aplicación de escritorio se conecta a él automáticamente. Los datos del servicio se almacenan en %PROGRAMDATA%\\C3i Backup ONE.",
+			"currentConnection": {
+				"title": "Conexión actual",
+				"serviceMode": "Modo servicio",
+				"desktopMode": "Modo escritorio",
+				"port": "Puerto",
+				"restartButton": "Reiniciar para cambiar",
+				"warningService": "El estado del servicio ha cambiado. Reinicie la aplicación para cambiar al modo servicio.",
+				"warningDesktop": "El estado del servicio ha cambiado. Reinicie la aplicación para cambiar al modo escritorio."
+			},
+			"toast": {
+				"installSuccess": "Servicio de Windows instalado correctamente",
+				"installFailed": "Error al instalar el servicio",
+				"uninstallSuccess": "Servicio de Windows desinstalado correctamente",
+				"uninstallFailed": "Error al desinstalar el servicio",
+				"startSuccess": "Servicio de Windows iniciado correctamente",
+				"startFailed": "Error al iniciar el servicio",
+				"stopSuccess": "Servicio de Windows detenido correctamente",
+				"stopFailed": "Error al detener el servicio",
+				"restartFailed": "Error al reiniciar la aplicación"
+			}
+		},
+		"logs": {
+			"title": "Registros de la aplicación",
+			"description": "Ver registros recientes de la aplicación",
+			"refreshButton": "Actualizar",
+			"openFolderButton": "Abrir carpeta",
+			"loading": "Cargando registros...",
+			"noLogs": "No hay registros disponibles.",
+			"lines": {
+				"50": "Últimas 50 líneas",
+				"100": "Últimas 100 líneas",
+				"200": "Últimas 200 líneas",
+				"500": "Últimas 500 líneas",
+				"1000": "Últimas 1000 líneas"
+			}
+		}
+	},
+	"layout": {
+		"welcome": "Bienvenido,",
+		"logoutButton": "Cerrar sesión"
+	},
+	"sidebar": {
+		"logoAlt": "Logo de C3i Backup ONE",
+		"title": "C3i Backup ONE",
+		"nav": {
+			"volumes": "Volúmenes",
+			"repositories": "Repositorios",
+			"backups": "Copias de seguridad",
+			"notifications": "Notificaciones",
+			"settings": "Configuración"
+		},
+		"version": {
+			"restic": "Restic:",
+			"rclone": "Rclone:",
+			"shoutrrr": "Shoutrrr:"
+		},
+		"updateAvailable": "Actualización disponible"
+	},
+	"titlebar": {
+		"title": "C3i Servicios Informáticos",
+		"minimize": "Minimizar",
+		"restore": "Restaurar",
+		"maximize": "Maximizar",
+		"close": "Cerrar"
+	},
+	"common": {
+		"buttons": {
+			"cancel": "Cancelar",
+			"download": "Descargar",
+			"change": "Cambiar",
+			"save": "Guardar",
+			"delete": "Eliminar",
+			"edit": "Editar",
+			"create": "Crear",
+			"enable": "Habilitar",
+			"disable": "Deshabilitar",
+			"refresh": "Actualizar",
+			"clearFilters": "Limpiar filtros",
+			"openFolder": "Abrir carpeta"
+		},
+		"status": {
+			"enabled": "Habilitado",
+			"disabled": "Deshabilitado",
+			"running": "En ejecución",
+			"stopped": "Detenido",
+			"healthy": "Saludable",
+			"error": "Error",
+			"unknown": "Desconocido",
+			"mounted": "Montado",
+			"unmounted": "Desmontado"
+		},
+		"language": {
+			"title": "Idioma",
+			"description": "Seleccione su idioma preferido",
+			"english": "English (Inglés)",
+			"spanish": "Español"
+		}
+	}
+}

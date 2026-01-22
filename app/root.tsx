@@ -6,6 +6,7 @@ import "./app.css";
 import { Toaster } from "./client/components/ui/sonner";
 import { useServerEvents } from "./client/hooks/use-server-events";
 import { client } from "./client/api-client/client.gen";
+import "./client/i18n/config";
 
 client.setConfig({
 	baseUrl: "/",

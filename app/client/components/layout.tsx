@@ -1,4 +1,5 @@
 import { Outlet, redirect, useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { appContext } from "~/context";
 import { authMiddleware } from "~/middleware/auth";
@@ -24,6 +25,7 @@ export async function clientLoader({ context }: Route.LoaderArgs) {
 }
 
 export default function Layout({ loaderData }: Route.ComponentProps) {
+	const { t } = useTranslation();
 	const navigate = useNavigate();
 
 	const handleLogout = async () => {
@@ -33,7 +35,7 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
 					void navigate("/login", { replace: true });
 				},
 				onError: ({ error }) => {
-					toast.error("Logout failed", { description: error.message });
+					toast.error(t("settings.logout.failed"), { description: error.message });
 				},
 			},
 		});
@@ -54,11 +56,11 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
 						{loaderData.user && (
 							<div className="flex items-center gap-4">
 								<span className="text-sm text-muted-foreground hidden md:inline-flex">
-									Welcome,&nbsp;
+									{t("layout.welcome")}&nbsp;
 									<span className="text-strong-accent">{loaderData.user?.username}</span>
 								</span>
 								<Button variant="default" size="sm" onClick={handleLogout}>
-									Logout
+									{t("layout.logoutButton")}
 								</Button>
 							</div>
 						)}

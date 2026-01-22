@@ -1,5 +1,6 @@
 import { Minus, Square, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "~/client/lib/utils";
 import { isTauri } from "~/client/lib/tauri";
 
@@ -20,6 +21,7 @@ declare global {
 }
 
 export function Titlebar() {
+	const { t } = useTranslation();
 	const [isMaximized, setIsMaximized] = useState(false);
 
 	useEffect(() => {
@@ -82,7 +84,7 @@ export function Titlebar() {
 				data-tauri-drag-region
 				className="flex-1 h-full flex items-center px-4"
 			>
-				<span className="text-sm font-medium text-foreground">C3i Servicios Informáticos</span>
+				<span className="text-sm font-medium text-foreground">{t("titlebar.title")}</span>
 			</div>
 
 			{/* Window Controls */}
@@ -95,7 +97,7 @@ export function Titlebar() {
 						"flex items-center justify-center",
 						"focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					)}
-					title="Minimize"
+					title={t("titlebar.minimize")}
 				>
 					<Minus className="w-4 h-4" />
 				</button>
@@ -107,7 +109,7 @@ export function Titlebar() {
 						"flex items-center justify-center",
 						"focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					)}
-					title={isMaximized ? "Restore" : "Maximize"}
+					title={isMaximized ? t("titlebar.restore") : t("titlebar.maximize")}
 				>
 					<Square className="w-3.5 h-3.5" />
 				</button>
@@ -119,7 +121,7 @@ export function Titlebar() {
 						"flex items-center justify-center",
 						"focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					)}
-					title="Close"
+					title={t("titlebar.close")}
 				>
 					<X className="w-4 h-4" />
 				</button>

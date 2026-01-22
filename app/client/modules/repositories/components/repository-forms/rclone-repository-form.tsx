@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 import {
@@ -20,15 +21,16 @@ type Props = {
 };
 
 export const RcloneRepositoryForm = ({ form }: Props) => {
+	const { t } = useTranslation();
 	const { data: rcloneRemotes, isLoading: isLoadingRemotes } = useQuery(listRcloneRemotesOptions());
 
 	if (!isLoadingRemotes && (!rcloneRemotes || rcloneRemotes.length === 0)) {
 		return (
 			<Alert>
 				<AlertDescription className="space-y-2">
-					<p className="font-medium">No rclone remotes configured</p>
+					<p className="font-medium">{t("repositories.rcloneForm.noRemotes")}</p>
 					<p className="text-sm text-muted-foreground">
-						To use rclone, you need to configure remotes on your host system
+						{t("repositories.rcloneForm.noRemotesDescription")}
 					</p>
 					<a
 						href="https://rclone.org/docs/"
@@ -36,7 +38,7 @@ export const RcloneRepositoryForm = ({ form }: Props) => {
 						rel="noopener noreferrer"
 						className="text-sm text-strong-accent inline-flex items-center gap-1"
 					>
-						View rclone documentation
+						{t("repositories.rcloneForm.viewDocs")}
 						<ExternalLink className="w-3 h-3" />
 					</a>
 				</AlertDescription>
@@ -51,17 +53,17 @@ export const RcloneRepositoryForm = ({ form }: Props) => {
 				name="remote"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Remote</FormLabel>
+						<FormLabel>{t("repositories.rcloneForm.remote")}</FormLabel>
 						<Select onValueChange={(v) => field.onChange(v)} defaultValue={field.value} value={field.value}>
 							<FormControl>
 								<SelectTrigger>
-									<SelectValue placeholder="Select an rclone remote" />
+									<SelectValue placeholder={t("repositories.rcloneForm.remotePlaceholder")} />
 								</SelectTrigger>
 							</FormControl>
 							<SelectContent>
 								{isLoadingRemotes ? (
 									<SelectItem value="loading" disabled>
-										Loading remotes...
+										{t("repositories.rcloneForm.loadingRemotes")}
 									</SelectItem>
 								) : (
 									rcloneRemotes?.map((remote: { name: string; type: string }) => (
@@ -72,7 +74,7 @@ export const RcloneRepositoryForm = ({ form }: Props) => {
 								)}
 							</SelectContent>
 						</Select>
-						<FormDescription>Select the rclone remote configured on your host system.</FormDescription>
+						<FormDescription>{t("repositories.rcloneForm.remoteDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -82,11 +84,11 @@ export const RcloneRepositoryForm = ({ form }: Props) => {
 				name="path"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Path</FormLabel>
+						<FormLabel>{t("repositories.rcloneForm.path")}</FormLabel>
 						<FormControl>
-							<Input placeholder="backups/zerobyte" {...field} />
+							<Input placeholder={t("repositories.rcloneForm.pathPlaceholder")} {...field} />
 						</FormControl>
-						<FormDescription>Path within the remote where backups will be stored.</FormDescription>
+						<FormDescription>{t("repositories.rcloneForm.pathDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
