@@ -3,12 +3,26 @@ pub mod service;
 use crate::AppState;
 use serde::Serialize;
 use std::sync::atomic::Ordering;
+use tauri::Manager;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct BackendInfo {
     pub url: String,
     pub port: u16,
     pub using_service: bool,
+}
+
+/// Show the main window and bring it to focus
+/// Used when app starts minimized but user needs to log in
+#[tauri::command]
+pub async fn show_window(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("main") {
+        window.show().map_err(|e| e.to_string())?;
+        window.set_focus().map_err(|e| e.to_string())?;
+        Ok(())
+    } else {
+        Err("Main window not found".to_string())
+    }
 }
 
 /// Get the URL of the backend server

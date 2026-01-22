@@ -10,7 +10,7 @@ function getRepositoryBase(): string {
 		return "%APPDATA%\\C3i Backup ONE\\repositories";
 	}
 	if (platform.includes("mac")) {
-		return "/Library/Application Support/C3i Backup ONE/repositories";
+		return "~/Library/Application Support/C3i Backup ONE/repositories";
 	}
 	return "/var/lib/c3i-backup-one/repositories";
 }

@@ -1,17 +1,24 @@
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Monitor, Power } from "lucide-react";
+import { Bell, Loader2, Monitor, Power } from "lucide-react";
 import { toast } from "sonner";
 import { CardContent, CardDescription, CardTitle } from "~/client/components/ui/card";
 import { Switch } from "~/client/components/ui/switch";
 import { Label } from "~/client/components/ui/label";
+import { areDesktopNotificationsEnabled, setDesktopNotificationsEnabled } from "~/client/lib/notifications";
 import { isTauri } from "~/client/lib/tauri";
 
 export function AppSettingsSection() {
 	const [autostartEnabled, setAutostartEnabled] = useState(false);
 	const [isLoadingAutostart, setIsLoadingAutostart] = useState(true);
 	const [isTogglingAutostart, setIsTogglingAutostart] = useState(false);
+	const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
 	const inTauri = isTauri();
+
+	// Load notifications setting on mount
+	useEffect(() => {
+		setNotificationsEnabled(areDesktopNotificationsEnabled());
+	}, []);
 
 	const checkAutostartStatus = useCallback(async () => {
 		if (!inTauri) return;
@@ -62,6 +69,16 @@ export function AppSettingsSection() {
 		}
 	};
 
+	const handleNotificationsToggle = (enabled: boolean) => {
+		setDesktopNotificationsEnabled(enabled);
+		setNotificationsEnabled(enabled);
+		if (enabled) {
+			toast.success("Desktop notifications enabled");
+		} else {
+			toast.success("Desktop notifications disabled");
+		}
+	};
+
 	return (
 		<>
 			<div className="border-t border-border/50 bg-card-header p-6">
@@ -94,6 +111,27 @@ export function AppSettingsSection() {
 							checked={autostartEnabled}
 							onCheckedChange={handleAutostartToggle}
 							disabled={isLoadingAutostart || isTogglingAutostart}
+						/>
+					</div>
+				</div>
+
+				<div className="flex items-center justify-between gap-4">
+					<div className="space-y-1 flex-1">
+						<div className="flex items-center gap-2">
+							<Bell className="h-4 w-4 text-muted-foreground" />
+							<Label htmlFor="notifications" className="text-sm font-medium cursor-pointer">
+								Desktop notifications
+							</Label>
+						</div>
+						<p className="text-xs text-muted-foreground max-w-xl">
+							Show desktop notifications for backup events and other important updates.
+						</p>
+					</div>
+					<div className="flex items-center gap-2">
+						<Switch
+							id="notifications"
+							checked={notificationsEnabled}
+							onCheckedChange={handleNotificationsToggle}
 						/>
 					</div>
 				</div>

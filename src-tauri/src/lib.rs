@@ -272,6 +272,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::get_backend_url,
             commands::get_backend_info,
+            commands::show_window,
             commands::service::get_service_status,
             commands::service::install_service,
             commands::service::uninstall_service,

@@ -13,6 +13,26 @@ export interface NotificationOptions {
 	sound?: string;
 }
 
+const NOTIFICATIONS_ENABLED_KEY = "desktop-notifications-enabled";
+
+/**
+ * Check if desktop notifications are enabled in settings
+ */
+export function areDesktopNotificationsEnabled(): boolean {
+	if (typeof window === "undefined") return true;
+	const stored = localStorage.getItem(NOTIFICATIONS_ENABLED_KEY);
+	// Default to enabled if not set
+	return stored === null ? true : stored === "true";
+}
+
+/**
+ * Enable or disable desktop notifications
+ */
+export function setDesktopNotificationsEnabled(enabled: boolean): void {
+	if (typeof window === "undefined") return;
+	localStorage.setItem(NOTIFICATIONS_ENABLED_KEY, String(enabled));
+}
+
 function getNotificationAPI() {
 	if (!isTauri() || typeof window === "undefined") {
 		return null;
@@ -50,6 +70,11 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 }
 
 export async function sendNotification(options: NotificationOptions): Promise<void> {
+	// Check if desktop notifications are enabled in settings
+	if (!areDesktopNotificationsEnabled()) {
+		return;
+	}
+
 	const api = getNotificationAPI();
 	if (!api) {
 		// Fallback to browser notifications if not in Tauri
