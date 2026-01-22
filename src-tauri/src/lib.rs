@@ -281,6 +281,15 @@ pub fn run() {
         .setup(|app| {
             let app_handle = app.handle().clone();
 
+            // Check if --minimized flag is passed (autostart mode)
+            let start_minimized = std::env::args().any(|arg| arg == "--minimized");
+            if start_minimized {
+                info!("Starting minimized (autostart mode)");
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.hide();
+                }
+            }
+
             // Open devtools in debug mode only
             #[cfg(debug_assertions)]
             if let Some(window) = app.get_webview_window("main") {
