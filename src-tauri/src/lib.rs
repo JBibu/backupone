@@ -271,6 +271,7 @@ pub fn run() {
         .manage(AppState::default())
         .invoke_handler(tauri::generate_handler![
             commands::get_backend_url,
+            commands::get_backend_info,
             commands::service::get_service_status,
             commands::service::install_service,
             commands::service::uninstall_service,
@@ -285,9 +286,6 @@ pub fn run() {
             let start_minimized = std::env::args().any(|arg| arg == "--minimized");
             if start_minimized {
                 info!("Starting minimized (autostart mode)");
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.hide();
-                }
             }
 
             // Open devtools in debug mode only
@@ -398,6 +396,12 @@ pub fn run() {
                     info!("Navigating to SSR server at {}", url);
                     if let Err(e) = window.navigate(url.parse().unwrap()) {
                         error!("Failed to navigate: {}", e);
+                    }
+
+                    // Show window only if not in minimized/autostart mode
+                    if !start_minimized {
+                        let _ = window.show();
+                        let _ = window.set_focus();
                     }
                 } else {
                     error!("Could not get main window");

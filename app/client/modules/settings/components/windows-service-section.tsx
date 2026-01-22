@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle, Cog, Download, Loader2, Play, Square, Trash2, XCircle } from "lucide-react";
+import { CheckCircle, Cog, Download, ExternalLink, Loader2, Play, RefreshCw, Square, Trash2, XCircle } from "lucide-react";
+import { relaunch } from "@tauri-apps/plugin-process";
 import { toast } from "sonner";
 import { Button } from "~/client/components/ui/button";
 import { CardContent, CardDescription, CardTitle } from "~/client/components/ui/card";
@@ -14,11 +15,18 @@ interface ServiceStatusResponse {
 	start_type: string | null;
 }
 
+interface BackendInfo {
+	url: string;
+	port: number;
+	using_service: boolean;
+}
+
 export function WindowsServiceSection() {
 	const { platform } = useSystemInfo();
 	const [serviceStatus, setServiceStatus] = useState<ServiceStatusString>("unknown");
 	const [isLoading, setIsLoading] = useState(false);
 	const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+	const [backendInfo, setBackendInfo] = useState<BackendInfo | null>(null);
 
 	const isWindows = platform?.os === "windows";
 	const inTauri = isTauri();
@@ -44,11 +52,23 @@ export function WindowsServiceSection() {
 		}
 	}, [inTauri]);
 
+	const fetchBackendInfo = useCallback(async () => {
+		if (!inTauri) return;
+
+		try {
+			const info = await invoke<BackendInfo>("get_backend_info");
+			setBackendInfo(info);
+		} catch {
+			// Ignore errors
+		}
+	}, [inTauri]);
+
 	useEffect(() => {
 		if (isWindows && inTauri) {
 			void fetchServiceStatus();
+			void fetchBackendInfo();
 		}
-	}, [isWindows, inTauri, fetchServiceStatus]);
+	}, [isWindows, inTauri, fetchServiceStatus, fetchBackendInfo]);
 
 	// Don't render if not on Windows or not in Tauri
 	if (!isWindows || !inTauri) {
@@ -114,6 +134,29 @@ export function WindowsServiceSection() {
 			setActionInProgress(null);
 		}
 	};
+
+	const handleOpenServiceUI = () => {
+		window.open("http://localhost:4097", "_blank");
+	};
+
+	const handleRestart = async () => {
+		setActionInProgress("restart");
+		try {
+			await relaunch();
+		} catch (error) {
+			toast.error("Failed to restart app", {
+				description: error instanceof Error ? error.message : "An error occurred",
+			});
+			setActionInProgress(null);
+		}
+	};
+
+	// Check if there's a mismatch between service state and current connection
+	const needsRestart =
+		backendInfo &&
+		((serviceStatus === "running" && !backendInfo.using_service) ||
+			(serviceStatus === "stopped" && backendInfo.using_service) ||
+			(serviceStatus === "not_installed" && backendInfo.using_service));
 
 	const getStatusIcon = () => {
 		if (isLoading) {
@@ -204,6 +247,10 @@ export function WindowsServiceSection() {
 
 					{serviceStatus === "running" && (
 						<>
+							<Button onClick={handleOpenServiceUI} variant="default">
+								<ExternalLink className="h-4 w-4 mr-2" />
+								Open Service UI
+							</Button>
 							<Button onClick={handleStop} disabled={!!actionInProgress} variant="outline">
 								{actionInProgress === "stop" ? (
 									<Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -221,6 +268,44 @@ export function WindowsServiceSection() {
 						When the service is running, the desktop app connects to it automatically. Service data is stored in{" "}
 						<code className="bg-muted px-1 py-0.5 rounded text-xs">%PROGRAMDATA%\C3i Backup ONE</code>.
 					</p>
+				)}
+
+				{backendInfo && (
+					<div className="mt-4 p-3 bg-muted/50 rounded-lg border border-border/50">
+						<div className="flex items-center justify-between">
+							<div>
+								<p className="text-xs font-medium mb-1">Current Connection</p>
+								<div className="flex items-center gap-2">
+									<span
+										className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+											backendInfo.using_service
+												? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+												: "bg-green-500/20 text-green-400 border border-green-500/30"
+										}`}
+									>
+										{backendInfo.using_service ? "Service Mode" : "Desktop Mode"}
+									</span>
+									<span className="text-xs text-muted-foreground">Port {backendInfo.port}</span>
+								</div>
+							</div>
+							{needsRestart && (
+								<Button onClick={handleRestart} disabled={!!actionInProgress} variant="outline" size="sm">
+									{actionInProgress === "restart" ? (
+										<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+									) : (
+										<RefreshCw className="h-4 w-4 mr-2" />
+									)}
+									Restart to Switch
+								</Button>
+							)}
+						</div>
+						{needsRestart && (
+							<p className="text-xs text-yellow-500 mt-2">
+								Service state changed. Restart the app to switch to{" "}
+								{serviceStatus === "running" ? "Service Mode" : "Desktop Mode"}.
+							</p>
+						)}
+					</div>
 				)}
 			</CardContent>
 		</>

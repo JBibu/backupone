@@ -74,7 +74,7 @@ pub async fn get_service_status() -> Result<ServiceStatus, String> {
 
         // Query service status using sc command
         let output = Command::new("sc")
-            .args(["query", "ZerobyteService"])
+            .args(["query", "C3iBackupONE"])
             .creation_flags(CREATE_NO_WINDOW)
             .output()
             .map_err(|e| format!("Failed to query service: {}", e))?;
@@ -95,7 +95,7 @@ pub async fn get_service_status() -> Result<ServiceStatus, String> {
 
         // Query start type
         let qc_output = Command::new("sc")
-            .args(["qc", "ZerobyteService"])
+            .args(["qc", "C3iBackupONE"])
             .creation_flags(CREATE_NO_WINDOW)
             .output()
             .ok();
@@ -180,13 +180,13 @@ pub async fn install_service(app: tauri::AppHandle) -> Result<(), String> {
         let script = format!(
             r#"@echo off
 echo Installing service... > "{log}"
-sc create ZerobyteService binPath= "{exe}" start= auto DisplayName= "C3i Backup ONE Service" >> "{log}" 2>&1
+sc create C3iBackupONE binPath= "{exe}" start= auto DisplayName= "C3i Backup ONE Service" >> "{log}" 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: Failed to create service >> "{log}"
     exit /b %errorlevel%
 )
-sc description ZerobyteService "Background backup service for C3i Backup ONE" >> "{log}" 2>&1
-sc start ZerobyteService >> "{log}" 2>&1
+sc description C3iBackupONE "Background backup service for C3i Backup ONE" >> "{log}" 2>&1
+sc start C3iBackupONE >> "{log}" 2>&1
 echo Installation complete >> "{log}"
 "#,
             exe = service_exe.display(),
@@ -242,10 +242,10 @@ pub async fn uninstall_service() -> Result<(), String> {
         let script = format!(
             r#"@echo off
 echo Stopping service... > "{log}"
-sc stop ZerobyteService >> "{log}" 2>&1
+sc stop C3iBackupONE >> "{log}" 2>&1
 timeout /t 3 /nobreak >nul
 echo Deleting service... >> "{log}"
-sc delete ZerobyteService >> "{log}" 2>&1
+sc delete C3iBackupONE >> "{log}" 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: Failed to delete service >> "{log}"
     exit /b %errorlevel%
@@ -303,7 +303,7 @@ pub async fn start_service() -> Result<(), String> {
         let script = format!(
             r#"@echo off
 echo Starting service... > "{log}"
-sc start ZerobyteService >> "{log}" 2>&1
+sc start C3iBackupONE >> "{log}" 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: Failed to start service >> "{log}"
     exit /b %errorlevel%
@@ -361,7 +361,7 @@ pub async fn stop_service() -> Result<(), String> {
         let script = format!(
             r#"@echo off
 echo Stopping service... > "{log}"
-sc stop ZerobyteService >> "{log}" 2>&1
+sc stop C3iBackupONE >> "{log}" 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: Failed to stop service >> "{log}"
     exit /b %errorlevel%

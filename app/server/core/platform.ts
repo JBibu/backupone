@@ -58,8 +58,8 @@ export function getProgramDataPath(): string {
  * - Windows (Desktop): %APPDATA%\C3i Backup ONE
  * - Windows (Service): %PROGRAMDATA%\C3i Backup ONE
  * - macOS: ~/Library/Application Support/C3i Backup ONE
- * - Linux (production/Docker): /var/lib/zerobyte
- * - Linux (development): ~/.local/share/zerobyte
+ * - Linux (production/Docker): /var/lib/c3i-backup-one
+ * - Linux (development): ~/.local/share/c3i-backup-one
  */
 export function getZerobytePath(): string {
 	// Allow override via environment variable
@@ -77,14 +77,14 @@ export function getZerobytePath(): string {
 		return path.join(getAppDataPath(), "C3i Backup ONE");
 	}
 
-	// Linux: Use /var/lib/zerobyte in production (Docker), otherwise use user directory
+	// Linux: Use /var/lib/c3i-backup-one in production (Docker), otherwise use user directory
 	const isProduction = process.env.NODE_ENV === "production";
 	if (isProduction) {
-		return "/var/lib/zerobyte";
+		return "/var/lib/c3i-backup-one";
 	}
 
 	// Development mode: use user-accessible directory
-	return path.join(os.homedir(), ".local", "share", "zerobyte");
+	return path.join(os.homedir(), ".local", "share", "c3i-backup-one");
 }
 
 /**

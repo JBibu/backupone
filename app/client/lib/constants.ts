@@ -2,17 +2,17 @@ import { isTauri } from "./tauri";
 
 function getRepositoryBase(): string {
 	if (!isTauri()) {
-		return "/var/lib/zerobyte/repositories";
+		return "/var/lib/c3i-backup-one/repositories";
 	}
 
 	const platform = navigator.platform.toLowerCase();
 	if (platform.includes("win")) {
-		return "C:\\ProgramData\\Zerobyte\\repositories";
+		return "%APPDATA%\\C3i Backup ONE\\repositories";
 	}
 	if (platform.includes("mac")) {
-		return "/Library/Application Support/Zerobyte/repositories";
+		return "/Library/Application Support/C3i Backup ONE/repositories";
 	}
-	return "/var/lib/zerobyte/repositories";
+	return "/var/lib/c3i-backup-one/repositories";
 }
 
 export const REPOSITORY_BASE = getRepositoryBase();

@@ -27,7 +27,7 @@ mod windows_service {
     use windows_service::service_control_handler::{self, ServiceControlHandlerResult};
     use windows_service::{define_windows_service, service_dispatcher};
 
-    const SERVICE_NAME: &str = "ZerobyteService";
+    const SERVICE_NAME: &str = "C3iBackupONE";
     const SERVICE_TYPE: ServiceType = ServiceType::OWN_PROCESS;
 
     define_windows_service!(ffi_service_main, service_main);
@@ -272,7 +272,7 @@ fn install_service() -> Result<(), Box<dyn std::error::Error>> {
     let output = Command::new("sc")
         .args([
             "create",
-            "ZerobyteService",
+            "C3iBackupONE",
             &format!("binPath= \"{}\"", exe_path),
             "start= auto",
             "DisplayName= C3i Backup ONE Service",
@@ -288,7 +288,7 @@ fn install_service() -> Result<(), Box<dyn std::error::Error>> {
     let _ = Command::new("sc")
         .args([
             "description",
-            "ZerobyteService",
+            "C3iBackupONE",
             "Background backup service for C3i Backup ONE - manages scheduled backups",
         ])
         .output();
@@ -302,7 +302,7 @@ fn uninstall_service() -> Result<(), Box<dyn std::error::Error>> {
 
     // Stop the service first
     let _ = Command::new("sc")
-        .args(["stop", "ZerobyteService"])
+        .args(["stop", "C3iBackupONE"])
         .output();
 
     // Wait a bit
@@ -310,7 +310,7 @@ fn uninstall_service() -> Result<(), Box<dyn std::error::Error>> {
 
     // Delete the service
     let output = Command::new("sc")
-        .args(["delete", "ZerobyteService"])
+        .args(["delete", "C3iBackupONE"])
         .output()?;
 
     if !output.status.success() {
