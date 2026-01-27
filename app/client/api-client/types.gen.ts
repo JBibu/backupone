@@ -2979,6 +2979,7 @@ export type GetScheduleNotificationsResponses = {
 						botToken: string;
 						chatId: string;
 						type: "telegram";
+						threadId?: string;
 				  }
 				| {
 						from: string;
@@ -3089,6 +3090,7 @@ export type UpdateScheduleNotificationsResponses = {
 						botToken: string;
 						chatId: string;
 						type: "telegram";
+						threadId?: string;
 				  }
 				| {
 						from: string;
@@ -3664,6 +3666,7 @@ export type ListNotificationDestinationsResponses = {
 					botToken: string;
 					chatId: string;
 					type: "telegram";
+					threadId?: string;
 			  }
 			| {
 					from: string;
@@ -3745,6 +3748,7 @@ export type CreateNotificationDestinationData = {
 					botToken: string;
 					chatId: string;
 					type: "telegram";
+					threadId?: string;
 			  }
 			| {
 					from: string;
@@ -3824,6 +3828,7 @@ export type CreateNotificationDestinationResponses = {
 					botToken: string;
 					chatId: string;
 					type: "telegram";
+					threadId?: string;
 			  }
 			| {
 					from: string;
@@ -3952,6 +3957,7 @@ export type GetNotificationDestinationResponses = {
 					botToken: string;
 					chatId: string;
 					type: "telegram";
+					threadId?: string;
 			  }
 			| {
 					from: string;
@@ -4033,6 +4039,7 @@ export type UpdateNotificationDestinationData = {
 					botToken: string;
 					chatId: string;
 					type: "telegram";
+					threadId?: string;
 			  }
 			| {
 					from: string;
@@ -4122,6 +4129,7 @@ export type UpdateNotificationDestinationResponses = {
 					botToken: string;
 					chatId: string;
 					type: "telegram";
+					threadId?: string;
 			  }
 			| {
 					from: string;
