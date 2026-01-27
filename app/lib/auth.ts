@@ -23,6 +23,10 @@ const createBetterAuth = (secret: string) =>
 	betterAuth({
 		secret,
 		trustedOrigins: config.trustedOrigins ?? ["*"],
+		advanced: {
+			cookiePrefix: "better-auth",
+			useSecureCookies: false,
+		},
 		onAPIError: {
 			throw: true,
 		},
