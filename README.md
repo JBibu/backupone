@@ -40,7 +40,7 @@ In order to run Zerobyte, you need to have Docker and Docker Compose installed o
 ```yaml
 services:
   zerobyte:
-    image: ghcr.io/nicotsx/zerobyte:v0.23
+    image: ghcr.io/nicotsx/zerobyte:v0.24
     container_name: zerobyte
     restart: unless-stopped
     cap_add:
@@ -52,6 +52,7 @@ services:
     environment:
       - TZ=Europe/Paris # Set your timezone here
       - BASE_URL=http://localhost:4096 # URL you will use to access Zerobyte
+      - APP_SECRET=94bad46...c66e25d5c2b # Generate your own secret with `openssl rand -hex 32`
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/lib/zerobyte:/var/lib/zerobyte
@@ -77,15 +78,16 @@ Zerobyte can be customized using environment variables. Below are the available 
 
 ### Environment Variables
 
-| Variable              | Description                                                                                                                 | Default    |
-| :-------------------- | :-------------------------------------------------------------------------------------------------------------------------- | :--------- |
-| `BASE_URL`            | The base URL of your Zerobyte instance (e.g., `https://zerobyte.example.com`). See [Authentication](#authentication) below. | (none)     |
-| `PORT`                | The port the web interface and API will listen on.                                                                          | `4096`     |
-| `RESTIC_HOSTNAME`     | The hostname used by Restic when creating snapshots. Automatically detected if a custom hostname is set in Docker.          | `zerobyte` |
-| `TZ`                  | Timezone for the container (e.g., `Europe/Paris`). **Crucial for accurate backup scheduling.**                              | `UTC`      |
-| `TRUSTED_ORIGINS`     | Comma-separated list of trusted origins for CORS (e.g., `http://localhost:3000,http://example.com`).                        | (none)     |
-| `LOG_LEVEL`           | Logging verbosity. Options: `debug`, `info`, `warn`, `error`.                                                               | `info`     |
-| `SERVER_IDLE_TIMEOUT` | Idle timeout for the server in seconds.                                                                                     | `60`       |
+| Variable              | Description                                                                                                                         | Default    |
+| :-------------------- | :---------------------------------------------------------------------------------------------------------------------------------- | :--------- |
+| `BASE_URL`            | The base URL of your Zerobyte instance (e.g., `https://zerobyte.example.com`). See [Authentication](#authentication) below.         | (none)     |
+| `APP_SECRET`          | **Required.** A random secret key (32+ chars) used to encrypt sensitive data in the database. Generate with `openssl rand -hex 32`. | (none)     |
+| `PORT`                | The port the web interface and API will listen on.                                                                                  | `4096`     |
+| `RESTIC_HOSTNAME`     | The hostname used by Restic when creating snapshots. Automatically detected if a custom hostname is set in Docker.                  | `zerobyte` |
+| `TZ`                  | Timezone for the container (e.g., `Europe/Paris`). **Crucial for accurate backup scheduling.**                                      | `UTC`      |
+| `TRUSTED_ORIGINS`     | Comma-separated list of extra trusted origins for CORS (e.g., `http://localhost:3000,http://example.com`).                          | (none)     |
+| `LOG_LEVEL`           | Logging verbosity. Options: `debug`, `info`, `warn`, `error`.                                                                       | `info`     |
+| `SERVER_IDLE_TIMEOUT` | Idle timeout for the server in seconds.                                                                                             | `60`       |
 
 ### Secret References
 
@@ -104,7 +106,7 @@ If you only need to back up locally mounted folders and don't require remote sha
 ```yaml
 services:
   zerobyte:
-    image: ghcr.io/nicotsx/zerobyte:v0.23
+    image: ghcr.io/nicotsx/zerobyte:v0.24
     container_name: zerobyte
     restart: unless-stopped
     ports:
@@ -112,6 +114,7 @@ services:
     environment:
       - TZ=Europe/Paris # Set your timezone here
       - BASE_URL=http://localhost:4096 # Change this to your actual URL (use https:// for secure cookies)
+      - APP_SECRET=94bad46...c66e25d5c2b # Generate your own secret with `openssl rand -hex 32`
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/lib/zerobyte:/var/lib/zerobyte
@@ -142,7 +145,7 @@ If you want to track a local directory on the same server where Zerobyte is runn
 ```diff
 services:
   zerobyte:
-    image: ghcr.io/nicotsx/zerobyte:v0.23
+    image: ghcr.io/nicotsx/zerobyte:v0.24
     container_name: zerobyte
     restart: unless-stopped
     cap_add:
@@ -154,6 +157,7 @@ services:
     environment:
       - TZ=Europe/Paris
       - BASE_URL=http://localhost:4096 # URL you will use to access Zerobyte
+      - APP_SECRET=94bad46...c66e25d5c2b # Generate your own secret with `openssl rand -hex 32`
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/lib/zerobyte:/var/lib/zerobyte
@@ -216,7 +220,7 @@ Zerobyte can use [rclone](https://rclone.org/) to support 40+ cloud storage prov
    ```diff
    services:
      zerobyte:
-       image: ghcr.io/nicotsx/zerobyte:v0.23
+       image: ghcr.io/nicotsx/zerobyte:v0.24
        container_name: zerobyte
        restart: unless-stopped
        cap_add:
@@ -290,8 +294,6 @@ If you're running Zerobyte behind a reverse proxy (Nginx, Traefik, Caddy, etc.):
 
 - The `BASE_URL` must start with `https://` for secure cookies to be enabled
 - Local IP addresses (e.g., `http://192.168.x.x`) are **not** treated as secure contexts by browsers, so secure cookies are disabled automatically
-- `localhost` is treated as a secure context by browsers even over HTTP, but we still recommend using `BASE_URL` for consistency
-- If you don't set `BASE_URL`, the app will work but may have issues with callback URLs in certain authentication flows. All cookies will be set with `Secure: false`.
 
 ## Troubleshooting
 
@@ -330,6 +332,7 @@ For local development, create a `.env.local` file at the repo root and override 
 ```bash
 # Example
 DATABASE_URL=./data/zerobyte.db
+APP_SECRET=your_app_secret_here
 RESTIC_PASS_FILE=./data/restic.pass
 RESTIC_CACHE_DIR=./data/restic/cache
 ZEROBYTE_REPOSITORIES_DIR=./data/repositories
