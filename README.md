@@ -64,6 +64,15 @@ services:
 > [!WARNING]
 > Do not try to point `/var/lib/zerobyte` on a network share. You will face permission issues and strong performance degradation.
 
+> [!NOTE]
+> **TrueNAS Users:** The host path `/var/lib` is ephemeral on TrueNAS and will be reset during system upgrades. Instead of using `/var/lib/zerobyte:/var/lib/zerobyte`, create a dedicated ZFS dataset (e.g., `tank/docker/zerobyte`) and mount it instead:
+> ```yaml
+> volumes:
+>   - /etc/localtime:/etc/localtime:ro
+>   - /mnt/tank/docker/zerobyte:/var/lib/zerobyte
+> ```
+> This ensures your configuration, encryption keys, and database persist across TrueNAS upgrades.
+
 Then, run the following command to start Zerobyte:
 
 ```bash
