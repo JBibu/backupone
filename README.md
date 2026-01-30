@@ -15,12 +15,11 @@
   </figure>
 </div>
 
-> [!WARNING]
-> C3i Backup ONE is still in version 0.x.x and is subject to major changes from version to version. I am developing the core features and collecting feedbacks. Expect bugs! Please open issues or feature requests
+> [!NOTE]
+> C3i Backup ONE is a fork of [Zerobyte](https://github.com/nicotsx/zerobyte) by nicotsx, maintained by C3i Servicios Informaticos.
 
-<p align="center">
-<a href="https://www.buymeacoffee.com/nicotsx" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
-</p>
+> [!WARNING]
+> C3i Backup ONE is still in version 0.x.x and is subject to major changes from version to version. Expect bugs! Please open issues or feature requests.
 
 ## Intro
 
@@ -285,7 +284,7 @@ For a complete list of third-party software licenses and attributions, please re
 
 ## Contributing
 
-Contributions by anyone are welcome! If you find a bug or have a feature request, please open an issue on GitHub. If you want to contribute code, feel free to fork the repository and submit a pull request. We require that all contributors sign a Contributor License Agreement (CLA) before we can accept your contributions. This is to protect both you and the project. Please see the [CONTRIBUTING.md](CONTRIBUTING.md) file for more details.
+Contributions are welcome! If you find a bug or have a feature request, please open an issue on GitHub. If you want to contribute code, feel free to fork the repository and submit a pull request. Please see the [CONTRIBUTING.md](CONTRIBUTING.md) file for more details.
 
 ## Development (no Docker)
 

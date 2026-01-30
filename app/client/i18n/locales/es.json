@@ -854,6 +854,22 @@
 				"notificationsDisabled": "Notificaciones de escritorio deshabilitadas"
 			}
 		},
+		"update": {
+			"title": "Actualización de software",
+			"description": "Buscar nuevas versiones de C3i Backup ONE",
+			"checkButton": "Buscar actualizaciones",
+			"installButton": "Instalar actualización",
+			"upToDate": "Estás usando la última versión",
+			"availableText": "La versión {{version}} está disponible",
+			"errorText": "No se pudo buscar actualizaciones",
+			"downloading": "Descargando... {{downloaded}} MB / {{total}} MB",
+			"toast": {
+				"available": "Actualización disponible: v{{version}}",
+				"checkFailed": "Error al buscar actualizaciones",
+				"installed": "Actualización instalada. Reiniciando...",
+				"installFailed": "Error al instalar la actualización"
+			}
+		},
 		"twoFactor": {
 			"title": "Autenticación de dos factores",
 			"description": "Añada una capa adicional de seguridad a su cuenta",

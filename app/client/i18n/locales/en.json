@@ -854,6 +854,22 @@
 				"notificationsDisabled": "Desktop notifications disabled"
 			}
 		},
+		"update": {
+			"title": "Software Update",
+			"description": "Check for new versions of C3i Backup ONE",
+			"checkButton": "Check for updates",
+			"installButton": "Install update",
+			"upToDate": "You're running the latest version",
+			"availableText": "Version {{version}} is available",
+			"errorText": "Could not check for updates",
+			"downloading": "Downloading... {{downloaded}} MB / {{total}} MB",
+			"toast": {
+				"available": "Update available: v{{version}}",
+				"checkFailed": "Failed to check for updates",
+				"installed": "Update installed. Restarting...",
+				"installFailed": "Failed to install update"
+			}
+		},
 		"twoFactor": {
 			"title": "Two-Factor Authentication",
 			"description": "Add an extra layer of security to your account",
