@@ -1,9 +1,9 @@
-# C3i Backup ONE
+# Backup ONE
 
-Automatizacion de copias de seguridad con cifrado, compresion y politicas de retencion. Basado en [Restic](https://github.com/restic/restic).
+Automatizacion de copias de seguridad con cifrado, compresion y politicas de retencion. Basado en [Restic](https://github.com/restic/restic) y [Zerobyte](https://github.com/nicotsx/zerobyte) 
 
 > [!WARNING]
-> C3i Backup ONE esta en version 0.x.x y puede sufrir cambios importantes entre versiones. Es posible que encuentres errores. Por favor, abre issues o solicitudes de funcionalidades.
+> Backup ONE esta en version 0.x.x y puede sufrir cambios importantes entre versiones. Es posible que encuentres errores. Por favor, abre issues o solicitudes de funcionalidades.
 
 ## Caracteristicas
 
