@@ -2,8 +2,6 @@ import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "~/client/components/ui/dialog";
 import { isTauri } from "~/client/lib/tauri";
 
-const DOCKER_RESET_COMMAND = "docker exec -it zerobyte bun run cli reset-password";
-
 type ResetPasswordDialogProps = {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;

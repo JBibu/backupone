@@ -33,6 +33,7 @@ export const CustomForm = ({ form }: Props) => {
 										href="https://shoutrrr.nickfedor.com/latest/services/overview/"
 										target="_blank"
 										rel="noopener noreferrer"
+										aria-label="Shoutrrr services documentation"
 										className="text-strong-accent hover:underline"
 									/>
 								),

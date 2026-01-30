@@ -465,6 +465,7 @@ export const CreateScheduleForm = ({ initialValues, formId, onSubmit, volume }: 
 															target="_blank"
 															rel="noopener noreferrer"
 															className="underline hover:text-foreground"
+															aria-label="Restic exclude patterns documentation"
 														/>
 													),
 												}}
