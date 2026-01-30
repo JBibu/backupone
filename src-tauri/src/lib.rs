@@ -253,6 +253,7 @@ pub fn run() {
         .init();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
         // Single instance plugin must be registered first
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
