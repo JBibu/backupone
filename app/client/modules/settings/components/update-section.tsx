@@ -13,6 +13,7 @@ export function UpdateSection() {
 	const [status, setStatus] = useState<UpdateStatus>("idle");
 	const [updateVersion, setUpdateVersion] = useState<string | null>(null);
 	const [progress, setProgress] = useState<{ downloaded: number; total: number } | null>(null);
+	const isDownloading = status === "downloading";
 
 	const inTauri = isTauri();
 
@@ -98,12 +99,12 @@ export function UpdateSection() {
 			</div>
 			<CardContent className="p-6 space-y-4">
 				<div className="flex items-center gap-4">
-					{status === "available" && updateVersion ? (
+					{(status === "available" || isDownloading) && updateVersion ? (
 						<>
 							<p className="text-sm">
 								{t("settings.update.availableText", { version: updateVersion })}
 							</p>
-							<Button onClick={installUpdate} loading={status === "downloading"}>
+							<Button onClick={installUpdate} loading={isDownloading} disabled={isDownloading}>
 								<Download className="h-4 w-4 mr-2" />
 								{t("settings.update.installButton")}
 							</Button>
