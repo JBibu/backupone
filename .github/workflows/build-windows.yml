@@ -60,7 +60,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
 
       - name: Upload MSI artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: zerobyte-windows-msi
           path: |
@@ -69,7 +69,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload NSIS artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: zerobyte-windows-nsis
           path: |

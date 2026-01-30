@@ -70,7 +70,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
 
       - name: Upload AppImage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: zerobyte-linux-appimage
           path: |
@@ -79,7 +79,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload deb artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: zerobyte-linux-deb
           path: |
@@ -87,7 +87,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload rpm artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: zerobyte-linux-rpm
           path: |
