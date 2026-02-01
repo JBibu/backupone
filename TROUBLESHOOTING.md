@@ -21,13 +21,13 @@ docker logs -f zerobyte
 - [Common Issues](#common-issues)
   - [Permission Denied Errors When Mounting Remote Shares](#permission-denied-errors-when-mounting-remote-shares)
   - [Security Levels for Mounting Remote Shares](#security-levels-for-mounting-remote-shares)
-    - [Secure (Recommended)](#secure-recommended)
-    - [Advanced](#advanced)
+    - [Permission Errors with Remote Shares](#permission-errors-with-remote-shares)
+    - [Container Cannot Perform Mounts](#container-cannot-perform-mounts)
     - [AppArmor-Enabled Systems (Ubuntu/Debian)](#apparmor-enabled-systems-ubuntudebian)
     - [Seccomp-Restricted Environments](#seccomp-restricted-environments)
     - [SELinux-Enabled Systems (CentOS/Fedora)](#selinux-enabled-systems-centosfedora)
-    - [Privileged Mode (Not Recommended)](#privileged-mode-not-recommended)
-- [FUSE-Based Backends](#fuse-based-backends)
+    - [Still Getting Permission Errors After SYS_ADMIN](#still-getting-permission-errors-after-sys_admin)
+- [FUSE Mount Failures](#fuse-mount-failures)
 - [Rclone Issues](#rclone-issues)
   - [Test on Host First](#critical-test-on-host-first)
   - [Pre-flight Checklist](#pre-flight-checklist)
@@ -36,15 +36,15 @@ docker logs -f zerobyte
     - ["Failed to Create File System" Error](#failed-to-create-file-system-error)
     - [EACCES Errors](#eacces-errors)
   - [Rclone Volume Mount Issues](#rclone-volume-mount-issues)
-    - [Requirements](#rclone-volume-requirements)
-    - [Common Mount Errors](#rclone-common-mount-errors)
+    - [Prerequisites Check](#prerequisites-check)
+    - [Common Mount Errors](#common-mount-errors)
   - [Still Having Issues?](#still-having-issues)
 
 ---
 
 ## Common Issues
 
-### Permission Denied Errors When Mounting Remote Shares {#permission-denied-errors-when-mounting-remote-shares}
+### Permission Denied Errors When Mounting Remote Shares
 
 Mounting remote filesystems (such as SMB/CIFS) requires kernel-level privileges. When Zerobyte attempts to perform mounts from inside a container, additional permissions may be required.
 
@@ -58,13 +58,13 @@ In some environments, Linux security mechanisms such as AppArmor or seccomp may 
 
 ---
 
-### Security Levels for Mounting Remote Shares {#security-levels-for-mounting-remote-shares}
+### Security Levels for Mounting Remote Shares
 
 Zerobyte supports multiple deployment models depending on your security requirements and environment.
 
 ---
 
-#### Permission Errors with Remote Shares {#secure-recommended}
+#### Permission Errors with Remote Shares
 
 **Problem:** You're getting permission errors when Zerobyte tries to mount remote shares (SMB/CIFS, NFS, etc.).
 
@@ -94,7 +94,7 @@ Zerobyte supports multiple deployment models depending on your security requirem
 
 ---
 
-#### Container Cannot Perform Mounts {#advanced}
+#### Container Cannot Perform Mounts
 
 **Problem:** Zerobyte shows "Operation not permitted" errors when trying to mount remote shares directly.
 
@@ -113,7 +113,7 @@ services:
 
 ---
 
-#### AppArmor-Enabled Systems (Ubuntu/Debian) {#apparmor-enabled-systems-ubuntudebian}
+#### AppArmor-Enabled Systems (Ubuntu/Debian)
 
 On hosts using AppArmor, the default Docker profile (`docker-default`) may block mount operations even when `SYS_ADMIN` is present.
 
@@ -139,7 +139,7 @@ services:
 
 ---
 
-#### Seccomp-Restricted Environments {#seccomp-restricted-environments}
+#### Seccomp-Restricted Environments
 
 Docker's default seccomp profile may block mount-related syscalls required by filesystem operations.
 
@@ -156,7 +156,7 @@ services:
 
 ---
 
-#### SELinux-Enabled Systems (CentOS/Fedora) {#selinux-enabled-systems-centosfedora}
+#### SELinux-Enabled Systems (CentOS/Fedora)
 
 On hosts using SELinux, you may need to adjust the security context to allow mount operations.
 If mount operations fail with permission errors, you can try adding the following label:
@@ -183,7 +183,7 @@ services:
 
 ---
 
-#### Still Getting Permission Errors After SYS_ADMIN {#privileged-mode-not-recommended}
+#### Still Getting Permission Errors After SYS_ADMIN
 
 **Problem:** Mount operations still fail even with `SYS_ADMIN` capability.
 
@@ -199,7 +199,7 @@ services:
 
 ---
 
-### FUSE Mount Failures {#fuse-based-backends}
+### FUSE Mount Failures
 
 **Problem:** FUSE-based mounts (sshfs, rclone mount) are failing with device access errors.
 
@@ -217,7 +217,7 @@ services:
 
 ## Rclone Issues
 
-### ⚠️ Critical: Test on Host First {#critical-test-on-host-first}
+### ⚠️ Critical: Test on Host First
 
 **Before reporting any rclone-related issue, you MUST verify that rclone works correctly on your Docker host.**
 
@@ -251,7 +251,7 @@ Common issues include:
 
 ---
 
-### Pre-flight Checklist {#pre-flight-checklist}
+### Pre-flight Checklist
 
 If you're experiencing rclone issues, verify all of the following:
 
@@ -262,9 +262,9 @@ If you're experiencing rclone issues, verify all of the following:
 
 ---
 
-### Common Rclone Errors {#common-rclone-errors}
+### Common Rclone Errors
 
-#### "No Remotes Available" in Dropdown {#no-remotes-available-in-dropdown}
+#### "No Remotes Available" in Dropdown
 
 **Cause:** Zerobyte cannot find your rclone configuration file.
 
@@ -300,7 +300,7 @@ docker exec zerobyte cat /root/.config/rclone/rclone.conf
    docker compose up -d
    ```
 
-#### "Failed to Create File System" Error {#failed-to-create-file-system-error}
+#### "Failed to Create File System" Error
 
 **Cause:** Authentication failure with the cloud provider.
 
@@ -311,7 +311,7 @@ docker exec zerobyte cat /root/.config/rclone/rclone.conf
 3. Verify with: `rclone lsd remote:`
 4. Restart the Zerobyte container
 
-#### EACCES Errors {#eacces-errors}
+#### EACCES Errors
 
 **Cause:** AppArmor or seccomp is blocking rclone execution.
 
@@ -322,11 +322,11 @@ docker exec zerobyte cat /root/.config/rclone/rclone.conf
 
 ---
 
-### Rclone Volume Mount Issues {#rclone-volume-mount-issues}
+### Rclone Volume Mount Issues
 
 When using rclone as a **volume backend** (mounting cloud storage to back up from), additional requirements apply:
 
-#### Prerequisites Check {#rclone-volume-requirements}
+#### Prerequisites Check
 
 If rclone volume mounting isn't working, verify these prerequisites on your system:
 
@@ -335,7 +335,7 @@ If rclone volume mounting isn't working, verify these prerequisites on your syst
 - **`SYS_ADMIN` capability:** Required for mount operations inside containers
 - **FUSE support on host:** Verify FUSE is installed and working on your Docker host
 
-#### Common Mount Errors {#rclone-common-mount-errors}
+#### Common Mount Errors
 
 **"mount helper error: fusermount3: failed to open /dev/fuse: Permission denied"**
 
@@ -373,7 +373,7 @@ cap_add:
 
 ---
 
-### Still having issues? {#still-having-issues}
+### Still having issues?
 
 If you've verified rclone works on the host and followed all troubleshooting steps above, gather this information for your issue report:
 
