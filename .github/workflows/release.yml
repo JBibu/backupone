@@ -49,31 +49,31 @@ jobs:
     needs: [determine-release-type, build-windows, build-linux]
     steps:
       - name: Download Windows MSI artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: zerobyte-windows-msi
           path: artifacts/windows-msi
 
       - name: Download Windows NSIS artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: zerobyte-windows-nsis
           path: artifacts/windows-nsis
 
       - name: Download Linux AppImage artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: zerobyte-linux-appimage
           path: artifacts/linux-appimage
 
       - name: Download Linux deb artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: zerobyte-linux-deb
           path: artifacts/linux-deb
 
       - name: Download Linux rpm artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: zerobyte-linux-rpm
           path: artifacts/linux-rpm
