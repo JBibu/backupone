@@ -31,10 +31,11 @@ docker logs -f zerobyte
 - [Rclone Issues](#rclone-issues)
   - [Test on Host First](#critical-test-on-host-first)
   - [Pre-flight Checklist](#pre-flight-checklist)
-  - [Common Rclone Errors](#common-rclone-errors)
-    - ["No Remotes Available" in Dropdown](#no-remotes-available-in-dropdown)
-    - ["Failed to Create File System" Error](#failed-to-create-file-system-error)
-    - [EACCES Errors](#eacces-errors)
+    - [Common Rclone Errors](#common-rclone-errors)
+      - ["No Remotes Available" in Dropdown](#no-remotes-available-in-dropdown)
+      - ["Failed to Create File System" Error](#failed-to-create-file-system-error)
+      - [EACCES Errors](#eacces-errors)
+      - [Rclone SFTP Repository Authentication Failures](#rclone-sftp-repository-authentication-failures)
   - [Rclone Volume Mount Issues](#rclone-volume-mount-issues)
     - [Prerequisites Check](#prerequisites-check)
     - [Common Mount Errors](#common-mount-errors)
@@ -319,6 +320,73 @@ docker exec zerobyte cat /root/.config/rclone/rclone.conf
 
 - [AppArmor-enabled systems](#apparmor-enabled-systems-ubuntudebian)
 - [Seccomp-restricted environments](#seccomp-restricted-environments)
+
+#### Rclone SFTP Repository Authentication Failures
+
+When creating an **rclone repository** that uses an **SFTP remote**, you may encounter authentication errors even though:
+
+- The rclone config is mounted correctly
+- The SFTP remote appears in the dropdown
+- The same config works on the host
+
+**The issue:** If your rclone SFTP remote uses `key_file` for SSH key authentication, the key file path in your rclone config points to a location on the **host** (e.g., `~/.ssh/id_rsa`). When rclone runs inside the container, it cannot access that path.
+
+**Solutions:**
+
+**Option 1: Mount your SSH keys (Recommended)**
+
+Add your SSH directory to the container volumes:
+
+```yaml
+services:
+  zerobyte:
+    volumes:
+      - ~/.config/rclone:/root/.config/rclone:ro
+      - ~/.ssh:/root/.ssh:ro # Required for SFTP remotes using key_file
+```
+
+**Option 2: Embed the SSH key in rclone config**
+
+Use `key_pem` instead of `key_file` to embed the private key directly in your rclone.conf:
+
+```bash
+# Convert your key to single-line format
+awk '{printf "%s\\n", $0}' < ~/.ssh/id_rsa
+```
+
+Then update your rclone config:
+
+```ini
+[sftp-remote]
+type = sftp
+host = example.com
+user = backup
+key_pem = -----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5v...\n-----END OPENSSH PRIVATE KEY-----
+```
+
+**Option 3: Use ssh-agent**
+
+Configure your rclone remote to use ssh-agent instead of a key file:
+
+```ini
+[sftp-remote]
+type = sftp
+host = example.com
+user = backup
+key_use_agent = true
+```
+
+Then mount the SSH agent socket and set the environment variable:
+
+```yaml
+services:
+  zerobyte:
+    environment:
+      - SSH_AUTH_SOCK=/ssh-agent
+    volumes:
+      - ~/.config/rclone:/root/.config/rclone:ro
+      - ${SSH_AUTH_SOCK}:/ssh-agent
+```
 
 ---
 
