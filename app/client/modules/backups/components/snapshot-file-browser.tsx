@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileIcon, RotateCcw, Trash2 } from "lucide-react";
-import { Link } from "react-router";
 import { FileTree } from "~/client/components/file-tree";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/client/components/ui/card";
 import { Button, buttonVariants } from "~/client/components/ui/button";
@@ -10,6 +9,7 @@ import { listSnapshotFilesOptions } from "~/client/api-client/@tanstack/react-qu
 import { formatDateTime } from "~/client/lib/datetime";
 import { useFileBrowser } from "~/client/hooks/use-file-browser";
 import { cn } from "~/client/lib/utils";
+import { Link } from "@tanstack/react-router";
 
 interface Props {
 	snapshot: Snapshot;
@@ -95,10 +95,11 @@ export const SnapshotFileBrowser = (props: Props) => {
 						</div>
 						<div className="flex gap-2">
 							<Link
-								to={
+								to={backupId ? "/backups/$backupId/$snapshotId/restore" : "/repositories/$repoId/$snapId/restore"}
+								params={
 									backupId
-										? `/backups/${backupId}/${snapshot.short_id}/restore`
-										: `/repositories/${repositoryId}/${snapshot.short_id}/restore`
+										? { backupId, snapshotId: snapshot.short_id }
+										: { repoId: repositoryId, snapId: snapshot.short_id }
 								}
 								className={buttonVariants({ variant: "primary", size: "sm" })}
 							>

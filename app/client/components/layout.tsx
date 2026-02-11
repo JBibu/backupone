@@ -1,37 +1,27 @@
 import { LifeBuoy } from "lucide-react";
-import { Outlet, redirect, useNavigate } from "react-router";
 import { toast } from "sonner";
-import { appContext } from "~/context";
-import { authMiddleware } from "~/middleware/auth";
-import type { Route } from "./+types/layout";
-import { AppBreadcrumb } from "./app-breadcrumb";
+import { type AppContext } from "~/context";
 import { GridBackground } from "./grid-background";
 import { Button } from "./ui/button";
 import { SidebarProvider, SidebarTrigger } from "./ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
 import { authClient } from "../lib/auth-client";
 import { DevPanelListener } from "./dev-panel-listener";
+import { Outlet, useNavigate } from "@tanstack/react-router";
+import { AppBreadcrumb } from "./app-breadcrumb";
 
-export const clientMiddleware = [authMiddleware];
+type Props = {
+	loaderData: AppContext;
+};
 
-export async function clientLoader({ context }: Route.LoaderArgs) {
-	const ctx = context.get(appContext);
-
-	if (ctx.user && !ctx.user.hasDownloadedResticPassword) {
-		throw redirect("/download-recovery-key");
-	}
-
-	return ctx;
-}
-
-export default function Layout({ loaderData }: Route.ComponentProps) {
+export function Layout({ loaderData }: Props) {
 	const navigate = useNavigate();
 
 	const handleLogout = async () => {
 		await authClient.signOut({
 			fetchOptions: {
 				onSuccess: () => {
-					void navigate("/login", { replace: true });
+					void navigate({ to: "/login", replace: true });
 				},
 				onError: ({ error }) => {
 					toast.error("Logout failed", { description: error.message });

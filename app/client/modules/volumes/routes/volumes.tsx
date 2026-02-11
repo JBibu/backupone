@@ -1,7 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { HardDrive, Plus, RotateCcw } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
 import { EmptyState } from "~/client/components/empty-state";
 import { StatusDot } from "~/client/components/status-dot";
 import { Button } from "~/client/components/ui/button";
@@ -10,10 +9,9 @@ import { Input } from "~/client/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/client/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/client/components/ui/table";
 import { VolumeIcon } from "~/client/components/volume-icon";
-import type { Route } from "./+types/volumes";
-import { listVolumes } from "~/client/api-client";
 import { listVolumesOptions } from "~/client/api-client/@tanstack/react-query.gen";
 import type { VolumeStatus } from "~/client/lib/types";
+import { useNavigate } from "@tanstack/react-router";
 
 const getVolumeStatusVariant = (status: VolumeStatus): "success" | "neutral" | "error" | "warning" => {
 	const statusMap = {
@@ -25,27 +23,7 @@ const getVolumeStatusVariant = (status: VolumeStatus): "success" | "neutral" | "
 	return statusMap[status];
 };
 
-export const handle = {
-	breadcrumb: () => [{ label: "Volumes" }],
-};
-
-export function meta(_: Route.MetaArgs) {
-	return [
-		{ title: "Zerobyte - Volumes" },
-		{
-			name: "description",
-			content: "Create, manage, monitor, and automate your Docker volumes with ease.",
-		},
-	];
-}
-
-export const clientLoader = async () => {
-	const volumes = await listVolumes();
-	if (volumes.data) return volumes.data;
-	return [];
-};
-
-export default function Volumes({ loaderData }: Route.ComponentProps) {
+export function VolumesPage() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState("");
 	const [backendFilter, setBackendFilter] = useState("");
@@ -58,9 +36,8 @@ export default function Volumes({ loaderData }: Route.ComponentProps) {
 
 	const navigate = useNavigate();
 
-	const { data } = useQuery({
+	const { data } = useSuspenseQuery({
 		...listVolumesOptions(),
-		initialData: loaderData,
 	});
 
 	const filteredVolumes =
@@ -81,7 +58,7 @@ export default function Volumes({ loaderData }: Route.ComponentProps) {
 				title="No volume"
 				description="Manage and monitor all your storage backends in one place with advanced features like automatic mounting and health checks."
 				button={
-					<Button onClick={() => navigate("/volumes/create")}>
+					<Button onClick={() => navigate({ to: "/volumes/create" })}>
 						<Plus size={16} className="mr-2" />
 						Create Volume
 					</Button>
@@ -95,13 +72,13 @@ export default function Volumes({ loaderData }: Route.ComponentProps) {
 			<div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2 md:justify-between p-4 bg-card-header py-4">
 				<span className="flex flex-col sm:flex-row items-stretch md:items-center gap-0 flex-wrap ">
 					<Input
-						className="w-full lg:w-[180px] min-w-[180px] -mr-px -mt-px"
+						className="w-full lg:w-45 min-w-45 -mr-px -mt-px"
 						placeholder="Search volumes…"
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 					/>
 					<Select value={statusFilter} onValueChange={setStatusFilter}>
-						<SelectTrigger className="w-full lg:w-[180px] min-w-[180px] -mr-px -mt-px">
+						<SelectTrigger className="w-full lg:w-45 min-w-45 -mr-px -mt-px">
 							<SelectValue placeholder="All status" />
 						</SelectTrigger>
 						<SelectContent>
@@ -111,7 +88,7 @@ export default function Volumes({ loaderData }: Route.ComponentProps) {
 						</SelectContent>
 					</Select>
 					<Select value={backendFilter} onValueChange={setBackendFilter}>
-						<SelectTrigger className="w-full lg:w-[180px] min-w-[180px] -mt-px">
+						<SelectTrigger className="w-full lg:w-45 min-w-45 -mt-px">
 							<SelectValue placeholder="All backends" />
 						</SelectTrigger>
 						<SelectContent>
@@ -127,7 +104,7 @@ export default function Volumes({ loaderData }: Route.ComponentProps) {
 						</Button>
 					)}
 				</span>
-				<Button onClick={() => navigate("/volumes/create")}>
+				<Button onClick={() => navigate({ to: "/volumes/create" })}>
 					<Plus size={16} className="mr-2" />
 					Create Volume
 				</Button>
@@ -136,7 +113,7 @@ export default function Volumes({ loaderData }: Route.ComponentProps) {
 				<Table className="border-t">
 					<TableHeader className="bg-card-header">
 						<TableRow>
-							<TableHead className="w-[100px] uppercase">Name</TableHead>
+							<TableHead className="w-25 uppercase">Name</TableHead>
 							<TableHead className="uppercase text-left">Backend</TableHead>
 							<TableHead className="uppercase text-center">Status</TableHead>
 						</TableRow>
@@ -159,7 +136,7 @@ export default function Volumes({ loaderData }: Route.ComponentProps) {
 								<TableRow
 									key={volume.name}
 									className="hover:bg-accent/50 hover:cursor-pointer"
-									onClick={() => navigate(`/volumes/${volume.shortId}`)}
+									onClick={() => navigate({ to: `/volumes/${volume.shortId}` })}
 								>
 									<TableCell className="font-medium text-strong-accent">{volume.name}</TableCell>
 									<TableCell>

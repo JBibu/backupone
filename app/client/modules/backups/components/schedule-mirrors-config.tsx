@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -19,9 +19,9 @@ import type { Repository } from "~/client/lib/types";
 import { RepositoryIcon } from "~/client/components/repository-icon";
 import { StatusDot } from "~/client/components/status-dot";
 import { formatDistanceToNow } from "date-fns";
-import { Link } from "react-router";
 import { cn } from "~/client/lib/utils";
 import type { GetScheduleMirrorsResponse } from "~/client/api-client";
+import { Link } from "@tanstack/react-router";
 
 type Props = {
 	scheduleId: number;
@@ -38,15 +38,34 @@ type MirrorAssignment = {
 	lastCopyError: string | null;
 };
 
+const buildAssignments = (mirrors: GetScheduleMirrorsResponse) => {
+	const map = new Map<string, MirrorAssignment>();
+	for (const mirror of mirrors) {
+		map.set(mirror.repositoryId, {
+			repositoryId: mirror.repositoryId,
+			enabled: mirror.enabled,
+			lastCopyAt: mirror.lastCopyAt,
+			lastCopyStatus: mirror.lastCopyStatus,
+			lastCopyError: mirror.lastCopyError,
+		});
+	}
+	return map;
+};
+
 export const ScheduleMirrorsConfig = ({ scheduleId, primaryRepositoryId, repositories, initialData }: Props) => {
-	const [assignments, setAssignments] = useState<Map<string, MirrorAssignment>>(new Map());
+	const [assignments, setAssignments] = useState<Map<string, MirrorAssignment>>(() => buildAssignments(initialData));
 	const [hasChanges, setHasChanges] = useState(false);
 	const [isAddingNew, setIsAddingNew] = useState(false);
 
-	const { data: currentMirrors } = useQuery({
+	const { data: currentMirrors } = useSuspenseQuery({
 		...getScheduleMirrorsOptions({ path: { scheduleId: scheduleId.toString() } }),
-		initialData,
 	});
+
+	useEffect(() => {
+		if (!hasChanges) {
+			setAssignments(buildAssignments(currentMirrors));
+		}
+	}, [currentMirrors, hasChanges]);
 
 	const { data: compatibility } = useQuery({
 		...getMirrorCompatibilityOptions({ path: { scheduleId: scheduleId.toString() } }),
@@ -74,23 +93,6 @@ export const ScheduleMirrorsConfig = ({ scheduleId, primaryRepositoryId, reposit
 		}
 		return map;
 	}, [compatibility]);
-
-	useEffect(() => {
-		if (currentMirrors && !hasChanges) {
-			const map = new Map<string, MirrorAssignment>();
-			for (const mirror of currentMirrors) {
-				map.set(mirror.repositoryId, {
-					repositoryId: mirror.repositoryId,
-					enabled: mirror.enabled,
-					lastCopyAt: mirror.lastCopyAt,
-					lastCopyStatus: mirror.lastCopyStatus,
-					lastCopyError: mirror.lastCopyError,
-				});
-			}
-
-			setAssignments(map);
-		}
-	}, [currentMirrors, hasChanges]);
 
 	const addRepository = (repositoryId: string) => {
 		const newAssignments = new Map(assignments);
@@ -288,7 +290,8 @@ export const ScheduleMirrorsConfig = ({ scheduleId, primaryRepositoryId, reposit
 											<TableCell>
 												<div className="flex items-center gap-2">
 													<Link
-														to={`/repositories/${repository.shortId}`}
+														to="/repositories/$repositoryId"
+														params={{ repositoryId: repository.id }}
 														className="hover:underline flex items-center gap-2"
 													>
 														<RepositoryIcon backend={repository.type} className="h-4 w-4" />

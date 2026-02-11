@@ -1,7 +1,6 @@
 import { arktypeResolver } from "@hookform/resolvers/arktype";
 import { type } from "arktype";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
 	Form,
@@ -13,24 +12,14 @@ import {
 	FormMessage,
 } from "~/client/components/ui/form";
 import { authMiddleware } from "~/middleware/auth";
-import type { Route } from "./+types/onboarding";
 import { AuthLayout } from "~/client/components/auth-layout";
 import { Input } from "~/client/components/ui/input";
 import { Button } from "~/client/components/ui/button";
 import { authClient } from "~/client/lib/auth-client";
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 
 export const clientMiddleware = [authMiddleware];
-
-export function meta(_: Route.MetaArgs) {
-	return [
-		{ title: "Zerobyte - Onboarding" },
-		{
-			name: "description",
-			content: "Welcome to Zerobyte. Create your admin account to get started.",
-		},
-	];
-}
 
 const onboardingSchema = type({
 	username: type("2<=string<=30").pipe((str) => str.trim().toLowerCase()),
@@ -41,7 +30,7 @@ const onboardingSchema = type({
 
 type OnboardingFormValues = typeof onboardingSchema.inferIn;
 
-export default function OnboardingPage() {
+export function OnboardingPage() {
 	const navigate = useNavigate();
 	const [submitting, setSubmitting] = useState(false);
 
@@ -83,7 +72,7 @@ export default function OnboardingPage() {
 
 		if (data?.token) {
 			toast.success("Admin user created successfully!");
-			void navigate("/download-recovery-key");
+			void navigate({ to: "/download-recovery-key" });
 		} else if (error) {
 			console.error(error);
 			const errorMessage = error.message ?? "Unknown error";

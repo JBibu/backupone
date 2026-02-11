@@ -79,6 +79,7 @@ FROM base AS builder
 
 ARG APP_VERSION=dev
 ENV VITE_APP_VERSION=${APP_VERSION}
+ENV PORT=4096
 
 WORKDIR /app
 
@@ -94,6 +95,7 @@ FROM base AS production
 ARG APP_VERSION=dev
 ENV APP_VERSION=${APP_VERSION}
 ENV NODE_ENV="production"
+ENV PORT=4096
 
 WORKDIR /app
 
@@ -103,8 +105,7 @@ RUN bun install --production --frozen-lockfile && rm -rf $HOME/.bun/install/cach
 COPY --from=deps /deps/restic /usr/local/bin/restic
 COPY --from=deps /deps/rclone /usr/local/bin/rclone
 COPY --from=deps /deps/shoutrrr /usr/local/bin/shoutrrr
-COPY --from=builder /app/dist/client ./dist/client
-COPY --from=builder /app/dist/server ./dist/server
+COPY --from=builder /app/.output ./.output
 COPY --from=builder /app/app/drizzle ./assets/migrations
 
 # Include third-party licenses and attribution
@@ -114,5 +115,4 @@ COPY ./LICENSE ./LICENSE.md
 
 EXPOSE 4096
 
-CMD ["bun", "run", "start"]
-
+CMD ["bun", ".output/server/index.mjs"]

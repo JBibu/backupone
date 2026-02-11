@@ -1649,6 +1649,7 @@ export type ListSnapshotsResponses = {
 		size: number;
 		tags: Array<string>;
 		time: number;
+		hostname?: string;
 	}>;
 };
 
@@ -1718,6 +1719,7 @@ export type GetSnapshotDetailsResponses = {
 		size: number;
 		tags: Array<string>;
 		time: number;
+		hostname?: string;
 	};
 };
 

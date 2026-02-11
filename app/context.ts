@@ -1,5 +1,3 @@
-import { createContext } from "react-router";
-
 type User = {
 	id: string;
 	email: string;
@@ -9,12 +7,7 @@ type User = {
 	role?: string | null | undefined;
 };
 
-type AppContext = {
+export type AppContext = {
 	user: User | null;
 	hasUsers: boolean;
 };
-
-export const appContext = createContext<AppContext>({
-	user: null,
-	hasUsers: false,
-});

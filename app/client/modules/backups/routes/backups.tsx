@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
 import {
 	DndContext,
 	closestCenter,
@@ -10,44 +10,21 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy } from "@dnd-kit/sortable";
 import { CalendarClock, Plus } from "lucide-react";
-import { Link } from "react-router";
 import { useState, useEffect } from "react";
 import { EmptyState } from "~/client/components/empty-state";
 import { Button } from "~/client/components/ui/button";
 import { Card, CardContent } from "~/client/components/ui/card";
-import type { Route } from "./+types/backups";
-import { listBackupSchedules } from "~/client/api-client";
 import {
 	listBackupSchedulesOptions,
 	reorderBackupSchedulesMutation,
 } from "~/client/api-client/@tanstack/react-query.gen";
 import { SortableCard } from "~/client/components/sortable-card";
 import { BackupCard } from "../components/backup-card";
+import { Link } from "@tanstack/react-router";
 
-export const handle = {
-	breadcrumb: () => [{ label: "Backups" }],
-};
-
-export function meta(_: Route.MetaArgs) {
-	return [
-		{ title: "Zerobyte - Backup Jobs" },
-		{
-			name: "description",
-			content: "Automate volume backups with scheduled jobs and retention policies.",
-		},
-	];
-}
-
-export const clientLoader = async () => {
-	const jobs = await listBackupSchedules();
-	if (jobs.data) return jobs.data;
-	return [];
-};
-
-export default function Backups({ loaderData }: Route.ComponentProps) {
-	const { data: schedules, isLoading } = useQuery({
+export function BackupsPage() {
+	const { data: schedules } = useSuspenseQuery({
 		...listBackupSchedulesOptions(),
-		initialData: loaderData,
 	});
 
 	const [items, setItems] = useState(schedules?.map((s) => s.id) ?? []);
@@ -84,14 +61,6 @@ export default function Backups({ loaderData }: Route.ComponentProps) {
 			});
 		}
 	};
-
-	if (isLoading) {
-		return (
-			<div className="flex items-center justify-center h-full">
-				<p className="text-muted-foreground">Loading backup schedules...</p>
-			</div>
-		);
-	}
 
 	if (!schedules || schedules.length === 0) {
 		return (
