@@ -1,4 +1,3 @@
-import { LifeBuoy } from "lucide-react";
 import { toast } from "sonner";
 import { type AppContext } from "~/context";
 import { GridBackground } from "./grid-background";
