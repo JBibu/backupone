@@ -712,6 +712,24 @@ export type ListFilesResponses = {
 
 export type ListFilesResponse = ListFilesResponses[keyof ListFilesResponses];
 
+export type GetFilesystemRootsData = {
+	body?: never;
+	path?: never;
+	query?: never;
+	url: "/api/v1/volumes/filesystem/roots";
+};
+
+export type GetFilesystemRootsResponses = {
+	/**
+	 * List of filesystem roots
+	 */
+	200: {
+		roots: Array<string>;
+	};
+};
+
+export type GetFilesystemRootsResponse = GetFilesystemRootsResponses[keyof GetFilesystemRootsResponses];
+
 export type BrowseFilesystemData = {
 	body?: never;
 	path?: never;
@@ -4543,6 +4561,11 @@ export type GetSystemInfoResponses = {
 		capabilities: {
 			rclone: boolean;
 			sysAdmin: boolean;
+		};
+		platform: {
+			dataPath: string;
+			isServiceMode: boolean;
+			os: "darwin" | "linux" | "windows";
 		};
 	};
 };

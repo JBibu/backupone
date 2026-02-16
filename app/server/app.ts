@@ -1,9 +1,11 @@
+import path from "node:path";
 import { Scalar } from "@scalar/hono-api-reference";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { logger as honoLogger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
+import { serveStatic } from "hono/bun";
 import { rateLimiter } from "hono-rate-limiter";
 import { openAPIRouteHandler } from "hono-openapi";
 import { authController } from "./modules/auth/auth.controller";
@@ -18,12 +20,26 @@ import { handleServiceError } from "./utils/errors";
 import { logger } from "./utils/logger";
 import { config } from "./core/config";
 import { auth } from "~/server/lib/auth";
+import { closeDatabase } from "./db/db";
+
+// Get the static files directory - use execDir for bundled binaries
+const getStaticRoot = () => {
+	// In production (compiled binary), use the directory containing the executable
+	if (config.__prod__) {
+		return path.join(path.dirname(process.execPath), "dist", "client");
+	}
+	// In development, use the standard dist/client or public
+	return "dist/client";
+};
+
+// Flag to track if shutdown has been requested
+let isShuttingDown = false;
 
 export const generalDescriptor = (app: Hono) =>
 	openAPIRouteHandler(app, {
 		documentation: {
 			info: {
-				title: "Zerobyte API",
+				title: "C3i Backup ONE API",
 				version: "1.0.0",
 				description: "API for managing volumes",
 			},
@@ -32,13 +48,22 @@ export const generalDescriptor = (app: Hono) =>
 	});
 
 export const scalarDescriptor = Scalar({
-	title: "Zerobyte API Docs",
-	pageTitle: "Zerobyte API Docs",
+	title: "C3i Backup ONE API Docs",
+	pageTitle: "C3i Backup ONE API Docs",
 	url: "/api/v1/openapi.json",
 });
 
 export const createApp = () => {
 	const app = new Hono();
+
+	// Serve static files from dist/client (images, favicon, etc.)
+	// This must be before other middleware to ensure static files are served
+	const staticRoot = getStaticRoot();
+	logger.info(`[Static] Serving static files from: ${staticRoot}`);
+
+	app.use("/images/*", serveStatic({ root: staticRoot }));
+	app.use("/assets/*", serveStatic({ root: staticRoot }));
+	app.get("/site.webmanifest", serveStatic({ root: staticRoot, path: "/images/favicon/site.webmanifest" }));
 
 	if (config.trustedOrigins) {
 		app.use(cors({ origin: config.trustedOrigins }));
@@ -71,6 +96,25 @@ export const createApp = () => {
 
 	app
 		.get("/api/healthcheck", (c) => c.json({ status: "ok" }))
+		.post("/api/shutdown", async (c) => {
+			// Graceful shutdown endpoint for Tauri/Service
+			if (isShuttingDown) {
+				return c.json({ message: "Shutdown already in progress" }, 200);
+			}
+
+			isShuttingDown = true;
+			logger.info("Graceful shutdown requested");
+
+			// Schedule shutdown after response is sent
+			setTimeout(async () => {
+				logger.info("Closing database connection...");
+				closeDatabase();
+				logger.info("Database closed. Exiting...");
+				process.exit(0);
+			}, 100);
+
+			return c.json({ message: "Shutdown initiated" }, 200);
+		})
 		.route("/api/v1/auth", authController)
 		.route("/api/v1/volumes", volumeController)
 		.route("/api/v1/repositories", repositoriesController)

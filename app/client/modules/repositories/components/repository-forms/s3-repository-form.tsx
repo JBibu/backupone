@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import {
 	FormControl,
 	FormDescription,
@@ -16,6 +17,8 @@ type Props = {
 };
 
 export const S3RepositoryForm = ({ form }: Props) => {
+	const { t } = useTranslation();
+
 	return (
 		<>
 			<FormField
@@ -23,11 +26,11 @@ export const S3RepositoryForm = ({ form }: Props) => {
 				name="endpoint"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Endpoint</FormLabel>
+						<FormLabel>{t("repositories.s3Form.endpoint")}</FormLabel>
 						<FormControl>
-							<Input placeholder="s3.amazonaws.com" {...field} />
+							<Input placeholder={t("repositories.s3Form.endpointPlaceholder")} {...field} />
 						</FormControl>
-						<FormDescription>S3-compatible endpoint URL.</FormDescription>
+						<FormDescription>{t("repositories.s3Form.endpointDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -37,11 +40,11 @@ export const S3RepositoryForm = ({ form }: Props) => {
 				name="bucket"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Bucket</FormLabel>
+						<FormLabel>{t("repositories.s3Form.bucket")}</FormLabel>
 						<FormControl>
-							<Input placeholder="my-backup-bucket" {...field} />
+							<Input placeholder={t("repositories.s3Form.bucketPlaceholder")} {...field} />
 						</FormControl>
-						<FormDescription>S3 bucket name for storing backups.</FormDescription>
+						<FormDescription>{t("repositories.s3Form.bucketDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -51,11 +54,11 @@ export const S3RepositoryForm = ({ form }: Props) => {
 				name="accessKeyId"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Access Key ID</FormLabel>
+						<FormLabel>{t("repositories.s3Form.accessKeyId")}</FormLabel>
 						<FormControl>
-							<Input placeholder="AKIAIOSFODNN7EXAMPLE" {...field} />
+							<Input placeholder={t("repositories.s3Form.accessKeyIdPlaceholder")} {...field} />
 						</FormControl>
-						<FormDescription>S3 access key ID for authentication.</FormDescription>
+						<FormDescription>{t("repositories.s3Form.accessKeyIdDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -65,11 +68,11 @@ export const S3RepositoryForm = ({ form }: Props) => {
 				name="secretAccessKey"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Secret Access Key</FormLabel>
+						<FormLabel>{t("repositories.s3Form.secretAccessKey")}</FormLabel>
 						<FormControl>
-							<SecretInput placeholder="••••••••" value={field.value ?? ""} onChange={field.onChange} />
+							<SecretInput placeholder={t("repositories.s3Form.secretAccessKeyPlaceholder")} value={field.value ?? ""} onChange={field.onChange} />
 						</FormControl>
-						<FormDescription>S3 secret access key for authentication.</FormDescription>
+						<FormDescription>{t("repositories.s3Form.secretAccessKeyDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}

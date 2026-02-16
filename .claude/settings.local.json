@@ -1,0 +1,29 @@
+{
+	"permissions": {
+		"allow": [
+			"Bash(bun run tauri:*)",
+			"Bash(bun run tauri:dev:*)",
+			"Bash(bun install)",
+			"Bash(git add:*)",
+			"Bash(find:*)",
+			"Bash(git -C /home/javi/Git/backupone log --oneline --all -- app/drizzle/0023_chemical_deathbird.sql)",
+			"Bash(git -C /home/javi/Git/backupone log --diff-filter=D --summary --all)",
+			"Bash(xargs -I {} sh -c 'du -h \"\"{}\"\" && git -C /home/javi/Git/backupone ls-files --error-unmatch \"\"{}\"\" 2>/dev/null && echo \"\"  ^ TRACKED\"\"')",
+			"Bash(git -C /home/javi/Git/backupone ls-files -s)",
+			"Bash(grep:*)",
+			"Bash(git -C /home/javi/Git/backupone ls-files:*)",
+			"Bash(gh api:*)",
+			"Bash(git remote add:*)",
+			"Bash(git merge:*)",
+			"Bash(git checkout:*)",
+			"Bash(git rm:*)",
+			"Bash(git -C /home/javi/Git/backupone diff --staged)",
+			"Bash(git -C /home/javi/Git/backupone diff)",
+			"Bash(git -C /home/javi/Git/backupone add:*)",
+			"Bash(git -C /home/javi/Git/backupone commit -m \"$\\(cat <<''EOF''\nci: add dev branch to CI triggers and remove Linux build\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+			"Bash(git -C /home/javi/Git/backupone status)",
+			"Bash(bun run tsc:*)",
+			"Bash(git fetch:*)"
+		]
+	}
+}

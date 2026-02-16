@@ -1,6 +1,9 @@
 import { useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { Check, Pencil, X, AlertTriangle } from "lucide-react";
+import { REPOSITORY_BASE } from "~/client/lib/constants";
+import { isTauri } from "~/client/lib/tauri";
 import { Button } from "../../../../components/ui/button";
 import { FormItem, FormLabel, FormDescription, FormField, FormControl } from "../../../../components/ui/form";
 import { DirectoryBrowser } from "../../../../components/directory-browser";
@@ -15,23 +18,15 @@ import {
 	AlertDialogTitle,
 } from "../../../../components/ui/alert-dialog";
 import type { RepositoryFormValues } from "../create-repository-form";
-import { useServerFn } from "@tanstack/react-start";
-import { getServerConstants } from "~/server/lib/functions/server-constants";
-import { useSuspenseQuery } from "@tanstack/react-query";
 
 type Props = {
 	form: UseFormReturn<RepositoryFormValues>;
 };
 
 export const LocalRepositoryForm = ({ form }: Props) => {
+	const { t } = useTranslation();
 	const [showPathBrowser, setShowPathBrowser] = useState(false);
 	const [showPathWarning, setShowPathWarning] = useState(false);
-
-	const getConstants = useServerFn(getServerConstants);
-	const { data: constants } = useSuspenseQuery({
-		queryKey: ["server-constants"],
-		queryFn: getConstants,
-	});
 
 	return (
 		<FormField
@@ -40,19 +35,19 @@ export const LocalRepositoryForm = ({ form }: Props) => {
 			render={({ field }) => (
 				<>
 					<FormItem>
-						<FormLabel>Repository Directory</FormLabel>
+						<FormLabel>{t("repositories.localForm.directory")}</FormLabel>
 						<FormControl>
 							<div className="flex items-center gap-2">
 								<div className="flex-1 text-sm font-mono bg-muted px-3 py-2 rounded-md border">
-									{field.value || constants.REPOSITORY_BASE}
+									{field.value || REPOSITORY_BASE}
 								</div>
-								<Button type="button" variant="outline" onClick={() => setShowPathWarning(true)} size="sm">
+								<Button type="button" variant="outline" onClick={() => isTauri() ? setShowPathBrowser(true) : setShowPathWarning(true)} size="sm">
 									<Pencil className="h-4 w-4 mr-2" />
-									Change
+									{t("common.buttons.change")}
 								</Button>
 							</div>
 						</FormControl>
-						<FormDescription>The directory where the repository will be stored.</FormDescription>
+						<FormDescription>{t("repositories.localForm.directoryDescription")}</FormDescription>
 					</FormItem>
 
 					<AlertDialog open={showPathWarning} onOpenChange={setShowPathWarning}>
@@ -60,28 +55,27 @@ export const LocalRepositoryForm = ({ form }: Props) => {
 							<AlertDialogHeader>
 								<AlertDialogTitle className="flex items-center gap-2">
 									<AlertTriangle className="h-5 w-5 text-yellow-500" />
-									Important: Host mount required
+									{t("repositories.localForm.warningTitle")}
 								</AlertDialogTitle>
 								<AlertDialogDescription className="space-y-3">
-									<p>When selecting a custom path, ensure it is mounted from the host machine into the container.</p>
+									<p>{t("repositories.localForm.warningDescription1")}</p>
 									<p className="font-medium">
-										If the path is not a host mount, you will lose your repository data when the container restarts.
+										{t("repositories.localForm.warningDescription2")}
 									</p>
 									<p className="text-sm text-muted-foreground">
-										The default path <code className="bg-muted px-1 rounded">{constants.REPOSITORY_BASE}</code> is safe
-										to use if you followed the recommended Docker Compose setup.
+										{t("repositories.localForm.warningDescription3")} <code className="bg-muted px-1 rounded">{REPOSITORY_BASE}</code>
 									</p>
 								</AlertDialogDescription>
 							</AlertDialogHeader>
 							<AlertDialogFooter>
-								<AlertDialogCancel>Cancel</AlertDialogCancel>
+								<AlertDialogCancel>{t("common.buttons.cancel")}</AlertDialogCancel>
 								<AlertDialogAction
 									onClick={() => {
 										setShowPathBrowser(true);
 										setShowPathWarning(false);
 									}}
 								>
-									I Understand, Continue
+									{t("repositories.localForm.warningContinue")}
 								</AlertDialogAction>
 							</AlertDialogFooter>
 						</AlertDialogContent>
@@ -90,9 +84,9 @@ export const LocalRepositoryForm = ({ form }: Props) => {
 					<AlertDialog open={showPathBrowser} onOpenChange={setShowPathBrowser}>
 						<AlertDialogContent className="max-w-2xl">
 							<AlertDialogHeader>
-								<AlertDialogTitle>Select Repository Directory</AlertDialogTitle>
+								<AlertDialogTitle>{t("repositories.localForm.browserTitle")}</AlertDialogTitle>
 								<AlertDialogDescription>
-									Choose a directory from the filesystem to store the repository.
+									{t("repositories.localForm.browserDescription")}
 								</AlertDialogDescription>
 							</AlertDialogHeader>
 							<div className="py-4">
@@ -100,17 +94,17 @@ export const LocalRepositoryForm = ({ form }: Props) => {
 									onSelectPath={(path) => {
 										field.onChange(path);
 									}}
-									selectedPath={field.value || constants.REPOSITORY_BASE}
+									selectedPath={field.value || REPOSITORY_BASE}
 								/>
 							</div>
 							<AlertDialogFooter>
 								<AlertDialogCancel>
 									<X className="h-4 w-4 mr-2" />
-									Cancel
+									{t("common.buttons.cancel")}
 								</AlertDialogCancel>
 								<AlertDialogAction onClick={() => setShowPathBrowser(false)}>
 									<Check className="h-4 w-4 mr-2" />
-									Done
+									{t("repositories.localForm.done")}
 								</AlertDialogAction>
 							</AlertDialogFooter>
 						</AlertDialogContent>

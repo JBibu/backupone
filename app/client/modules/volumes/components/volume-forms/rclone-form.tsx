@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import type { FormValues } from "../create-volume-form";
 import {
 	FormControl,
@@ -21,6 +22,7 @@ type Props = {
 };
 
 export const RcloneForm = ({ form }: Props) => {
+	const { t } = useTranslation();
 	const { capabilities } = useSystemInfo();
 
 	const { data: rcloneRemotes, isPending } = useQuery({
@@ -32,17 +34,15 @@ export const RcloneForm = ({ form }: Props) => {
 		return (
 			<Alert>
 				<AlertDescription className="space-y-2">
-					<p className="font-medium">No rclone remotes configured</p>
-					<p className="text-sm text-muted-foreground">
-						To use rclone, you need to configure remotes on your host system
-					</p>
+					<p className="font-medium">{t("volumes.rcloneForm.noRemotesTitle")}</p>
+					<p className="text-sm text-muted-foreground">{t("volumes.rcloneForm.noRemotesDescription")}</p>
 					<a
 						href="https://rclone.org/docs/"
 						target="_blank"
 						rel="noopener noreferrer"
 						className="text-sm text-strong-accent inline-flex items-center gap-1"
 					>
-						View rclone documentation
+						{t("volumes.rcloneForm.viewDocumentation")}
 						<ExternalLink className="w-3 h-3" />
 					</a>
 				</AlertDescription>
@@ -57,17 +57,17 @@ export const RcloneForm = ({ form }: Props) => {
 				name="remote"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Remote</FormLabel>
+						<FormLabel>{t("volumes.rcloneForm.remoteLabel")}</FormLabel>
 						<Select onValueChange={(v) => field.onChange(v)} value={field.value}>
 							<FormControl>
 								<SelectTrigger>
-									<SelectValue placeholder="Select an rclone remote" />
+									<SelectValue placeholder={t("volumes.rcloneForm.remotePlaceholder")} />
 								</SelectTrigger>
 							</FormControl>
 							<SelectContent>
 								{isPending ? (
 									<SelectItem value="loading" disabled>
-										Loading remotes...
+										{t("volumes.rcloneForm.loadingRemotes")}
 									</SelectItem>
 								) : (
 									rcloneRemotes?.map((remote) => (
@@ -78,7 +78,7 @@ export const RcloneForm = ({ form }: Props) => {
 								)}
 							</SelectContent>
 						</Select>
-						<FormDescription>Select the rclone remote configured on your host system.</FormDescription>
+						<FormDescription>{t("volumes.rcloneForm.remoteDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -88,11 +88,11 @@ export const RcloneForm = ({ form }: Props) => {
 				name="path"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Path</FormLabel>
+						<FormLabel>{t("volumes.rcloneForm.pathLabel")}</FormLabel>
 						<FormControl>
 							<Input placeholder="/" {...field} />
 						</FormControl>
-						<FormDescription>Path on the remote to mount. Use "/" for the root.</FormDescription>
+						<FormDescription>{t("volumes.rcloneForm.pathDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -103,7 +103,7 @@ export const RcloneForm = ({ form }: Props) => {
 				defaultValue={false}
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Read-only Mode</FormLabel>
+						<FormLabel>{t("volumes.rcloneForm.readOnlyLabel")}</FormLabel>
 						<FormControl>
 							<div className="flex items-center space-x-2">
 								<input
@@ -112,12 +112,10 @@ export const RcloneForm = ({ form }: Props) => {
 									onChange={(e) => field.onChange(e.target.checked)}
 									className="rounded border-gray-300"
 								/>
-								<span className="text-sm">Mount volume as read-only</span>
+								<span className="text-sm">{t("volumes.rcloneForm.readOnlyCheckbox")}</span>
 							</div>
 						</FormControl>
-						<FormDescription>
-							Prevent any modifications to the volume. Recommended for backup sources and sensitive data.
-						</FormDescription>
+						<FormDescription>{t("volumes.rcloneForm.readOnlyDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}

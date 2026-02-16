@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import {
 	FormControl,
 	FormDescription,
@@ -22,6 +23,7 @@ type Props = {
 };
 
 export const AdvancedForm = ({ form }: Props) => {
+	const { t } = useTranslation();
 	const insecureTls = form.watch("insecureTls");
 	const cacert = form.watch("cacert");
 	const uploadLimitEnabled = form.watch("uploadLimit.enabled");
@@ -29,7 +31,7 @@ export const AdvancedForm = ({ form }: Props) => {
 
 	return (
 		<Collapsible>
-			<CollapsibleTrigger>Advanced Settings</CollapsibleTrigger>
+			<CollapsibleTrigger>{t("repositories.advancedForm.title")}</CollapsibleTrigger>
 			<CollapsibleContent className="pb-4 space-y-4">
 				<div className="space-y-4 mt-4">
 					<div className="grid gap-6">
@@ -43,8 +45,8 @@ export const AdvancedForm = ({ form }: Props) => {
 											<Checkbox checked={field.value ?? false} onCheckedChange={field.onChange} />
 										</FormControl>
 										<div className="space-y-1">
-											<FormLabel>Enable upload speed limit</FormLabel>
-											<FormDescription className="text-xs">Limit upload speed to the repository</FormDescription>
+											<FormLabel>{t("repositories.advancedForm.uploadLimit")}</FormLabel>
+											<FormDescription className="text-xs">{t("repositories.advancedForm.uploadLimitDescription")}</FormDescription>
 										</div>
 									</FormItem>
 								)}
@@ -119,8 +121,8 @@ export const AdvancedForm = ({ form }: Props) => {
 										<Checkbox checked={field.value ?? false} onCheckedChange={field.onChange} />
 									</FormControl>
 									<div className="space-y-1">
-										<FormLabel>Enable download speed limit</FormLabel>
-										<FormDescription className="text-xs">Limit download speed from the repository</FormDescription>
+										<FormLabel>{t("repositories.advancedForm.downloadLimit")}</FormLabel>
+										<FormDescription className="text-xs">{t("repositories.advancedForm.downloadLimitDescription")}</FormDescription>
 									</div>
 								</FormItem>
 							)}
@@ -207,17 +209,15 @@ export const AdvancedForm = ({ form }: Props) => {
 									</TooltipTrigger>
 									<TooltipContent className={cn({ hidden: !cacert })}>
 										<p className="max-w-xs">
-											This option is disabled because a CA certificate is provided. Remove the CA certificate to skip
-											TLS validation instead.
+											{t("repositories.advancedForm.insecureTlsDisabledTooltip")}
 										</p>
 									</TooltipContent>
 								</Tooltip>
 							</FormControl>
 							<div className="space-y-1 leading-none">
-								<FormLabel>Skip TLS certificate verification</FormLabel>
+								<FormLabel>{t("repositories.advancedForm.insecureTls")}</FormLabel>
 								<FormDescription>
-									Disable TLS certificate verification for HTTPS connections with self-signed certificates. This is
-									insecure and should only be used for testing.
+									{t("repositories.advancedForm.insecureTlsDescription")}
 								</FormDescription>
 							</div>
 						</FormItem>
@@ -228,13 +228,13 @@ export const AdvancedForm = ({ form }: Props) => {
 					name="cacert"
 					render={({ field }) => (
 						<FormItem>
-							<FormLabel>CA Certificate (Optional)</FormLabel>
+							<FormLabel>{t("repositories.advancedForm.caCertificate")}</FormLabel>
 							<FormControl>
 								<Tooltip delayDuration={500}>
 									<TooltipTrigger asChild>
 										<div>
 											<Textarea
-												placeholder={"-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"}
+												placeholder={t("repositories.advancedForm.caCertificatePlaceholder")}
 												rows={6}
 												disabled={insecureTls}
 												{...field}
@@ -243,22 +243,20 @@ export const AdvancedForm = ({ form }: Props) => {
 									</TooltipTrigger>
 									<TooltipContent className={cn({ hidden: !insecureTls })}>
 										<p className="max-w-xs">
-											CA certificate is disabled because TLS validation is being skipped. Uncheck "Skip TLS Certificate
-											Verification" to provide a custom CA certificate.
+											{t("repositories.advancedForm.caCertificateDisabledTooltip")}
 										</p>
 									</TooltipContent>
 								</Tooltip>
 							</FormControl>
 							<FormDescription>
-								Custom CA certificate for self-signed certificates (PEM format). This applies to HTTPS
-								connections.&nbsp;
+								{t("repositories.advancedForm.caCertificateDescription")}&nbsp;
 								<a
 									href="https://restic.readthedocs.io/en/stable/030_preparing_a_new_repo.html#rest-server"
 									target="_blank"
 									rel="noopener noreferrer"
 									className="text-primary hover:underline"
 								>
-									Learn more
+									{t("repositories.advancedForm.learnMore")}
 								</a>
 							</FormDescription>
 							<FormMessage />

@@ -1,30 +1,21 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
+import { toast } from "sonner";
 import { ChevronDown, FileIcon, FolderOpen, RotateCcw } from "lucide-react";
 import { Button } from "~/client/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/client/components/ui/card";
+import { Checkbox } from "~/client/components/ui/checkbox";
 import { Input } from "~/client/components/ui/input";
 import { Label } from "~/client/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/client/components/ui/select";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "~/client/components/ui/alert-dialog";
 import { PathSelector } from "~/client/components/path-selector";
 import { FileTree } from "~/client/components/file-tree";
-import { RestoreProgress } from "~/client/components/restore-progress";
 import { listSnapshotFilesOptions, restoreSnapshotMutation } from "~/client/api-client/@tanstack/react-query.gen";
 import { useFileBrowser } from "~/client/hooks/use-file-browser";
-import { type RestoreCompletedEvent, useServerEvents } from "~/client/hooks/use-server-events";
+import { useSystemInfo } from "~/client/hooks/use-system-info";
 import { OVERWRITE_MODES, type OverwriteMode } from "~/schemas/restic";
 import type { Repository, Snapshot } from "~/client/lib/types";
-import { handleRepositoryError } from "~/client/lib/errors";
-import { useNavigate } from "@tanstack/react-router";
 
 type RestoreLocation = "original" | "custom";
 
@@ -37,9 +28,10 @@ interface RestoreFormProps {
 
 export function RestoreForm({ snapshot, repository, snapshotId, returnPath }: RestoreFormProps) {
 	const navigate = useNavigate();
-	const { addEventListener } = useServerEvents();
 	const queryClient = useQueryClient();
+	const { platform } = useSystemInfo();
 
+	const defaultRootPath = platform?.os === "windows" ? "C:\\" : "/";
 	const volumeBasePath = snapshot.paths[0]?.match(/^(.*?_data)(\/|$)/)?.[1] || "/";
 
 	const [restoreLocation, setRestoreLocation] = useState<RestoreLocation>("original");
@@ -47,47 +39,9 @@ export function RestoreForm({ snapshot, repository, snapshotId, returnPath }: Re
 	const [overwriteMode, setOverwriteMode] = useState<OverwriteMode>("always");
 	const [showAdvanced, setShowAdvanced] = useState(false);
 	const [excludeXattr, setExcludeXattr] = useState("");
-	const [isRestoreActive, setIsRestoreActive] = useState(false);
-	const [restoreResult, setRestoreResult] = useState<RestoreCompletedEvent | null>(null);
-	const [showRestoreResultAlert, setShowRestoreResultAlert] = useState(false);
-	const restoreCompletedRef = useRef(false);
+	const [deleteExtraFiles, setDeleteExtraFiles] = useState(false);
 
 	const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
-
-	useEffect(() => {
-		const unsubscribeStarted = addEventListener("restore:started", (startedData) => {
-			if (startedData.repositoryId === repository.id && startedData.snapshotId === snapshotId) {
-				restoreCompletedRef.current = false;
-				setIsRestoreActive(true);
-				setRestoreResult(null);
-				setShowRestoreResultAlert(false);
-			}
-		});
-
-		const unsubscribeProgress = addEventListener("restore:progress", (progressData) => {
-			if (progressData.repositoryId === repository.id && progressData.snapshotId === snapshotId) {
-				if (restoreCompletedRef.current) {
-					return;
-				}
-				setIsRestoreActive(true);
-			}
-		});
-
-		const unsubscribeCompleted = addEventListener("restore:completed", (completedData) => {
-			if (completedData.repositoryId === repository.id && completedData.snapshotId === snapshotId) {
-				restoreCompletedRef.current = true;
-				setIsRestoreActive(false);
-				setRestoreResult(completedData);
-				setShowRestoreResultAlert(true);
-			}
-		});
-
-		return () => {
-			unsubscribeStarted();
-			unsubscribeProgress();
-			unsubscribeCompleted();
-		};
-	}, [addEventListener, repository.id, snapshotId]);
 
 	const { data: filesData, isLoading: filesLoading } = useQuery({
 		...listSnapshotFilesOptions({
@@ -147,10 +101,12 @@ export function RestoreForm({ snapshot, repository, snapshotId, returnPath }: Re
 
 	const { mutate: restoreSnapshot, isPending: isRestoring } = useMutation({
 		...restoreSnapshotMutation(),
+		onSuccess: () => {
+			toast.success("Restore completed");
+			void navigate(returnPath);
+		},
 		onError: (error) => {
-			restoreCompletedRef.current = true;
-			setIsRestoreActive(false);
-			handleRepositoryError("Restore failed", error, repository.id);
+			toast.error("Restore failed", { description: error.message || "Failed to restore snapshot" });
 		},
 	});
 
@@ -166,16 +122,12 @@ export function RestoreForm({ snapshot, repository, snapshotId, returnPath }: Re
 		const pathsArray = Array.from(selectedPaths);
 		const includePaths = pathsArray.map((path) => addBasePath(path));
 
-		restoreCompletedRef.current = false;
-		setIsRestoreActive(true);
-		setRestoreResult(null);
-		setShowRestoreResultAlert(false);
-
 		restoreSnapshot({
 			path: { id: repository.id },
 			body: {
 				snapshotId,
 				include: includePaths.length > 0 ? includePaths : undefined,
+				delete: deleteExtraFiles,
 				excludeXattr: excludeXattrArray && excludeXattrArray.length > 0 ? excludeXattrArray : undefined,
 				targetPath,
 				overwrite: overwriteMode,
@@ -189,23 +141,12 @@ export function RestoreForm({ snapshot, repository, snapshotId, returnPath }: Re
 		customTargetPath,
 		selectedPaths,
 		addBasePath,
+		deleteExtraFiles,
 		overwriteMode,
 		restoreSnapshot,
 	]);
 
-	const acknowledgeRestoreResult = useCallback(() => {
-		setShowRestoreResultAlert(false);
-		setRestoreResult(null);
-	}, []);
-
-	const handleResultAlertOpenChange = useCallback((open: boolean) => {
-		if (open) {
-			setShowRestoreResultAlert(true);
-		}
-	}, []);
-
 	const canRestore = restoreLocation === "original" || customTargetPath.trim();
-	const isRestoreRunning = isRestoring || isRestoreActive;
 
 	return (
 		<div className="space-y-6">
@@ -217,12 +158,12 @@ export function RestoreForm({ snapshot, repository, snapshotId, returnPath }: Re
 					</p>
 				</div>
 				<div className="flex gap-2">
-					<Button variant="outline" onClick={() => navigate({ to: returnPath })}>
+					<Button variant="outline" onClick={() => navigate(returnPath)}>
 						Cancel
 					</Button>
-					<Button variant="primary" onClick={handleRestore} disabled={isRestoreRunning || !canRestore}>
+					<Button variant="primary" onClick={handleRestore} disabled={isRestoring || !canRestore}>
 						<RotateCcw className="h-4 w-4 mr-2" />
-						{isRestoreRunning
+						{isRestoring
 							? "Restoring..."
 							: selectedPaths.size > 0
 								? `Restore ${selectedPaths.size} ${selectedPaths.size === 1 ? "item" : "items"}`
@@ -233,8 +174,6 @@ export function RestoreForm({ snapshot, repository, snapshotId, returnPath }: Re
 
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 				<div className="space-y-6">
-					{isRestoreRunning && <RestoreProgress repositoryId={repository.id} snapshotId={snapshotId} />}
-
 					<Card>
 						<CardHeader>
 							<CardTitle>Restore Location</CardTitle>
@@ -265,7 +204,7 @@ export function RestoreForm({ snapshot, repository, snapshotId, returnPath }: Re
 							</div>
 							{restoreLocation === "custom" && (
 								<div className="space-y-2">
-									<PathSelector value={customTargetPath || "/"} onChange={setCustomTargetPath} />
+									<PathSelector value={customTargetPath || defaultRootPath} onChange={setCustomTargetPath} />
 									<p className="text-xs text-muted-foreground">Files will be restored directly to this path</p>
 								</div>
 							)}
@@ -325,6 +264,16 @@ export function RestoreForm({ snapshot, repository, snapshotId, returnPath }: Re
 										Exclude specific extended attributes during restore (comma-separated)
 									</p>
 								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="delete-extra"
+										checked={deleteExtraFiles}
+										onCheckedChange={(checked) => setDeleteExtraFiles(checked === true)}
+									/>
+									<Label htmlFor="delete-extra" className="text-sm font-normal cursor-pointer">
+										Delete files not present in the snapshot
+									</Label>
+								</div>
 							</CardContent>
 						)}
 					</Card>
@@ -372,24 +321,6 @@ export function RestoreForm({ snapshot, repository, snapshotId, returnPath }: Re
 					</CardContent>
 				</Card>
 			</div>
-
-			<AlertDialog open={showRestoreResultAlert} onOpenChange={handleResultAlertOpenChange}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{restoreResult?.status === "success" ? "Restore completed" : "Restore failed"}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{restoreResult?.status === "success"
-								? `Snapshot ${snapshotId} was restored successfully.`
-								: restoreResult?.error || `Snapshot ${snapshotId} could not be restored.`}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogAction onClick={acknowledgeRestoreResult}>OK</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
 		</div>
 	);
 }

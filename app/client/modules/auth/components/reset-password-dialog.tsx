@@ -1,6 +1,6 @@
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "~/client/components/ui/dialog";
-
-const RESET_PASSWORD_COMMAND = "docker exec -it zerobyte bun run cli reset-password";
+import { isTauri } from "~/client/lib/tauri";
 
 type ResetPasswordDialogProps = {
 	open: boolean;
@@ -8,20 +8,40 @@ type ResetPasswordDialogProps = {
 };
 
 export const ResetPasswordDialog = ({ open, onOpenChange }: ResetPasswordDialogProps) => {
+	const { t } = useTranslation();
+	const isDesktop = isTauri();
+
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-xl">
 				<DialogHeader>
-					<DialogTitle>Reset your password</DialogTitle>
+					<DialogTitle>{t("auth.resetPassword.title")}</DialogTitle>
 					<DialogDescription>
-						To reset your password, run the following command on the server where Zerobyte is installed.
+						{isDesktop
+							? t("auth.resetPassword.descriptionTauri")
+							: t("auth.resetPassword.descriptionWeb")}
 					</DialogDescription>
 				</DialogHeader>
 				<div className="space-y-4">
-					<div className="rounded-md bg-muted p-4 font-mono text-sm break-all select-all">{RESET_PASSWORD_COMMAND}</div>
-					<p className="text-sm text-muted-foreground">
-						This command will start an interactive session where you can enter a new password for your account.
-					</p>
+					{isDesktop ? (
+						<>
+							<div className="rounded-md bg-muted p-4 font-mono text-sm break-all select-all">
+								{t("auth.resetPassword.commandTauri")}
+							</div>
+							<p className="text-sm text-muted-foreground">
+								{t("auth.resetPassword.commandHint")}
+							</p>
+						</>
+					) : (
+						<>
+							<div className="rounded-md bg-muted p-4 font-mono text-sm break-all select-all">
+								{t("auth.resetPassword.commandDocker")}
+							</div>
+							<p className="text-sm text-muted-foreground">
+								{t("auth.resetPassword.commandDockerHint")}
+							</p>
+						</>
+					)}
 				</div>
 			</DialogContent>
 		</Dialog>

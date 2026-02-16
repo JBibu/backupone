@@ -25,6 +25,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/client/components/ui
 import { authClient } from "~/client/lib/auth-client";
 import { type AppContext } from "~/context";
 import { TwoFactorSection } from "../components/two-factor-section";
+import { AppSettingsSection } from "../components/app-settings-section";
+import { UpdateSection } from "../components/update-section";
+import { LogViewerSection } from "../components/log-viewer-section";
+import { WindowsServiceSection } from "../components/windows-service-section";
+import { LanguageSection } from "../components/language-section";
 import { UserManagement } from "../components/user-management";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 
@@ -303,6 +308,18 @@ export function SettingsPage({ appContext }: Props) {
 							</CardContent>
 
 							<TwoFactorSection twoFactorEnabled={appContext.user?.twoFactorEnabled} />
+
+							<AppSettingsSection />
+
+							<UpdateSection />
+
+							<div className="border-t border-border/50 p-6">
+								<LanguageSection />
+							</div>
+
+							<WindowsServiceSection />
+
+							<LogViewerSection />
 						</Card>
 					</TabsContent>
 

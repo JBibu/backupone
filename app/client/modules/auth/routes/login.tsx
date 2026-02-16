@@ -2,6 +2,8 @@ import { arktypeResolver } from "@hookform/resolvers/arktype";
 import { type } from "arktype";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { AuthLayout } from "~/client/components/auth-layout";
 import { Button } from "~/client/components/ui/button";
@@ -10,8 +12,21 @@ import { Input } from "~/client/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "~/client/components/ui/input-otp";
 import { Label } from "~/client/components/ui/label";
 import { authClient } from "~/client/lib/auth-client";
+import { authMiddleware } from "~/middleware/auth";
 import { ResetPasswordDialog } from "../components/reset-password-dialog";
-import { useNavigate } from "@tanstack/react-router";
+import type { Route } from "./+types/login";
+
+export const clientMiddleware = [authMiddleware];
+
+export function meta(_: Route.MetaArgs) {
+	return [
+		{ title: "C3i Backup ONE - Login" },
+		{
+			name: "description",
+			content: "Sign in to your C3i Backup ONE account.",
+		},
+	];
+}
 
 const loginSchema = type({
 	username: "2<=string<=50",
@@ -20,7 +35,8 @@ const loginSchema = type({
 
 type LoginFormValues = typeof loginSchema.inferIn;
 
-export function LoginPage() {
+export default function LoginPage() {
+	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const [showResetDialog, setShowResetDialog] = useState(false);
 	const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -64,15 +80,15 @@ export function LoginPage() {
 
 		const d = await authClient.getSession();
 		if (data.user && !d.data?.user.hasDownloadedResticPassword) {
-			void navigate({ to: "/download-recovery-key" });
+			void navigate("/download-recovery-key");
 		} else {
-			void navigate({ to: "/volumes" });
+			void navigate("/volumes");
 		}
 	};
 
 	const handleVerify2FA = async () => {
 		if (totpCode.length !== 6) {
-			toast.error("Please enter a 6-digit code");
+			toast.error(t("auth.login.toast.invalidCode"));
 			return;
 		}
 
@@ -91,18 +107,18 @@ export function LoginPage() {
 
 		if (error) {
 			console.error(error);
-			toast.error("Verification failed", { description: error.message });
+			toast.error(t("auth.login.toast.verificationFailed"), { description: error.message });
 			setTotpCode("");
 			return;
 		}
 
 		if (data) {
-			toast.success("Login successful");
+			toast.success(t("auth.login.toast.loginSuccess"));
 			const session = await authClient.getSession();
 			if (session.data?.user && !session.data.user.hasDownloadedResticPassword) {
-				void navigate({ to: "/download-recovery-key" });
+				void navigate("/download-recovery-key");
 			} else {
-				void navigate({ to: "/volumes" });
+				void navigate("/volumes");
 			}
 		}
 	};
@@ -116,10 +132,10 @@ export function LoginPage() {
 
 	if (requires2FA) {
 		return (
-			<AuthLayout title="Two-Factor Authentication" description="Enter the 6-digit code from your authenticator app">
+			<AuthLayout title={t("auth.login.twoFactor.title")} description={t("auth.login.twoFactor.description")}>
 				<div className="space-y-6">
 					<div className="space-y-4 flex flex-col items-center">
-						<Label htmlFor="totp-code">Authentication code</Label>
+						<Label htmlFor="totp-code">{t("auth.login.twoFactor.codeLabel")}</Label>
 						<div>
 							<InputOTP
 								maxLength={6}
@@ -152,7 +168,7 @@ export function LoginPage() {
 							className="h-4 w-4"
 						/>
 						<label htmlFor="trust-device" className="text-sm text-muted-foreground cursor-pointer">
-							Trust this device for 30 days
+							{t("auth.login.twoFactor.trustDevice")}
 						</label>
 					</div>
 
@@ -164,7 +180,7 @@ export function LoginPage() {
 							onClick={handleVerify2FA}
 							disabled={totpCode.length !== 6}
 						>
-							Verify
+							{t("auth.login.twoFactor.verifyButton")}
 						</Button>
 						<Button
 							type="button"
@@ -173,7 +189,7 @@ export function LoginPage() {
 							onClick={handleBackToLogin}
 							disabled={isVerifying2FA}
 						>
-							Back to Login
+							{t("auth.login.twoFactor.backButton")}
 						</Button>
 					</div>
 				</div>
@@ -182,7 +198,7 @@ export function LoginPage() {
 	}
 
 	return (
-		<AuthLayout title="Login to your account" description="Enter your credentials below to login to your account">
+		<AuthLayout title={t("auth.login.form.title")} description={t("auth.login.form.description")}>
 			<Form {...form}>
 				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 					<FormField
@@ -190,9 +206,9 @@ export function LoginPage() {
 						name="username"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Username</FormLabel>
+								<FormLabel>{t("auth.login.form.username")}</FormLabel>
 								<FormControl>
-									<Input {...field} type="text" placeholder="admin" disabled={isLoggingIn} />
+									<Input {...field} type="text" placeholder={t("auth.login.form.usernamePlaceholder")} disabled={isLoggingIn} />
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -204,13 +220,13 @@ export function LoginPage() {
 						render={({ field }) => (
 							<FormItem>
 								<div className="flex items-center justify-between">
-									<FormLabel>Password</FormLabel>
+									<FormLabel>{t("auth.login.form.password")}</FormLabel>
 									<button
 										type="button"
 										className="text-xs text-muted-foreground hover:underline"
 										onClick={() => setShowResetDialog(true)}
 									>
-										Forgot your password?
+										{t("auth.login.form.forgotPassword")}
 									</button>
 								</div>
 								<FormControl>
@@ -221,7 +237,7 @@ export function LoginPage() {
 						)}
 					/>
 					<Button type="submit" className="w-full" loading={isLoggingIn}>
-						Login
+						{t("auth.login.form.loginButton")}
 					</Button>
 				</form>
 			</Form>

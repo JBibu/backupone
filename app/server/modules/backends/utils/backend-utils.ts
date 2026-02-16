@@ -3,8 +3,17 @@ import * as npath from "node:path";
 import { toMessage } from "../../../utils/errors";
 import { logger } from "../../../utils/logger";
 import { exec } from "~/server/utils/spawn";
+import { IS_WINDOWS } from "~/server/core/platform";
 
+/**
+ * Execute mount command (Linux only).
+ * On Windows, throws an error as mounting isn't supported via this mechanism.
+ */
 export const executeMount = async (args: string[]): Promise<void> => {
+	if (IS_WINDOWS) {
+		throw new Error("Mount command is not available on Windows. Use native Windows sharing or rclone instead.");
+	}
+
 	const shouldBeVerbose = process.env.LOG_LEVEL === "debug" || process.env.NODE_ENV !== "production";
 	const hasVerboseFlag = args.some((arg) => arg === "-v" || arg.startsWith("-vv"));
 	const effectiveArgs = shouldBeVerbose && !hasVerboseFlag ? ["-v", ...args] : args;
@@ -27,7 +36,16 @@ export const executeMount = async (args: string[]): Promise<void> => {
 	throw new Error(`Mount command failed with exit code ${result.exitCode}: ${stderr || stdout || "unknown error"}`);
 };
 
+/**
+ * Execute unmount command (Linux only).
+ * On Windows, this is a no-op as mounting isn't used.
+ */
 export const executeUnmount = async (path: string): Promise<void> => {
+	if (IS_WINDOWS) {
+		logger.debug(`Unmount not applicable on Windows for path: ${path}`);
+		return;
+	}
+
 	let stderr: string | undefined;
 
 	logger.debug(`Executing umount -l ${path}`);
@@ -44,6 +62,10 @@ export const executeUnmount = async (path: string): Promise<void> => {
 	}
 };
 
+/**
+ * Create a test file to verify write access to a path.
+ * Works cross-platform.
+ */
 export const createTestFile = async (path: string): Promise<void> => {
 	const testFilePath = npath.join(path, `.healthcheck-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
 
@@ -62,4 +84,28 @@ export const createTestFile = async (path: string): Promise<void> => {
 			}
 		}),
 	);
+};
+
+/**
+ * Check if a path is accessible (works cross-platform).
+ */
+export const isPathAccessible = async (path: string): Promise<boolean> => {
+	try {
+		await fs.access(path);
+		return true;
+	} catch {
+		return false;
+	}
+};
+
+/**
+ * Check if a path is a directory (works cross-platform).
+ */
+export const isDirectory = async (path: string): Promise<boolean> => {
+	try {
+		const stats = await fs.stat(path);
+		return stats.isDirectory();
+	} catch {
+		return false;
+	}
 };

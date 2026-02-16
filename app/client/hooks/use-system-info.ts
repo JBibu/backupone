@@ -11,6 +11,7 @@ export function useSystemInfo() {
 
 	return {
 		capabilities: data?.capabilities ?? { rclone: false, sysAdmin: false },
+		platform: data?.platform,
 		isLoading,
 		error,
 		systemInfo: data,

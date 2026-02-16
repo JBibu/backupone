@@ -6,8 +6,15 @@ export const capabilitiesSchema = type({
 	sysAdmin: "boolean",
 });
 
+export const platformInfoSchema = type({
+	os: '"windows" | "linux" | "darwin"',
+	isServiceMode: "boolean",
+	dataPath: "string",
+});
+
 export const systemInfoResponse = type({
 	capabilities: capabilitiesSchema,
+	platform: platformInfoSchema,
 });
 
 export type SystemInfoDto = typeof systemInfoResponse.infer;
@@ -75,6 +82,29 @@ export const downloadResticPasswordDto = describeRoute({
 			content: {
 				"text/plain": {
 					schema: { type: "string" },
+				},
+			},
+		},
+	},
+});
+
+export const logsResponseSchema = type({
+	logs: "string",
+	path: "string",
+});
+
+export type LogsDto = typeof logsResponseSchema.infer;
+
+export const getLogsDto = describeRoute({
+	description: "Get application logs",
+	tags: ["System"],
+	operationId: "getLogs",
+	responses: {
+		200: {
+			description: "Application logs content",
+			content: {
+				"application/json": {
+					schema: resolver(logsResponseSchema),
 				},
 			},
 		},

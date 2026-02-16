@@ -1,4 +1,4 @@
-import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
 	DndContext,
 	closestCenter,
@@ -10,25 +10,54 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, rectSortingStrategy } from "@dnd-kit/sortable";
 import { CalendarClock, Plus } from "lucide-react";
-import { useState } from "react";
+import { Link } from "react-router";
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { EmptyState } from "~/client/components/empty-state";
 import { Button } from "~/client/components/ui/button";
 import { Card, CardContent } from "~/client/components/ui/card";
+import type { Route } from "./+types/backups";
+import { listBackupSchedules } from "~/client/api-client";
 import {
 	listBackupSchedulesOptions,
 	reorderBackupSchedulesMutation,
 } from "~/client/api-client/@tanstack/react-query.gen";
 import { SortableCard } from "~/client/components/sortable-card";
 import { BackupCard } from "../components/backup-card";
-import { Link } from "@tanstack/react-router";
 
-export function BackupsPage() {
-	const { data: schedules } = useSuspenseQuery({
+export const handle = {
+	breadcrumb: () => [{ label: "Backups" }],
+};
+
+export function meta(_: Route.MetaArgs) {
+	return [
+		{ title: "C3i Backup ONE - Backup Jobs" },
+		{
+			name: "description",
+			content: "Automate volume backups with scheduled jobs and retention policies.",
+		},
+	];
+}
+
+export const clientLoader = async () => {
+	const jobs = await listBackupSchedules();
+	if (jobs.data) return jobs.data;
+	return [];
+};
+
+export default function Backups({ loaderData }: Route.ComponentProps) {
+	const { t } = useTranslation();
+	const { data: schedules, isLoading } = useQuery({
 		...listBackupSchedulesOptions(),
+		initialData: loaderData,
 	});
 
-	const [localItems, setLocalItems] = useState<number[] | null>(null);
-	const items = localItems ?? schedules?.map((s) => s.id) ?? [];
+	const [items, setItems] = useState(schedules?.map((s) => s.id) ?? []);
+	useEffect(() => {
+		if (schedules) {
+			setItems(schedules.map((s) => s.id));
+		}
+	}, [schedules]);
 
 	const sensors = useSensors(
 		useSensor(PointerSensor, {
@@ -47,28 +76,10 @@ export function BackupsPage() {
 		const { active, over } = event;
 
 		if (over && active.id !== over.id) {
-			setLocalItems((currentItems) => {
-				const baseItems = currentItems ?? schedules?.map((s) => s.id) ?? [];
-				const activeId = active.id as number;
-				const overId = over.id as number;
-				let oldIndex = baseItems.indexOf(activeId);
-				let newIndex = baseItems.indexOf(overId);
-
-				if (oldIndex === -1 || newIndex === -1) {
-					const freshItems = schedules?.map((s) => s.id) ?? [];
-					oldIndex = freshItems.indexOf(activeId);
-					newIndex = freshItems.indexOf(overId);
-
-					if (oldIndex === -1 || newIndex === -1) {
-						return currentItems;
-					}
-
-					const newItems = arrayMove(freshItems, oldIndex, newIndex);
-					reorderMutation.mutate({ body: { scheduleIds: newItems } });
-					return newItems;
-				}
-
-				const newItems = arrayMove(baseItems, oldIndex, newIndex);
+			setItems((items) => {
+				const oldIndex = items.indexOf(active.id as number);
+				const newIndex = items.indexOf(over.id as number);
+				const newItems = arrayMove(items, oldIndex, newIndex);
 				reorderMutation.mutate({ body: { scheduleIds: newItems } });
 
 				return newItems;
@@ -76,17 +87,25 @@ export function BackupsPage() {
 		}
 	};
 
+	if (isLoading) {
+		return (
+			<div className="flex items-center justify-center h-full">
+				<p className="text-muted-foreground">{t("backups.loading")}</p>
+			</div>
+		);
+	}
+
 	if (!schedules || schedules.length === 0) {
 		return (
 			<EmptyState
 				icon={CalendarClock}
-				title="No backup job"
-				description="Backup jobs help you automate the process of backing up your volumes on a regular schedule to ensure your data is safe and secure."
+				title={t("backups.empty.title")}
+				description={t("backups.empty.description")}
 				button={
 					<Button>
 						<Link to="/backups/create" className="flex items-center">
 							<Plus className="h-4 w-4 mr-2" />
-							Create a backup job
+							{t("backups.createButton")}
 						</Link>
 					</Button>
 				}
@@ -114,7 +133,7 @@ export function BackupsPage() {
 							<Card className="flex flex-col items-center justify-center h-full hover:bg-muted/50 transition-colors cursor-pointer">
 								<CardContent className="flex flex-col items-center justify-center gap-2">
 									<Plus className="h-8 w-8 text-muted-foreground" />
-									<span className="text-sm font-medium text-muted-foreground">Create a backup job</span>
+									<span className="text-sm font-medium text-muted-foreground">{t("backups.createButton")}</span>
 								</CardContent>
 							</Card>
 						</Link>

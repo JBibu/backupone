@@ -2,8 +2,15 @@ import { readFileSync } from "node:fs";
 import os from "node:os";
 import { type } from "arktype";
 import "dotenv/config";
+import { IS_WINDOWS, IS_SERVICE_MODE, getServerPort } from "./platform";
 
 const getResticHostname = () => {
+	// On Windows, just use the system hostname directly
+	if (IS_WINDOWS) {
+		return IS_SERVICE_MODE ? "zerobyte-service" : os.hostname() || "zerobyte";
+	}
+
+	// On Linux, check if we're running in a Docker container
 	try {
 		const mountinfo = readFileSync("/proc/self/mountinfo", "utf-8");
 		const hostnameLine = mountinfo.split("\n").find((line) => line.includes(" /etc/hostname "));
@@ -29,7 +36,7 @@ const envSchema = type({
 	SERVER_IP: 'string = "localhost"',
 	SERVER_IDLE_TIMEOUT: 'string.integer.parse = "60"',
 	RESTIC_HOSTNAME: "string?",
-	PORT: 'string.integer.parse = "4096"',
+	PORT: `string.integer.parse = "${getServerPort()}"`,
 	MIGRATIONS_PATH: "string?",
 	APP_VERSION: "string = 'dev'",
 	TRUSTED_ORIGINS: "string?",

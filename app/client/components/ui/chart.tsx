@@ -1,4 +1,4 @@
-// @ts-nocheck
+// @ts-nocheck - Recharts has complex generic types that cause TS issues with chart composition
 // biome-ignore-all lint: reason
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
@@ -56,7 +56,9 @@ function ChartContainer({
 				{...props}
 			>
 				<ChartStyle id={chartId} config={config} />
-				<RechartsPrimitive.ResponsiveContainer>{children}</RechartsPrimitive.ResponsiveContainer>
+				<RechartsPrimitive.ResponsiveContainer minWidth={0} minHeight={0}>
+					{children}
+				</RechartsPrimitive.ResponsiveContainer>
 			</div>
 		</ChartContext.Provider>
 	);

@@ -14,6 +14,7 @@ import { Input } from "~/client/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "~/client/components/ui/input-otp";
 import { Label } from "~/client/components/ui/label";
 import { authClient } from "~/client/lib/auth-client";
+import { useTranslation } from "react-i18next";
 
 type TwoFactorSetupDialogProps = {
 	open: boolean;
@@ -22,6 +23,7 @@ type TwoFactorSetupDialogProps = {
 };
 
 export const TwoFactorSetupDialog = ({ open, onOpenChange, onSuccess }: TwoFactorSetupDialogProps) => {
+	const { t } = useTranslation();
 	const [setupStep, setSetupStep] = useState<"password" | "qr" | "verify">("password");
 	const [password, setPassword] = useState("");
 	const [totpUri, setTotpUri] = useState<string | null>(null);
@@ -34,13 +36,13 @@ export const TwoFactorSetupDialog = ({ open, onOpenChange, onSuccess }: TwoFacto
 		e.preventDefault();
 
 		if (!password) {
-			toast.error("Password is required");
+			toast.error(t("settings.twoFactor.setup.toast.passwordRequired"));
 			return;
 		}
 
 		const { data, error } = await authClient.twoFactor.enable({
 			password,
-			issuer: "Zerobyte",
+			issuer: "C3i Backup ONE",
 			fetchOptions: {
 				onRequest: () => {
 					setIsEnabling2FA(true);
@@ -53,7 +55,7 @@ export const TwoFactorSetupDialog = ({ open, onOpenChange, onSuccess }: TwoFacto
 
 		if (error) {
 			console.error(error);
-			toast.error("Failed to enable 2FA", { description: error.message });
+			toast.error(t("settings.twoFactor.setup.toast.enableFailed"), { description: error.message });
 			return;
 		}
 
@@ -64,7 +66,7 @@ export const TwoFactorSetupDialog = ({ open, onOpenChange, onSuccess }: TwoFacto
 
 	const handleVerify2FA = async () => {
 		if (verificationCode.length !== 6) {
-			toast.error("Please enter a 6-digit code");
+			toast.error(t("settings.twoFactor.setup.toast.invalidCode"));
 			return;
 		}
 
@@ -82,13 +84,13 @@ export const TwoFactorSetupDialog = ({ open, onOpenChange, onSuccess }: TwoFacto
 
 		if (error) {
 			console.error(error);
-			toast.error("Verification failed", { description: error.message });
+			toast.error(t("settings.twoFactor.setup.toast.verificationFailed"), { description: error.message });
 			setVerificationCode("");
 			return;
 		}
 
 		if (data) {
-			toast.success("Two-factor authentication enabled successfully");
+			toast.success(t("settings.twoFactor.setup.toast.success"));
 			handleClose();
 			onSuccess();
 		}
@@ -111,30 +113,30 @@ export const TwoFactorSetupDialog = ({ open, onOpenChange, onSuccess }: TwoFacto
 				{setupStep === "password" && (
 					<form onSubmit={handleEnable2FA}>
 						<DialogHeader>
-							<DialogTitle>Enable Two-Factor Authentication</DialogTitle>
+							<DialogTitle>{t("settings.twoFactor.setup.passwordStep.title")}</DialogTitle>
 							<DialogDescription>
-								Enter your password to generate a QR code for your authenticator app
+								{t("settings.twoFactor.setup.passwordStep.description")}
 							</DialogDescription>
 						</DialogHeader>
 						<div className="space-y-4 py-4">
 							<div className="space-y-2">
-								<Label htmlFor="setup-password">Your password</Label>
+								<Label htmlFor="setup-password">{t("settings.twoFactor.setup.passwordStep.passwordLabel")}</Label>
 								<Input
 									id="setup-password"
 									type="password"
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}
-									placeholder="Enter your password"
+									placeholder={t("settings.twoFactor.setup.passwordStep.passwordPlaceholder")}
 									required
 								/>
 							</div>
 						</div>
 						<DialogFooter>
 							<Button type="button" variant="outline" onClick={handleClose}>
-								Cancel
+								{t("settings.twoFactor.setup.passwordStep.cancelButton")}
 							</Button>
 							<Button type="submit" loading={isEnabling2FA}>
-								Continue
+								{t("settings.twoFactor.setup.passwordStep.continueButton")}
 							</Button>
 						</DialogFooter>
 					</form>
@@ -143,9 +145,9 @@ export const TwoFactorSetupDialog = ({ open, onOpenChange, onSuccess }: TwoFacto
 				{setupStep === "qr" && totpUri && (
 					<>
 						<DialogHeader>
-							<DialogTitle>Scan QR Code</DialogTitle>
+							<DialogTitle>{t("settings.twoFactor.setup.qrStep.title")}</DialogTitle>
 							<DialogDescription>
-								Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
+								{t("settings.twoFactor.setup.qrStep.description")}
 							</DialogDescription>
 						</DialogHeader>
 						<div className="space-y-4 py-4">
@@ -153,7 +155,7 @@ export const TwoFactorSetupDialog = ({ open, onOpenChange, onSuccess }: TwoFacto
 								<QRCodeCanvas value={totpUri} size={200} />
 							</div>
 							<div className="space-y-2">
-								<Label className="text-xs">Manual entry code</Label>
+								<Label className="text-xs">{t("settings.twoFactor.setup.qrStep.manualEntryLabel")}</Label>
 								<div className="flex items-center gap-2">
 									<Input
 										value={totpUri.split("secret=")[1]?.split("&")[0] || ""}
@@ -164,7 +166,7 @@ export const TwoFactorSetupDialog = ({ open, onOpenChange, onSuccess }: TwoFacto
 							</div>
 							{backupCodes.length > 0 && (
 								<div className="space-y-2">
-									<Label className="text-xs">Backup codes (save these securely)</Label>
+									<Label className="text-xs">{t("settings.twoFactor.setup.qrStep.backupCodesLabel")}</Label>
 									<div className="p-3 bg-muted rounded-md space-y-1 max-h-32 overflow-y-auto">
 										{backupCodes.map((code) => (
 											<div key={code} className="text-xs font-mono py-1">
@@ -177,7 +179,7 @@ export const TwoFactorSetupDialog = ({ open, onOpenChange, onSuccess }: TwoFacto
 						</div>
 						<DialogFooter>
 							<Button type="button" onClick={() => setSetupStep("verify")}>
-								Continue
+								{t("settings.twoFactor.setup.qrStep.continueButton")}
 							</Button>
 						</DialogFooter>
 					</>
@@ -186,9 +188,9 @@ export const TwoFactorSetupDialog = ({ open, onOpenChange, onSuccess }: TwoFacto
 				{setupStep === "verify" && (
 					<>
 						<DialogHeader>
-							<DialogTitle>Verify setup</DialogTitle>
+							<DialogTitle>{t("settings.twoFactor.setup.verifyStep.title")}</DialogTitle>
 							<DialogDescription>
-								Enter the 6-digit code from your authenticator app to complete setup
+								{t("settings.twoFactor.setup.verifyStep.description")}
 							</DialogDescription>
 						</DialogHeader>
 						<div className="space-y-4 py-4">
@@ -218,7 +220,7 @@ export const TwoFactorSetupDialog = ({ open, onOpenChange, onSuccess }: TwoFacto
 						</div>
 						<DialogFooter>
 							<Button type="button" variant="outline" onClick={() => setSetupStep("qr")}>
-								Back
+								{t("settings.twoFactor.setup.verifyStep.backButton")}
 							</Button>
 							<Button
 								type="button"
@@ -226,7 +228,7 @@ export const TwoFactorSetupDialog = ({ open, onOpenChange, onSuccess }: TwoFacto
 								loading={isVerifying2FA}
 								disabled={verificationCode.length !== 6}
 							>
-								Verify
+								{t("settings.twoFactor.setup.verifyStep.verifyButton")}
 							</Button>
 						</DialogFooter>
 					</>

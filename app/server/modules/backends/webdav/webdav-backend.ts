@@ -1,6 +1,7 @@
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import { OPERATION_TIMEOUT } from "../../../core/constants";
+import { IS_WINDOWS } from "../../../core/platform";
 import { cryptoUtils } from "../../../utils/crypto";
 import { toMessage } from "../../../utils/errors";
 import { logger } from "../../../utils/logger";
@@ -10,12 +11,22 @@ import type { VolumeBackend } from "../backend";
 import { executeMount, executeUnmount } from "../utils/backend-utils";
 import { BACKEND_STATUS, type BackendConfig } from "~/schemas/volumes";
 
+const WINDOWS_WEBDAV_ERROR =
+	"WebDAV volume mounting is not supported on Windows. " +
+	"Consider using rclone with a WebDAV remote as a repository backend instead, " +
+	"or map the WebDAV share as a network drive in Windows Explorer.";
+
 const mount = async (config: BackendConfig, path: string) => {
 	logger.debug(`Mounting WebDAV volume ${path}...`);
 
 	if (config.backend !== "webdav") {
 		logger.error("Provided config is not for WebDAV backend");
 		return { status: BACKEND_STATUS.error, error: "Provided config is not for WebDAV backend" };
+	}
+
+	if (IS_WINDOWS) {
+		logger.error(WINDOWS_WEBDAV_ERROR);
+		return { status: BACKEND_STATUS.error, error: WINDOWS_WEBDAV_ERROR };
 	}
 
 	if (os.platform() !== "linux") {
@@ -105,6 +116,11 @@ const mount = async (config: BackendConfig, path: string) => {
 };
 
 const unmount = async (path: string) => {
+	if (IS_WINDOWS) {
+		logger.debug("WebDAV unmount not applicable on Windows");
+		return { status: BACKEND_STATUS.unmounted };
+	}
+
 	if (os.platform() !== "linux") {
 		logger.error("WebDAV unmounting is only supported on Linux hosts.");
 		return { status: BACKEND_STATUS.error, error: "WebDAV unmounting is only supported on Linux hosts." };
@@ -134,6 +150,10 @@ const unmount = async (path: string) => {
 };
 
 const checkHealth = async (path: string) => {
+	if (IS_WINDOWS) {
+		return { status: BACKEND_STATUS.error, error: WINDOWS_WEBDAV_ERROR };
+	}
+
 	const run = async () => {
 		try {
 			await fs.access(path);
@@ -164,6 +184,13 @@ const checkHealth = async (path: string) => {
 		}
 		return { status: BACKEND_STATUS.error, error: message };
 	}
+};
+
+/**
+ * Check if WebDAV volume mounting is supported on the current platform.
+ */
+export const isWebdavMountSupported = (): boolean => {
+	return !IS_WINDOWS && os.platform() === "linux";
 };
 
 export const makeWebdavBackend = (config: BackendConfig, path: string): VolumeBackend => ({

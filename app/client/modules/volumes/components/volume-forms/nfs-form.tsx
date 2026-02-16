@@ -1,4 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import type { FormValues } from "../create-volume-form";
 import {
 	FormControl,
@@ -16,6 +17,8 @@ type Props = {
 };
 
 export const NFSForm = ({ form }: Props) => {
+	const { t } = useTranslation();
+
 	return (
 		<>
 			<FormField
@@ -23,11 +26,11 @@ export const NFSForm = ({ form }: Props) => {
 				name="server"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Server</FormLabel>
+						<FormLabel>{t("volumes.nfsForm.serverLabel")}</FormLabel>
 						<FormControl>
 							<Input placeholder="192.168.1.100" {...field} />
 						</FormControl>
-						<FormDescription>NFS server IP address or hostname.</FormDescription>
+						<FormDescription>{t("volumes.nfsForm.serverDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -37,11 +40,11 @@ export const NFSForm = ({ form }: Props) => {
 				name="exportPath"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Export Path</FormLabel>
+						<FormLabel>{t("volumes.nfsForm.exportPathLabel")}</FormLabel>
 						<FormControl>
 							<Input placeholder="/export/data" {...field} />
 						</FormControl>
-						<FormDescription>Path to the NFS export on the server.</FormDescription>
+						<FormDescription>{t("volumes.nfsForm.exportPathDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -52,7 +55,7 @@ export const NFSForm = ({ form }: Props) => {
 				defaultValue={2049}
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Port</FormLabel>
+						<FormLabel>{t("volumes.nfsForm.portLabel")}</FormLabel>
 						<FormControl>
 							<Input
 								type="number"
@@ -61,7 +64,7 @@ export const NFSForm = ({ form }: Props) => {
 								onChange={(e) => field.onChange(parseInt(e.target.value, 10) || undefined)}
 							/>
 						</FormControl>
-						<FormDescription>NFS server port (default: 2049).</FormDescription>
+						<FormDescription>{t("volumes.nfsForm.portDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -72,11 +75,11 @@ export const NFSForm = ({ form }: Props) => {
 				defaultValue="4.1"
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Version</FormLabel>
+						<FormLabel>{t("volumes.nfsForm.versionLabel")}</FormLabel>
 						<Select onValueChange={field.onChange} value={field.value}>
 							<FormControl>
 								<SelectTrigger>
-									<SelectValue placeholder="Select NFS version" />
+									<SelectValue placeholder={t("volumes.nfsForm.versionPlaceholder")} />
 								</SelectTrigger>
 							</FormControl>
 							<SelectContent>
@@ -85,7 +88,7 @@ export const NFSForm = ({ form }: Props) => {
 								<SelectItem value="4.1">NFS v4.1</SelectItem>
 							</SelectContent>
 						</Select>
-						<FormDescription>NFS protocol version to use.</FormDescription>
+						<FormDescription>{t("volumes.nfsForm.versionDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}
@@ -96,7 +99,7 @@ export const NFSForm = ({ form }: Props) => {
 				defaultValue={false}
 				render={({ field }) => (
 					<FormItem>
-						<FormLabel>Read-only Mode</FormLabel>
+						<FormLabel>{t("volumes.nfsForm.readOnlyLabel")}</FormLabel>
 						<FormControl>
 							<div className="flex items-center space-x-2">
 								<input
@@ -105,12 +108,10 @@ export const NFSForm = ({ form }: Props) => {
 									onChange={(e) => field.onChange(e.target.checked)}
 									className="rounded border-gray-300"
 								/>
-								<span className="text-sm">Mount volume as read-only</span>
+								<span className="text-sm">{t("volumes.nfsForm.readOnlyCheckbox")}</span>
 							</div>
 						</FormControl>
-						<FormDescription>
-							Prevent any modifications to the volume. Recommended for backup sources and sensitive data.
-						</FormDescription>
+						<FormDescription>{t("volumes.nfsForm.readOnlyDescription")}</FormDescription>
 						<FormMessage />
 					</FormItem>
 				)}

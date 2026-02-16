@@ -1,10 +1,13 @@
 import { Hono } from "hono";
+import path from "node:path";
 import { validator } from "hono-openapi";
 import {
 	downloadResticPasswordBodySchema,
 	downloadResticPasswordDto,
+	getLogsDto,
 	getUpdatesDto,
 	systemInfoDto,
+	type LogsDto,
 	type SystemInfoDto,
 	type UpdateInfoDto,
 	setRegistrationStatusDto,
@@ -20,6 +23,7 @@ import { db } from "../../db/db";
 import { usersTable } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { verifyUserPassword } from "../auth/helpers";
+import { getZerobytePath } from "../../core/platform";
 import { cryptoUtils } from "../../utils/crypto";
 import { createMiddleware } from "hono/factory";
 import { getOrganizationId } from "~/server/core/request-context";
@@ -45,6 +49,27 @@ export const systemController = new Hono()
 		const updates = await systemService.getUpdates();
 
 		return c.json<UpdateInfoDto>(updates, 200);
+	})
+	.get("/logs", getLogsDto, async (c) => {
+		const lines = c.req.query("lines") || "200";
+		const logPath = path.join(getZerobytePath(), "logs", "server.log");
+
+		try {
+			const file = Bun.file(logPath);
+			const exists = await file.exists();
+
+			if (!exists) {
+				return c.json<LogsDto>({ logs: "No logs available yet.", path: logPath }, 200);
+			}
+
+			const content = await file.text();
+			const allLines = content.split("\n");
+			const lastLines = allLines.slice(-parseInt(lines, 10)).join("\n");
+
+			return c.json<LogsDto>({ logs: lastLines, path: logPath }, 200);
+		} catch (_error) {
+			return c.json<LogsDto>({ logs: "Failed to read log file.", path: logPath }, 200);
+		}
 	})
 	.get("/registration-status", getRegistrationStatusDto, async (c) => {
 		const enabled = await systemService.isRegistrationEnabled();

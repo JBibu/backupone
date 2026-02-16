@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef } from "react";
+import { notifyError, notifyInfo, notifySuccess, notifyWarning } from "~/client/lib/notifications";
 import { serverEventNames, type ServerEventPayloadMap } from "~/schemas/server-events";
 
 type LifecycleEventPayloadMap = {
@@ -84,6 +85,43 @@ export function useServerEvents() {
 				}
 
 				emit(eventName, data);
+
+				switch (eventName) {
+					case "backup:started": {
+						const d = data as ServerEventsPayloadMap["backup:started"];
+						void notifyInfo("Backup Started", `${d.repositoryName} — ${d.volumeName}`);
+						break;
+					}
+					case "backup:completed": {
+						const d = data as ServerEventsPayloadMap["backup:completed"];
+						const label = `${d.repositoryName} — ${d.volumeName}`;
+						if (d.status === "success") void notifySuccess("Backup Completed", label);
+						else if (d.status === "warning") void notifyWarning("Backup Completed with Warnings", label);
+						else void notifyError("Backup Failed", label);
+						break;
+					}
+					case "mirror:started": {
+						const d = data as ServerEventsPayloadMap["mirror:started"];
+						void notifyInfo("Mirror Started", d.repositoryName);
+						break;
+					}
+					case "mirror:completed": {
+						const d = data as ServerEventsPayloadMap["mirror:completed"];
+						if (d.status === "success") void notifySuccess("Mirror Completed", d.repositoryName);
+						else void notifyError("Mirror Failed", d.error ?? d.repositoryName);
+						break;
+					}
+					case "volume:mounted": {
+						const d = data as ServerEventsPayloadMap["volume:mounted"];
+						void notifySuccess("Volume Mounted", d.volumeName);
+						break;
+					}
+					case "volume:unmounted": {
+						const d = data as ServerEventsPayloadMap["volume:unmounted"];
+						void notifyInfo("Volume Unmounted", d.volumeName);
+						break;
+					}
+				}
 			});
 		}
 

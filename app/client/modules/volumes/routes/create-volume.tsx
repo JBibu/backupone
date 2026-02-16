@@ -1,16 +1,31 @@
 import { useMutation } from "@tanstack/react-query";
 import { HardDrive, Plus } from "lucide-react";
 import { useId } from "react";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { createVolumeMutation } from "~/client/api-client/@tanstack/react-query.gen";
 import { CreateVolumeForm, type FormValues } from "~/client/modules/volumes/components/create-volume-form";
 import { Button } from "~/client/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/client/components/ui/card";
 import { parseError } from "~/client/lib/errors";
+import type { Route } from "./+types/create-volume";
 import { Alert, AlertDescription } from "~/client/components/ui/alert";
-import { useNavigate } from "@tanstack/react-router";
 
-export function CreateVolumePage() {
+export const handle = {
+	breadcrumb: () => [{ label: "Volumes", href: "/volumes" }, { label: "Create" }],
+};
+
+export function meta(_: Route.MetaArgs) {
+	return [
+		{ title: "C3i Backup ONE - Create Volume" },
+		{
+			name: "description",
+			content: "Create a new storage volume with automatic mounting and health checks.",
+		},
+	];
+}
+
+export default function CreateVolume() {
 	const navigate = useNavigate();
 	const formId = useId();
 
@@ -18,7 +33,7 @@ export function CreateVolumePage() {
 		...createVolumeMutation(),
 		onSuccess: (data) => {
 			toast.success("Volume created successfully");
-			void navigate({ to: `/volumes/${data.shortId}` });
+			void navigate(`/volumes/${data.shortId}`);
 		},
 	});
 
@@ -54,7 +69,7 @@ export function CreateVolumePage() {
 					)}
 					<CreateVolumeForm mode="create" formId={formId} onSubmit={handleSubmit} loading={createVolume.isPending} />
 					<div className="flex justify-end gap-2 pt-4 border-t">
-						<Button type="button" variant="secondary" onClick={() => navigate({ to: "/volumes" })}>
+						<Button type="button" variant="secondary" onClick={() => navigate("/volumes")}>
 							Cancel
 						</Button>
 						<Button type="submit" form={formId} loading={createVolume.isPending}>

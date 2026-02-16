@@ -5,12 +5,14 @@ import { CardContent, CardDescription, CardTitle } from "~/client/components/ui/
 import { TwoFactorSetupDialog } from "./two-factor-setup-dialog";
 import { TwoFactorDisableDialog } from "./two-factor-disable-dialog";
 import { BackupCodesDialog } from "./backup-codes-dialog";
+import { useTranslation } from "react-i18next";
 
 type TwoFactorSectionProps = {
 	twoFactorEnabled?: boolean | null;
 };
 
 export const TwoFactorSection = ({ twoFactorEnabled }: TwoFactorSectionProps) => {
+	const { t } = useTranslation();
 	const [setupDialogOpen, setSetupDialogOpen] = useState(false);
 	const [disableDialogOpen, setDisableDialogOpen] = useState(false);
 	const [backupCodesDialogOpen, setBackupCodesDialogOpen] = useState(false);
@@ -24,36 +26,35 @@ export const TwoFactorSection = ({ twoFactorEnabled }: TwoFactorSectionProps) =>
 			<div className="border-t border-border/50 bg-card-header p-6">
 				<CardTitle className="flex items-center gap-2">
 					<Shield className="size-5" />
-					Two-Factor Authentication
+					{t("settings.twoFactor.title")}
 				</CardTitle>
-				<CardDescription className="mt-1.5">Add an extra layer of security to your account</CardDescription>
+				<CardDescription className="mt-1.5">{t("settings.twoFactor.description")}</CardDescription>
 			</div>
 			<CardContent className="p-6 space-y-4">
 				<div className="flex items-center justify-between">
 					<div className="space-y-1">
 						<p className="text-sm font-medium">
-							Status:&nbsp;
+							{t("settings.twoFactor.statusLabel")}&nbsp;
 							{twoFactorEnabled ? (
-								<span className="text-green-500">Enabled</span>
+								<span className="text-green-500">{t("settings.twoFactor.statusEnabled")}</span>
 							) : (
-								<span className="text-muted-foreground">Disabled</span>
+								<span className="text-muted-foreground">{t("settings.twoFactor.statusDisabled")}</span>
 							)}
 						</p>
 						<p className="text-xs text-muted-foreground max-w-xl">
-							Two-factor authentication adds an extra layer of security by requiring a code from your authenticator app
-							in addition to your password.
+							{t("settings.twoFactor.helper")}
 						</p>
 					</div>
 					<div className="flex gap-2">
 						{!twoFactorEnabled ? (
-							<Button onClick={() => setSetupDialogOpen(true)}>Enable 2FA</Button>
+							<Button onClick={() => setSetupDialogOpen(true)}>{t("settings.twoFactor.enableButton")}</Button>
 						) : (
 							<div className="ml-2 flex flex-col @xl:flex-row gap-2">
 								<Button variant="outline" onClick={() => setBackupCodesDialogOpen(true)}>
-									Backup Codes
+									{t("settings.twoFactor.backupCodesButton")}
 								</Button>
 								<Button variant="destructive" onClick={() => setDisableDialogOpen(true)}>
-									Disable 2FA
+									{t("settings.twoFactor.disableButton")}
 								</Button>
 							</div>
 						)}

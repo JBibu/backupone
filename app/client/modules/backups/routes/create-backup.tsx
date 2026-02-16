@@ -1,7 +1,9 @@
 import { useId, useState } from "react";
-import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Database, HardDrive, Plus } from "lucide-react";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import {
 	createBackupScheduleMutation,
 	listRepositoriesOptions,
@@ -14,29 +16,54 @@ import { parseError } from "~/client/lib/errors";
 import { EmptyState } from "~/client/components/empty-state";
 import { getCronExpression } from "~/utils/utils";
 import { CreateScheduleForm, type BackupScheduleFormValues } from "../components/create-schedule-form";
-import { Link, useNavigate } from "@tanstack/react-router";
+import type { Route } from "./+types/create-backup";
+import { listRepositories, listVolumes } from "~/client/api-client";
 
-export function CreateBackupPage() {
+export const handle = {
+	breadcrumb: () => [{ label: "Backups", href: "/backups" }, { label: "Create" }],
+};
+
+export function meta(_: Route.MetaArgs) {
+	return [
+		{ title: "C3i Backup ONE - Create Backup Job" },
+		{
+			name: "description",
+			content: "Create a new automated backup job for your volumes.",
+		},
+	];
+}
+
+export const clientLoader = async () => {
+	const [volumes, repositories] = await Promise.all([listVolumes(), listRepositories()]);
+
+	if (volumes.data && repositories.data) return { volumes: volumes.data, repositories: repositories.data };
+	return { volumes: [], repositories: [] };
+};
+
+export default function CreateBackup({ loaderData }: Route.ComponentProps) {
+	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const formId = useId();
 	const [selectedVolumeId, setSelectedVolumeId] = useState<number | undefined>();
 
-	const { data: volumesData } = useSuspenseQuery({
+	const { data: volumesData, isLoading: loadingVolumes } = useQuery({
 		...listVolumesOptions(),
+		initialData: loaderData.volumes,
 	});
 
-	const { data: repositoriesData } = useSuspenseQuery({
+	const { data: repositoriesData } = useQuery({
 		...listRepositoriesOptions(),
+		initialData: loaderData.repositories,
 	});
 
 	const createSchedule = useMutation({
 		...createBackupScheduleMutation(),
 		onSuccess: (data) => {
-			toast.success("Backup job created successfully");
-			void navigate({ to: `/backups/${data.id}` });
+			toast.success(t("backups.create.toast.success"));
+			void navigate(`/backups/${data.id}`);
 		},
 		onError: (error) => {
-			toast.error("Failed to create backup job", {
+			toast.error(t("backups.create.toast.failed"), {
 				description: parseError(error)?.message,
 			});
 		},
@@ -79,15 +106,23 @@ export function CreateBackupPage() {
 
 	const selectedVolume = volumesData.find((v) => v.id === selectedVolumeId);
 
+	if (loadingVolumes) {
+		return (
+			<div className="flex items-center justify-center h-full">
+				<p className="text-muted-foreground">{t("backups.create.loading")}</p>
+			</div>
+		);
+	}
+
 	if (!volumesData.length) {
 		return (
 			<EmptyState
 				icon={HardDrive}
-				title="No volume to backup"
-				description="To create a backup job, you need to create a volume first. Volumes are the data sources that will be backed up."
+				title={t("backups.create.empty.title")}
+				description={t("backups.create.empty.description")}
 				button={
 					<Button>
-						<Link to="/volumes">Go to volumes</Link>
+						<Link to="/volumes">{t("backups.create.goToVolumes")}</Link>
 					</Button>
 				}
 			/>
@@ -98,11 +133,11 @@ export function CreateBackupPage() {
 		return (
 			<EmptyState
 				icon={Database}
-				title="No repository"
-				description="To create a backup job, you need to set up a backup repository first. Backup repositories are the destinations where your backups will be stored."
+				title={t("backups.create.emptyRepository.title")}
+				description={t("backups.create.emptyRepository.description")}
 				button={
 					<Button>
-						<Link to="/repositories">Go to repositories</Link>
+						<Link to="/repositories">{t("backups.create.goToRepositories")}</Link>
 					</Button>
 				}
 			/>
@@ -115,7 +150,7 @@ export function CreateBackupPage() {
 				<CardContent>
 					<Select value={selectedVolumeId?.toString()} onValueChange={(v) => setSelectedVolumeId(Number(v))}>
 						<SelectTrigger id="volume-select">
-							<SelectValue placeholder="Choose a volume to backup" />
+							<SelectValue placeholder={t("backups.create.selectVolume.placeholder")} />
 						</SelectTrigger>
 						<SelectContent>
 							{volumesData.map((volume) => (
@@ -136,7 +171,7 @@ export function CreateBackupPage() {
 					<div className="flex justify-end mt-4 gap-2">
 						<Button type="submit" variant="primary" form={formId} loading={createSchedule.isPending}>
 							<Plus className="h-4 w-4 mr-2" />
-							Create
+							{t("backups.create.createButton")}
 						</Button>
 					</div>
 				</>
@@ -152,9 +187,9 @@ export function CreateBackupPage() {
 									<Database className="w-12 h-12 text-primary/70" strokeWidth={1.5} />
 								</div>
 							</div>
-							<h3 className="text-xl font-semibold mb-2">Select a volume</h3>
+							<h3 className="text-xl font-semibold mb-2">{t("backups.create.selectVolume.title")}</h3>
 							<p className="text-muted-foreground text-sm max-w-md">
-								Choose a volume from the dropdown above to configure its backup schedule.
+								{t("backups.create.selectVolume.description")}
 							</p>
 						</div>
 					</CardContent>

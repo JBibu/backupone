@@ -241,8 +241,8 @@ const testDestination = async (id: number) => {
 
 	const result = await sendNotification({
 		shoutrrrUrl,
-		title: "Zerobyte Test Notification",
-		body: `This is a test notification from Zerobyte for destination: ${destination.name}`,
+		title: "C3i Backup ONE Test Notification",
+		body: `This is a test notification from C3i Backup ONE for destination: ${destination.name}`,
 	});
 
 	if (!result.success) {
@@ -471,7 +471,7 @@ function buildNotificationMessage(
 	switch (event) {
 		case "start":
 			return {
-				title: `Zerobyte ${backupName} started`,
+				title: `C3i Backup ONE ${backupName} started`,
 				body: [
 					`Volume: ${context.volumeName}`,
 					`Repository: ${context.repositoryName}`,
@@ -490,7 +490,7 @@ function buildNotificationMessage(
 			];
 
 			return {
-				title: `Zerobyte ${backupName} completed successfully`,
+				title: `C3i Backup ONE ${backupName} completed successfully`,
 				body: bodyLines.filter(Boolean).join("\n"),
 			};
 		}
@@ -505,14 +505,14 @@ function buildNotificationMessage(
 			];
 
 			return {
-				title: `Zerobyte ${backupName} completed with warnings`,
+				title: `C3i Backup ONE ${backupName} completed with warnings`,
 				body: bodyLines.filter(Boolean).join("\n"),
 			};
 		}
 
 		case "failure":
 			return {
-				title: `Zerobyte ${backupName} failed`,
+				title: `C3i Backup ONE ${backupName} failed`,
 				body: [
 					`Volume: ${context.volumeName}`,
 					`Repository: ${context.repositoryName}`,
@@ -525,7 +525,7 @@ function buildNotificationMessage(
 
 		default:
 			return {
-				title: `Zerobyte ${backupName} notification`,
+				title: `C3i Backup ONE ${backupName} notification`,
 				body: [
 					`Volume: ${context.volumeName}`,
 					`Repository: ${context.repositoryName}`,

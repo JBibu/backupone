@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
-import { useQuery, useMutation, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearch } from "@tanstack/react-router";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { redirect, useNavigate } from "react-router";
 import { toast } from "sonner";
 import { Save, X } from "lucide-react";
 import { Button } from "~/client/components/ui/button";
@@ -19,57 +19,76 @@ import {
 	runBackupNowMutation,
 	deleteBackupScheduleMutation,
 	listSnapshotsOptions,
-	listSnapshotsQueryKey,
 	updateBackupScheduleMutation,
 	stopBackupMutation,
 	deleteSnapshotMutation,
 } from "~/client/api-client/@tanstack/react-query.gen";
-import { parseError, handleRepositoryError } from "~/client/lib/errors";
+import { parseError } from "~/client/lib/errors";
 import { getCronExpression } from "~/utils/utils";
 import { CreateScheduleForm, type BackupScheduleFormValues } from "../components/create-schedule-form";
 import { ScheduleSummary } from "../components/schedule-summary";
+import type { Route } from "./+types/backup-details";
 import { SnapshotFileBrowser } from "../components/snapshot-file-browser";
 import { SnapshotTimeline } from "../components/snapshot-timeline";
+import {
+	getBackupSchedule,
+	getScheduleMirrors,
+	getScheduleNotifications,
+	listNotificationDestinations,
+	listRepositories,
+} from "~/client/api-client";
 import { ScheduleNotificationsConfig } from "../components/schedule-notifications-config";
 import { ScheduleMirrorsConfig } from "../components/schedule-mirrors-config";
-import { BackupSummaryCard } from "~/client/components/backup-summary-card";
 import { cn } from "~/client/lib/utils";
-import type {
-	BackupSchedule,
-	NotificationDestination,
-	Repository,
-	ScheduleMirror,
-	ScheduleNotification,
-	Snapshot,
-} from "~/client/lib/types";
-import { useNavigate } from "@tanstack/react-router";
 
-type Props = {
-	loaderData: {
-		schedule: BackupSchedule;
-		notifs: NotificationDestination[];
-		repos: Repository[];
-		scheduleNotifs: ScheduleNotification[];
-		mirrors: ScheduleMirror[];
-	};
-	scheduleId: string;
-	initialSnapshotId?: string;
+export const handle = {
+	breadcrumb: (match: Route.MetaArgs) => {
+		const data = match.loaderData;
+		return [{ label: "Backups", href: "/backups" }, { label: data.schedule.name }];
+	},
 };
 
-export function ScheduleDetailsPage(props: Props) {
-	const { loaderData, scheduleId, initialSnapshotId } = props;
+export function meta(_: Route.MetaArgs) {
+	return [
+		{ title: "C3i Backup ONE - Backup Job Details" },
+		{
+			name: "description",
+			content: "View and manage backup job configuration, schedule, and snapshots.",
+		},
+	];
+}
 
-	const queryClient = useQueryClient();
+export const clientLoader = async ({ params }: Route.LoaderArgs) => {
+	const [schedule, notifs, repos, scheduleNotifs, mirrors] = await Promise.all([
+		getBackupSchedule({ path: { scheduleId: params.id } }),
+		listNotificationDestinations(),
+		listRepositories(),
+		getScheduleNotifications({ path: { scheduleId: params.id } }),
+		getScheduleMirrors({ path: { scheduleId: params.id } }),
+	]);
+
+	if (!schedule.data) return redirect("/backups");
+
+	return {
+		schedule: schedule.data,
+		notifs: notifs.data,
+		repos: repos.data,
+		scheduleNotifs: scheduleNotifs.data,
+		scheduleMirrors: mirrors.data,
+	};
+};
+
+export default function ScheduleDetailsPage({ params, loaderData }: Route.ComponentProps) {
 	const navigate = useNavigate();
-	const searchParams = useSearch({ from: "/(dashboard)/backups/$backupId/" });
 	const [isEditMode, setIsEditMode] = useState(false);
 	const formId = useId();
-	const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | undefined>(initialSnapshotId);
+	const [selectedSnapshotId, setSelectedSnapshotId] = useState<string>();
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 	const [snapshotToDelete, setSnapshotToDelete] = useState<string | null>(null);
 
-	const { data: schedule } = useSuspenseQuery({
-		...getBackupScheduleOptions({ path: { scheduleId } }),
+	const { data: schedule } = useQuery({
+		...getBackupScheduleOptions({ path: { scheduleId: params.id } }),
+		initialData: loaderData.schedule,
 	});
 
 	const {
@@ -99,7 +118,7 @@ export function ScheduleDetailsPage(props: Props) {
 			toast.success("Backup started successfully");
 		},
 		onError: (error) => {
-			handleRepositoryError("Failed to start backup", error, schedule.repository.shortId);
+			toast.error("Failed to start backup", { description: parseError(error)?.message });
 		},
 	});
 
@@ -117,32 +136,20 @@ export function ScheduleDetailsPage(props: Props) {
 		...deleteBackupScheduleMutation(),
 		onSuccess: () => {
 			toast.success("Backup schedule deleted successfully");
-			void navigate({ to: "/backups" });
+			void navigate("/backups");
 		},
 		onError: (error) => {
 			toast.error("Failed to delete backup schedule", { description: parseError(error)?.message });
 		},
 	});
 
-	const listSnapshotsQueryOptions = { path: { id: schedule.repository.id }, query: { backupId: schedule.shortId } };
-
 	const deleteSnapshot = useMutation({
 		...deleteSnapshotMutation(),
-		onSuccess: (_data, variables) => {
-			const snapshotId = variables.path.snapshotId;
-			const queryKey = listSnapshotsQueryKey(listSnapshotsQueryOptions);
-
-			queryClient.setQueryData<Snapshot[]>(queryKey, (old) => {
-				if (!old) return old;
-				return old.filter((snapshot) => snapshot.short_id !== snapshotId);
-			});
-
-			void queryClient.invalidateQueries({ queryKey });
+		onSuccess: () => {
 			setShowDeleteConfirm(false);
 			setSnapshotToDelete(null);
-			if (selectedSnapshotId === snapshotId) {
+			if (selectedSnapshotId === snapshotToDelete) {
 				setSelectedSnapshotId(undefined);
-				void navigate({ to: ".", search: () => ({ snapshot: undefined }) });
 			}
 		},
 	});
@@ -218,14 +225,6 @@ export function ScheduleDetailsPage(props: Props) {
 		}
 	};
 
-	const handleSnapshotSelect = (snapshotId: string) => {
-		setSelectedSnapshotId(snapshotId);
-		void navigate({
-			to: ".",
-			search: () => ({ ...searchParams, snapshot: snapshotId }),
-		});
-	};
-
 	if (isEditMode) {
 		return (
 			<div>
@@ -268,7 +267,7 @@ export function ScheduleDetailsPage(props: Props) {
 					scheduleId={schedule.id}
 					primaryRepositoryId={schedule.repositoryId}
 					repositories={loaderData.repos ?? []}
-					initialData={loaderData.mirrors ?? []}
+					initialData={loaderData.scheduleMirrors ?? []}
 				/>
 			</div>
 			<SnapshotTimeline
@@ -276,9 +275,8 @@ export function ScheduleDetailsPage(props: Props) {
 				snapshots={snapshots ?? []}
 				snapshotId={selectedSnapshot?.short_id}
 				error={failureReason?.message}
-				onSnapshotSelect={handleSnapshotSelect}
+				onSnapshotSelect={setSelectedSnapshotId}
 			/>
-			<BackupSummaryCard summary={selectedSnapshot?.summary} />
 			{selectedSnapshot && (
 				<SnapshotFileBrowser
 					key={selectedSnapshot?.short_id}

@@ -9,6 +9,7 @@ import { authClient } from "../lib/auth-client";
 import { DevPanelListener } from "./dev-panel-listener";
 import { Outlet, useNavigate } from "@tanstack/react-router";
 import { AppBreadcrumb } from "./app-breadcrumb";
+import { Titlebar } from "./titlebar";
 
 type Props = {
 	loaderData: AppContext;
@@ -32,9 +33,11 @@ export function Layout({ loaderData }: Props) {
 
 	return (
 		<SidebarProvider defaultOpen={true}>
+			<Titlebar />
 			<AppSidebar />
-			<div className="w-full relative flex flex-col h-screen overflow-hidden">
-				<header className="z-50 bg-card-header border-b border-border/50 shrink-0">
+			{/* Add top padding when titlebar is present (Tauri desktop mode) */}
+			<div className="w-full relative flex flex-col h-screen overflow-hidden pt-9">
+				<header className="z-40 bg-card-header border-b border-border/50 shrink-0">
 					<div className="flex items-center justify-between py-3 sm:py-4 px-2 sm:px-8 mx-auto container gap-4">
 						<div className="flex items-center gap-4 min-w-0">
 							<SidebarTrigger />
@@ -48,19 +51,6 @@ export function Layout({ loaderData }: Props) {
 								</span>
 								<Button variant="default" size="sm" onClick={handleLogout}>
 									Logout
-								</Button>
-								<Button variant="default" size="sm" className="relative overflow-hidden hidden lg:inline-flex">
-									<a
-										href="https://github.com/nicotsx/zerobyte/issues/new"
-										target="_blank"
-										rel="noreferrer"
-										className="flex items-center gap-2"
-									>
-										<span className="flex items-center gap-2">
-											<LifeBuoy />
-											<span>Report an issue</span>
-										</span>
-									</a>
 								</Button>
 							</div>
 						)}

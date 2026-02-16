@@ -1,3 +1,4 @@
+import "~/client/i18n/config";
 import { Outlet, HeadContent, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import appCss from "../app.css?url";
 import { apiClientMiddleware } from "~/middleware/api-client";

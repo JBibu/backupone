@@ -1,6 +1,16 @@
 import { spawn, execFile, type ExecException, type ExecFileOptions } from "node:child_process";
 import { createInterface } from "node:readline";
 import { promisify } from "node:util";
+import { IS_WINDOWS, EXE_SUFFIX, getDefaultPath } from "../core/platform";
+
+/**
+ * Get the binary name with platform-appropriate extension
+ * @param name - The base name of the binary (e.g., "restic", "rclone")
+ * @returns The binary name with .exe suffix on Windows
+ */
+export function getBinaryName(name: string): string {
+	return IS_WINDOWS ? `${name}${EXE_SUFFIX}` : name;
+}
 
 type ExecProps = {
 	command: string;
@@ -8,13 +18,18 @@ type ExecProps = {
 	env?: NodeJS.ProcessEnv;
 } & ExecFileOptions;
 
-export const exec = async ({ command, args = [], env = {}, ...rest }: ExecProps) => {
+export async function exec({ command, args = [], env = {}, ...rest }: ExecProps) {
 	const options = {
-		env: { ...process.env, ...env },
+		env: { ...process.env, ...env, PATH: env.PATH || getDefaultPath() },
 	};
 
+	// On Windows, automatically add .exe suffix if not present
+	const effectiveCommand = IS_WINDOWS && !command.endsWith(".exe") && !command.includes("/") && !command.includes("\\")
+		? getBinaryName(command)
+		: command;
+
 	try {
-		const { stdout, stderr } = await promisify(execFile)(command, args, { ...options, ...rest, encoding: "utf8" });
+		const { stdout, stderr } = await promisify(execFile)(effectiveCommand, args, { ...options, ...rest, encoding: "utf8" });
 
 		return { exitCode: 0, stdout, stderr };
 	} catch (error) {
@@ -26,7 +41,7 @@ export const exec = async ({ command, args = [], env = {}, ...rest }: ExecProps)
 			stderr: execError.stderr || "",
 		};
 	}
-};
+}
 
 export interface SafeSpawnParams {
 	command: string;
@@ -43,15 +58,20 @@ type SpawnResult = {
 	error: string;
 };
 
-export const safeSpawn = (params: SafeSpawnParams) => {
+export function safeSpawn(params: SafeSpawnParams) {
 	const { command, args, env = {}, signal, onStdout, onStderr } = params;
+
+	// On Windows, automatically add .exe suffix if not present
+	const effectiveCommand = IS_WINDOWS && !command.endsWith(".exe") && !command.includes("/") && !command.includes("\\")
+		? getBinaryName(command)
+		: command;
 
 	let lastStdout = "";
 	let lastStderr = "";
 
 	return new Promise<SpawnResult>((resolve) => {
-		const child = spawn(command, args, {
-			env: { ...process.env, ...env },
+		const child = spawn(effectiveCommand, args, {
+			env: { ...process.env, ...env, PATH: env.PATH || getDefaultPath() },
 			signal: signal,
 			stdio: ["ignore", "pipe", "pipe"],
 		});
@@ -86,4 +106,4 @@ export const safeSpawn = (params: SafeSpawnParams) => {
 			resolve({ exitCode: code ?? -1, summary: lastStdout, error: lastStderr });
 		});
 	});
-};
+}

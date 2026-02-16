@@ -13,6 +13,7 @@ import {
 import { Input } from "~/client/components/ui/input";
 import { Label } from "~/client/components/ui/label";
 import { authClient } from "~/client/lib/auth-client";
+import { useTranslation } from "react-i18next";
 
 type BackupCodesDialogProps = {
 	open: boolean;
@@ -20,6 +21,7 @@ type BackupCodesDialogProps = {
 };
 
 export const BackupCodesDialog = ({ open, onOpenChange }: BackupCodesDialogProps) => {
+	const { t } = useTranslation();
 	const [password, setPassword] = useState("");
 	const [backupCodes, setBackupCodes] = useState<string[]>([]);
 	const [isGenerating, setIsGenerating] = useState(false);
@@ -28,7 +30,7 @@ export const BackupCodesDialog = ({ open, onOpenChange }: BackupCodesDialogProps
 		e.preventDefault();
 
 		if (!password) {
-			toast.error("Password is required");
+			toast.error(t("settings.twoFactor.backupCodes.toast.passwordRequired"));
 			return;
 		}
 
@@ -46,13 +48,13 @@ export const BackupCodesDialog = ({ open, onOpenChange }: BackupCodesDialogProps
 
 		if (error) {
 			console.error(error);
-			toast.error("Failed to generate backup codes", { description: error.message });
+			toast.error(t("settings.twoFactor.backupCodes.toast.generateFailed"), { description: error.message });
 			return;
 		}
 
 		setBackupCodes(data.backupCodes);
 		setPassword("");
-		toast.success("New backup codes generated successfully");
+		toast.success(t("settings.twoFactor.backupCodes.toast.success"));
 	};
 
 	const handleClose = () => {
@@ -67,10 +69,9 @@ export const BackupCodesDialog = ({ open, onOpenChange }: BackupCodesDialogProps
 		<Dialog open={open} onOpenChange={handleClose}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Backup Codes</DialogTitle>
+					<DialogTitle>{t("settings.twoFactor.backupCodes.title")}</DialogTitle>
 					<DialogDescription>
-						Use these codes to access your account if you lose access to your authenticator app. Each code can only be
-						used once.
+						{t("settings.twoFactor.backupCodes.description")}
 					</DialogDescription>
 				</DialogHeader>
 				<div className="space-y-4 py-4">
@@ -87,26 +88,26 @@ export const BackupCodesDialog = ({ open, onOpenChange }: BackupCodesDialogProps
 					) : (
 						<form onSubmit={handleGenerate} className="space-y-4">
 							<div className="space-y-2">
-								<Label htmlFor="backup-codes-password">Your password</Label>
+								<Label htmlFor="backup-codes-password">{t("settings.twoFactor.backupCodes.passwordLabel")}</Label>
 								<Input
 									id="backup-codes-password"
 									type="password"
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}
-									placeholder="Enter your password"
+									placeholder={t("settings.twoFactor.backupCodes.passwordPlaceholder")}
 									required
 								/>
 							</div>
 							<Button type="submit" loading={isGenerating} className="w-full">
 								<RefreshCw className="h-4 w-4 mr-2" />
-								Generate new codes
+								{t("settings.twoFactor.backupCodes.generateButton")}
 							</Button>
 						</form>
 					)}
 				</div>
 				<DialogFooter>
 					<Button type="button" onClick={handleClose}>
-						Close
+						{t("settings.twoFactor.backupCodes.closeButton")}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

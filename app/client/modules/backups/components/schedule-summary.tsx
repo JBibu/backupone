@@ -17,9 +17,10 @@ import { BackupProgressCard } from "./backup-progress-card";
 import { runForgetMutation } from "~/client/api-client/@tanstack/react-query.gen";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { handleRepositoryError } from "~/client/lib/errors";
+import { parseError } from "~/client/lib/errors";
+import { Link } from "react-router";
 import { formatShortDateTime, formatTimeAgo } from "~/client/lib/datetime";
-import { Link } from "@tanstack/react-router";
+import { isTauri } from "~/client/lib/tauri";
 
 type Props = {
 	schedule: BackupSchedule;
@@ -43,7 +44,7 @@ export const ScheduleSummary = (props: Props) => {
 			toast.success("Retention policy applied successfully");
 		},
 		onError: (error) => {
-			handleRepositoryError("Failed to apply retention policy", error, schedule.repository.shortId);
+			toast.error("Failed to apply retention policy", { description: parseError(error)?.message });
 		},
 	});
 
@@ -93,20 +94,12 @@ export const ScheduleSummary = (props: Props) => {
 						<div>
 							<CardTitle>{schedule.name}</CardTitle>
 							<CardDescription className="mt-1">
-								<Link
-									to="/volumes/$volumeId"
-									className="hover:underline"
-									params={{ volumeId: schedule.volume.shortId }}
-								>
+								<Link to={`/volumes/${schedule.volume.shortId}`} className="hover:underline">
 									<HardDrive className="inline h-4 w-4 mr-2" />
 									<span>{schedule.volume.name}</span>
 								</Link>
 								<span className="mx-2">→</span>
-								<Link
-									to="/repositories/$repositoryId"
-									className="hover:underline"
-									params={{ repositoryId: schedule.repository.shortId }}
-								>
+								<Link to={`/repositories/${schedule.repository.shortId}`} className="hover:underline">
 									<Database className="inline h-4 w-4 mr-2 text-strong-accent" />
 									<span className="text-strong-accent">{schedule.repository.name}</span>
 								</Link>
@@ -199,7 +192,9 @@ export const ScheduleSummary = (props: Props) => {
 							<p className="text-xs uppercase text-muted-foreground">Warning Details</p>
 							<p className="font-mono text-sm text-yellow-600 whitespace-pre-wrap wrap-break-word">
 								{schedule.lastBackupError ??
-									"Last backup completed with warnings. Check your container logs for more details."}
+									(isTauri()
+										? "Last backup completed with warnings. Check the application logs for more details."
+										: "Last backup completed with warnings. Check your container logs for more details.")}
 							</p>
 						</div>
 					)}

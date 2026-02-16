@@ -1,7 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileTree } from "./file-tree";
+import { FileTree, type FileEntry } from "./file-tree";
 import { ScrollArea } from "./ui/scroll-area";
 import { browseFilesystemOptions } from "../api-client/@tanstack/react-query.gen";
+import { client } from "../api-client/client.gen";
 import { useFileBrowser } from "../hooks/use-file-browser";
 
 type Props = {
@@ -9,16 +10,54 @@ type Props = {
 	selectedPath?: string;
 };
 
+// Fetch filesystem roots (drive letters on Windows, "/" on Unix)
+const fetchFilesystemRoots = async (): Promise<{ roots: string[] }> => {
+	const response = await client.get({
+		url: "/api/v1/volumes/filesystem/roots",
+	});
+	const data = response.data as { roots: string[] } | string[] | undefined;
+
+	// Handle both wrapped { roots: [...] } and unwrapped [...] responses
+	if (!data) {
+		return { roots: ["/"] };
+	}
+	if (Array.isArray(data)) {
+		return { roots: data };
+	}
+	if (typeof data === "object" && "roots" in data && Array.isArray(data.roots)) {
+		return { roots: data.roots };
+	}
+	return { roots: ["/"] };
+};
+
 export const DirectoryBrowser = ({ onSelectPath, selectedPath }: Props) => {
 	const queryClient = useQueryClient();
 
-	const { data, isLoading } = useQuery({
-		...browseFilesystemOptions({ query: { path: "/" } }),
+	const { data: rootsData, isLoading: rootsLoading } = useQuery({
+		queryKey: ["filesystemRoots"],
+		queryFn: fetchFilesystemRoots,
 	});
+
+	const firstRoot = rootsData?.roots?.[0] ?? "/";
+
+	const { data, isLoading } = useQuery({
+		...browseFilesystemOptions({ query: { path: firstRoot } }),
+		enabled: !!rootsData?.roots?.length,
+	});
+
+	// Convert roots to FileEntry format for display
+	const rootEntries: FileEntry[] =
+		rootsData?.roots?.map((root) => ({
+			name: root,
+			path: root,
+			type: "directory",
+		})) ?? [];
 
 	const fileBrowser = useFileBrowser({
 		initialData: data,
-		isLoading,
+		isLoading: rootsLoading || isLoading,
+		rootPath: firstRoot,
+		rootEntries,
 		fetchFolder: async (path) => {
 			return await queryClient.ensureQueryData(browseFilesystemOptions({ query: { path } }));
 		},

@@ -1,6 +1,8 @@
+import { exec } from "node:child_process";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
+import { promisify } from "node:util";
 import { and, eq } from "drizzle-orm";
 import { BadRequestError, InternalServerError, NotFoundError } from "http-errors-enhanced";
 import { db } from "../../db/db";
@@ -378,8 +380,45 @@ const listFiles = async (
 		if (isNodeJSErrnoException(error) && error.code === "ENOENT") {
 			throw new NotFoundError("Directory not found");
 		}
-		throw new InternalServerError(`Failed to list files: ${toMessage(error)}`);
+		// Handle permission denied and other access errors gracefully
+		const errorMessage = toMessage(error);
+		if (errorMessage.includes("EPERM") || errorMessage.includes("EACCES") || errorMessage.includes("denied")) {
+			return {
+				files: [],
+				path: subPath || "/",
+				offset: startOffset,
+				limit: pageSize,
+				total: 0,
+				hasMore: false,
+			};
+		}
+		throw new InternalServerError(`Failed to list files: ${errorMessage}`);
 	}
+};
+
+const execAsync = promisify(exec);
+
+const getFilesystemRoots = async (): Promise<string[]> => {
+	if (process.platform === "win32") {
+		try {
+			const { stdout } = await execAsync("wmic logicaldisk get name", { encoding: "utf8", windowsHide: true });
+			const lines = stdout.split("\n").map((line) => line.trim()).filter(Boolean);
+			// Skip the header "Name" and get the drive letters
+			const drives = lines.slice(1).filter((line) => /^[A-Z]:$/i.test(line)).map((drive) => `${drive}\\`);
+			return drives.length > 0 ? drives : ["C:\\"];
+		} catch {
+			return ["C:\\"];
+		}
+	}
+	return ["/"];
+};
+
+const getDefaultBrowsePath = async (): Promise<string> => {
+	if (process.platform === "win32") {
+		const roots = await getFilesystemRoots();
+		return roots[0] || "C:\\";
+	}
+	return "/";
 };
 
 const browseFilesystem = async (browsePath: string) => {
@@ -420,7 +459,16 @@ const browseFilesystem = async (browsePath: string) => {
 			path: normalizedPath,
 		};
 	} catch (error) {
-		throw new InternalServerError(`Failed to browse filesystem: ${toMessage(error)}`);
+		// Handle permission denied and other access errors gracefully
+		// Return empty directories instead of throwing 500 error
+		const errorMessage = toMessage(error);
+		if (errorMessage.includes("EPERM") || errorMessage.includes("EACCES") || errorMessage.includes("denied")) {
+			return {
+				directories: [],
+				path: normalizedPath,
+			};
+		}
+		throw new InternalServerError(`Failed to browse filesystem: ${errorMessage}`);
 	}
 };
 
@@ -436,4 +484,6 @@ export const volumeService = {
 	checkHealth,
 	listFiles,
 	browseFilesystem,
+	getFilesystemRoots,
+	getDefaultBrowsePath,
 };

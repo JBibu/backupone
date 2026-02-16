@@ -74,7 +74,7 @@ export const runMigrations = async () => {
 						"The application cannot start until the required migration has successfully completed.",
 						"Please fix the issues and restart the application.",
 						"",
-						"Seek support by opening an issue on the Zerobyte GitHub repository if you need assistance.",
+						"Seek support by opening an issue on the C3i Backup ONE GitHub repository if you need assistance.",
 						"================================================================================",
 					];
 					err.forEach((line) => logger.error(line));
@@ -102,7 +102,7 @@ export const runMigrations = async () => {
 					"The application cannot start until this migration has successfully completed.",
 					"",
 					"Please fix the issues and restart the application. Seek support by opening an issue",
-					"on the Zerobyte GitHub repository if you need assistance.",
+					"on the C3i Backup ONE GitHub repository if you need assistance.",
 					"================================================================================",
 				];
 				err.forEach((line) => logger.error(line));

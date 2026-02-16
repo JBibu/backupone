@@ -34,6 +34,10 @@ playwright/temp
 
 .idea/
 
+# Tauri
+/src-tauri/target/
+/src-tauri/binaries/
+
 # OpenAPI error logs
 openapi-ts-error-*.log
 .output

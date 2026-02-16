@@ -1,6 +1,5 @@
-import { useMutation, useSuspenseQuery } from "@tanstack/react-query";
-import { useSearch } from "@tanstack/react-router";
-
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Plug, Unplug } from "lucide-react";
@@ -19,8 +18,10 @@ import {
 import { VolumeIcon } from "~/client/components/volume-icon";
 import { parseError } from "~/client/lib/errors";
 import { cn } from "~/client/lib/utils";
+import type { Route } from "./+types/volume-details";
 import { VolumeInfoTabContent } from "../tabs/info";
 import { FilesTabContent } from "../tabs/files";
+import { getVolume } from "~/client/api-client";
 import type { VolumeStatus } from "~/client/lib/types";
 import {
 	deleteVolumeMutation,
@@ -28,7 +29,6 @@ import {
 	mountVolumeMutation,
 	unmountVolumeMutation,
 } from "~/client/api-client/@tanstack/react-query.gen";
-import { useNavigate } from "@tanstack/react-router";
 
 const getVolumeStatusVariant = (status: VolumeStatus): "success" | "neutral" | "error" | "warning" => {
 	const statusMap = {
@@ -40,23 +40,42 @@ const getVolumeStatusVariant = (status: VolumeStatus): "success" | "neutral" | "
 	return statusMap[status];
 };
 
-export function VolumeDetails({ volumeId }: { volumeId: string }) {
+export const handle = {
+	breadcrumb: (match: Route.MetaArgs) => [{ label: "Volumes", href: "/volumes" }, { label: match.params.id }],
+};
+
+export function meta({ params }: Route.MetaArgs) {
+	return [
+		{ title: `C3i Backup ONE - ${params.id}` },
+		{
+			name: "description",
+			content: "View and manage volume details, configuration, and files.",
+		},
+	];
+}
+
+export const clientLoader = async ({ params }: Route.ClientLoaderArgs) => {
+	const volume = await getVolume({ path: { id: params.id } });
+	if (volume.data) return volume.data;
+};
+
+export default function VolumeDetails({ loaderData }: Route.ComponentProps) {
+	const { id } = useParams<{ id: string }>();
 	const navigate = useNavigate();
-	const searchParams = useSearch({ from: "/(dashboard)/volumes/$volumeId" });
-
-	const activeTab = searchParams.tab || "info";
-
+	const [searchParams, setSearchParams] = useSearchParams();
+	const activeTab = searchParams.get("tab") || "info";
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-	const { data } = useSuspenseQuery({
-		...getVolumeOptions({ path: { id: volumeId } }),
+	const { data } = useQuery({
+		...getVolumeOptions({ path: { id: id ?? "" } }),
+		initialData: loaderData,
 	});
 
 	const deleteVol = useMutation({
 		...deleteVolumeMutation(),
 		onSuccess: () => {
 			toast.success("Volume deleted successfully");
-			void navigate({ to: "/volumes" });
+			void navigate("/volumes");
 		},
 		onError: (error) => {
 			toast.error("Failed to delete volume", {
@@ -91,10 +110,10 @@ export function VolumeDetails({ volumeId }: { volumeId: string }) {
 
 	const handleConfirmDelete = () => {
 		setShowDeleteConfirm(false);
-		deleteVol.mutate({ path: { id: volumeId } });
+		deleteVol.mutate({ path: { id: id ?? "" } });
 	};
 
-	if (!volumeId) {
+	if (!id) {
 		return <div>Volume not found</div>;
 	}
 
@@ -120,7 +139,7 @@ export function VolumeDetails({ volumeId }: { volumeId: string }) {
 				</div>
 				<div className="flex gap-4">
 					<Button
-						onClick={() => mountVol.mutate({ path: { id: volumeId } })}
+						onClick={() => mountVol.mutate({ path: { id } })}
 						loading={mountVol.isPending}
 						className={cn({ hidden: volume.status === "mounted" })}
 					>
@@ -129,7 +148,7 @@ export function VolumeDetails({ volumeId }: { volumeId: string }) {
 					</Button>
 					<Button
 						variant="secondary"
-						onClick={() => unmountVol.mutate({ path: { id: volumeId } })}
+						onClick={() => unmountVol.mutate({ path: { id } })}
 						loading={unmountVol.isPending}
 						className={cn({ hidden: volume.status !== "mounted" })}
 					>
@@ -141,11 +160,7 @@ export function VolumeDetails({ volumeId }: { volumeId: string }) {
 					</Button>
 				</div>
 			</div>
-			<Tabs
-				value={activeTab}
-				onValueChange={(value) => navigate({ to: ".", search: () => ({ tab: value }) })}
-				className="mt-4"
-			>
+			<Tabs value={activeTab} onValueChange={(value) => setSearchParams({ tab: value })} className="mt-4">
 				<TabsList className="mb-2">
 					<TabsTrigger value="info">Configuration</TabsTrigger>
 					<TabsTrigger value="files">Files</TabsTrigger>
