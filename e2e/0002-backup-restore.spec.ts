@@ -25,7 +25,6 @@ test("can backup & restore a file", async ({ page }) => {
 	// 1. Create a local volume on /test-data
 	await page.getByRole("button", { name: "Create Volume" }).click();
 	await page.getByRole("textbox", { name: "Name" }).fill("Test Volume");
-	await page.getByRole("button", { name: "Change" }).click();
 	await page.getByRole("button", { name: "test-data" }).click();
 	await page.getByRole("button", { name: "Create Volume" }).click();
 	await expect(page.getByText("Volume created successfully")).toBeVisible();
@@ -43,7 +42,7 @@ test("can backup & restore a file", async ({ page }) => {
 	await page.getByRole("link", { name: "Backups" }).click();
 	await page.getByRole("button", { name: "Create a backup job" }).click();
 	await page.getByRole("combobox").filter({ hasText: "Choose a volume to backup" }).click();
-	await page.getByRole("option", { name: "test-volume" }).click();
+	await page.getByRole("option", { name: "Test Volume" }).click();
 	await page.getByRole("textbox", { name: "Backup name" }).fill("Test Backup");
 	await page.getByRole("combobox").filter({ hasText: "Select a repository" }).click();
 	await page.getByRole("option", { name: "Test Repo" }).click();
@@ -62,6 +61,7 @@ test("can backup & restore a file", async ({ page }) => {
 	fs.writeFileSync(filePath, JSON.stringify({ data: "modified file" }));
 
 	// 6. Restores the file from backup
+	await page.getByRole('button', { name: /20 B/ }).click();
 	await page.getByRole("link", { name: "Restore" }).click();
 	await expect(page).toHaveURL(/\/restore/);
 	await page.getByRole("button", { name: "Restore All" }).click();

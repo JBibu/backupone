@@ -6,7 +6,9 @@ import {
 	REPOSITORY_BACKENDS,
 	REPOSITORY_STATUS,
 	repositoryConfigSchema,
+	doctorResultSchema,
 } from "~/schemas/restic";
+import { resticSnapshotSummarySchema } from "~/schemas/restic-dto";
 
 export const repositorySchema = type({
 	id: "string",
@@ -18,6 +20,7 @@ export const repositorySchema = type({
 	status: type.valueOf(REPOSITORY_STATUS).or("null"),
 	lastChecked: "number | null",
 	lastError: "string | null",
+	doctorResult: doctorResultSchema.or("null"),
 	createdAt: "number",
 	updatedAt: "number",
 });
@@ -137,6 +140,7 @@ export const deleteRepositoryDto = describeRoute({
 export const updateRepositoryBody = type({
 	name: "string?",
 	compressionMode: type.valueOf(COMPRESSION_MODES).optional(),
+	config: repositoryConfigSchema.optional(),
 });
 
 export type UpdateRepositoryBody = typeof updateRepositoryBody.infer;
@@ -157,6 +161,9 @@ export const updateRepositoryDto = describeRoute({
 				},
 			},
 		},
+		400: {
+			description: "Invalid repository update payload",
+		},
 		404: {
 			description: "Repository not found",
 		},
@@ -176,6 +183,9 @@ export const snapshotSchema = type({
 	size: "number",
 	duration: "number",
 	tags: "string[]",
+	retentionCategories: "string[]",
+	hostname: "string?",
+	summary: resticSnapshotSummarySchema.optional(),
 });
 
 const listSnapshotsResponse = snapshotSchema.array();
@@ -250,12 +260,18 @@ export const listSnapshotFilesResponse = type({
 		paths: "string[]",
 	}),
 	files: snapshotFileNodeSchema.array(),
+	offset: "number",
+	limit: "number",
+	total: "number",
+	hasMore: "boolean",
 });
 
 export type ListSnapshotFilesDto = typeof listSnapshotFilesResponse.infer;
 
 export const listSnapshotFilesQuery = type({
 	path: "string?",
+	offset: "string.integer?",
+	limit: "string.integer?",
 });
 
 export const listSnapshotFilesDto = describeRoute({
@@ -317,35 +333,59 @@ export const restoreSnapshotDto = describeRoute({
 });
 
 /**
- * Doctor a repository (unlock, check, repair)
+ * Start doctor operation
  */
-export const doctorStepSchema = type({
-	step: "string",
-	success: "boolean",
-	output: "string | null",
-	error: "string | null",
+export const startDoctorResponse = type({
+	message: "string",
+	repositoryId: "string",
 });
 
-export const doctorRepositoryResponse = type({
-	success: "boolean",
-	steps: doctorStepSchema.array(),
-});
+export type StartDoctorDto = typeof startDoctorResponse.infer;
 
-export type DoctorRepositoryDto = typeof doctorRepositoryResponse.infer;
-
-export const doctorRepositoryDto = describeRoute({
+export const startDoctorDto = describeRoute({
 	description:
-		"Run doctor operations on a repository to fix common issues (unlock, check, repair index). Use this when the repository is locked or has errors.",
+		"Start an asynchronous doctor operation on a repository to fix common issues (unlock, check, repair index). The operation runs in the background and sends results via SSE events.",
 	tags: ["Repositories"],
-	operationId: "doctorRepository",
+	operationId: "startDoctor",
 	responses: {
-		200: {
-			description: "Doctor operation completed",
+		202: {
+			description: "Doctor operation started",
 			content: {
 				"application/json": {
-					schema: resolver(doctorRepositoryResponse),
+					schema: resolver(startDoctorResponse),
 				},
 			},
+		},
+		409: {
+			description: "Doctor operation already in progress",
+		},
+	},
+});
+
+/**
+ * Cancel running doctor operation
+ */
+export const cancelDoctorResponse = type({
+	message: "string",
+});
+
+export type CancelDoctorDto = typeof cancelDoctorResponse.infer;
+
+export const cancelDoctorDto = describeRoute({
+	description: "Cancel a running doctor operation on a repository",
+	tags: ["Repositories"],
+	operationId: "cancelDoctor",
+	responses: {
+		200: {
+			description: "Doctor operation cancelled",
+			content: {
+				"application/json": {
+					schema: resolver(cancelDoctorResponse),
+				},
+			},
+		},
+		409: {
+			description: "No doctor operation is currently running",
 		},
 	},
 });
@@ -456,6 +496,84 @@ export const tagSnapshotsDto = describeRoute({
 			content: {
 				"application/json": {
 					schema: resolver(tagSnapshotsResponse),
+				},
+			},
+		},
+	},
+});
+
+/**
+ * Refresh snapshots cache
+ */
+export const refreshSnapshotsResponse = type({
+	message: "string",
+	count: "number",
+});
+
+export type RefreshSnapshotsDto = typeof refreshSnapshotsResponse.infer;
+
+export const refreshSnapshotsDto = describeRoute({
+	description: "Clear snapshot cache and force refresh from repository",
+	tags: ["Repositories"],
+	operationId: "refreshSnapshots",
+	responses: {
+		200: {
+			description: "Snapshot cache cleared and refreshed",
+			content: {
+				"application/json": {
+					schema: resolver(refreshSnapshotsResponse),
+				},
+			},
+		},
+	},
+});
+
+export const devPanelExecBody = type({
+	command: "string",
+	args: "string[]?",
+});
+
+export type DevPanelExecBody = typeof devPanelExecBody.infer;
+
+export const devPanelExecDto = describeRoute({
+	description: "Execute a restic command against a repository (dev panel only)",
+	tags: ["Repositories"],
+	operationId: "devPanelExec",
+	responses: {
+		200: {
+			description: "Command output stream (SSE)",
+			content: {
+				"text/event-stream": {
+					schema: { type: "string" },
+				},
+			},
+		},
+		403: {
+			description: "Dev panel not enabled",
+		},
+	},
+});
+
+/**
+ * Unlock repository
+ */
+export const unlockRepositoryResponse = type({
+	success: "boolean",
+	message: "string",
+});
+
+export type UnlockRepositoryDto = typeof unlockRepositoryResponse.infer;
+
+export const unlockRepositoryDto = describeRoute({
+	description: "Unlock a repository by removing all stale locks",
+	tags: ["Repositories"],
+	operationId: "unlockRepository",
+	responses: {
+		200: {
+			description: "Repository unlocked successfully",
+			content: {
+				"application/json": {
+					schema: resolver(unlockRepositoryResponse),
 				},
 			},
 		},

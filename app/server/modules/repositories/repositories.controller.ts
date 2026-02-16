@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { validator } from "hono-openapi";
+import { streamSSE } from "hono/streaming";
 import {
 	createRepositoryBody,
 	createRepositoryDto,
@@ -7,9 +8,11 @@ import {
 	deleteSnapshotDto,
 	deleteSnapshotsBody,
 	deleteSnapshotsDto,
-	doctorRepositoryDto,
+	startDoctorDto,
+	cancelDoctorDto,
 	getRepositoryDto,
 	getSnapshotDetailsDto,
+	refreshSnapshotsDto,
 	listRcloneRemotesDto,
 	listRepositoriesDto,
 	listSnapshotFilesDto,
@@ -22,22 +25,31 @@ import {
 	tagSnapshotsDto,
 	updateRepositoryBody,
 	updateRepositoryDto,
+	devPanelExecBody,
+	devPanelExecDto,
+	unlockRepositoryDto,
 	type DeleteRepositoryDto,
 	type DeleteSnapshotDto,
 	type DeleteSnapshotsResponseDto,
-	type DoctorRepositoryDto,
+	type StartDoctorDto,
+	type CancelDoctorDto,
 	type GetRepositoryDto,
 	type GetSnapshotDetailsDto,
+	type RefreshSnapshotsDto,
 	type ListRepositoriesDto,
 	type ListSnapshotFilesDto,
 	type ListSnapshotsDto,
 	type RestoreSnapshotDto,
 	type TagSnapshotsResponseDto,
 	type UpdateRepositoryDto,
+	type UnlockRepositoryDto,
 } from "./repositories.dto";
 import { repositoriesService } from "./repositories.service";
 import { getRcloneRemoteInfo, listRcloneRemotes } from "../../utils/rclone";
-import { requireAuth } from "../auth/auth.middleware";
+import { requireAuth, requireOrgAdmin } from "../auth/auth.middleware";
+import { toMessage } from "~/server/utils/errors";
+import { requireDevPanel } from "../auth/dev-panel.middleware";
+import { getSnapshotDuration } from "../../utils/snapshots";
 
 export const repositoriesController = new Hono()
 	.use(requireAuth)
@@ -83,46 +95,51 @@ export const repositoriesController = new Hono()
 		const { id } = c.req.param();
 		const { backupId } = c.req.valid("query");
 
-		const res = await repositoriesService.listSnapshots(id, backupId);
+		const [res, retentionCategories] = await Promise.all([
+			repositoriesService.listSnapshots(id, backupId),
+			repositoriesService.getRetentionCategories(id, backupId),
+		]);
 
 		const snapshots = res.map((snapshot) => {
 			const { summary } = snapshot;
 
-			let duration = 0;
-			if (summary) {
-				const { backup_start, backup_end } = summary;
-				duration = new Date(backup_end).getTime() - new Date(backup_start).getTime();
-			}
+			const duration = getSnapshotDuration(summary);
 
 			return {
 				short_id: snapshot.short_id,
 				duration,
 				paths: snapshot.paths,
 				tags: snapshot.tags ?? [],
-				size: summary?.total_bytes_processed || 0,
+				size: summary?.total_bytes_processed ?? 0,
 				time: new Date(snapshot.time).getTime(),
+				retentionCategories: retentionCategories.get(snapshot.short_id) ?? [],
+				summary: summary,
 			};
 		});
 
 		return c.json<ListSnapshotsDto>(snapshots, 200);
 	})
+	.post("/:id/snapshots/refresh", refreshSnapshotsDto, async (c) => {
+		const { id } = c.req.param();
+		const result = await repositoriesService.refreshSnapshots(id);
+
+		return c.json<RefreshSnapshotsDto>(result, 200);
+	})
 	.get("/:id/snapshots/:snapshotId", getSnapshotDetailsDto, async (c) => {
 		const { id, snapshotId } = c.req.param();
 		const snapshot = await repositoriesService.getSnapshotDetails(id, snapshotId);
 
-		let duration = 0;
-		if (snapshot.summary) {
-			const { backup_start, backup_end } = snapshot.summary;
-			duration = new Date(backup_end).getTime() - new Date(backup_start).getTime();
-		}
+		const duration = getSnapshotDuration(snapshot.summary);
 
 		const response = {
 			short_id: snapshot.short_id,
 			duration,
 			time: new Date(snapshot.time).getTime(),
 			paths: snapshot.paths,
-			size: snapshot.summary?.total_bytes_processed || 0,
+			hostname: snapshot.hostname,
+			size: snapshot.summary?.total_bytes_processed ?? 0,
 			tags: snapshot.tags ?? [],
+			retentionCategories: [],
 			summary: snapshot.summary,
 		};
 
@@ -134,10 +151,14 @@ export const repositoriesController = new Hono()
 		validator("query", listSnapshotFilesQuery),
 		async (c) => {
 			const { id, snapshotId } = c.req.param();
-			const { path } = c.req.valid("query");
+			const { path, ...query } = c.req.valid("query");
 
 			const decodedPath = path ? decodeURIComponent(path) : undefined;
-			const result = await repositoriesService.listSnapshotFiles(id, snapshotId, decodedPath);
+
+			const offset = Math.max(0, Number.parseInt(query.offset ?? "0", 10) || 0);
+			const limit = Math.min(1000, Math.max(1, Number.parseInt(query.limit ?? "500", 10) || 500));
+
+			const result = await repositoriesService.listSnapshotFiles(id, snapshotId, decodedPath, { offset, limit });
 
 			c.header("Cache-Control", "max-age=300, stale-while-revalidate=600");
 
@@ -147,21 +168,33 @@ export const repositoriesController = new Hono()
 	.post("/:id/restore", restoreSnapshotDto, validator("json", restoreSnapshotBody), async (c) => {
 		const { id } = c.req.param();
 		const { snapshotId, ...options } = c.req.valid("json");
-
 		const result = await repositoriesService.restoreSnapshot(id, snapshotId, options);
 
 		return c.json<RestoreSnapshotDto>(result, 200);
 	})
-	.post("/:id/doctor", doctorRepositoryDto, async (c) => {
+	.post("/:id/doctor", startDoctorDto, async (c) => {
 		const { id } = c.req.param();
 
-		const result = await repositoriesService.doctorRepository(id);
+		const result = await repositoriesService.startDoctor(id);
 
-		return c.json<DoctorRepositoryDto>(result, 200);
+		return c.json<StartDoctorDto>(result, 202);
+	})
+	.delete("/:id/doctor", cancelDoctorDto, async (c) => {
+		const { id } = c.req.param();
+
+		const result = await repositoriesService.cancelDoctor(id);
+
+		return c.json<CancelDoctorDto>(result, 200);
+	})
+	.post("/:id/unlock", unlockRepositoryDto, async (c) => {
+		const { id } = c.req.param();
+
+		const result = await repositoriesService.unlockRepository(id);
+
+		return c.json<UnlockRepositoryDto>(result, 200);
 	})
 	.delete("/:id/snapshots/:snapshotId", deleteSnapshotDto, async (c) => {
 		const { id, snapshotId } = c.req.param();
-
 		await repositoriesService.deleteSnapshot(id, snapshotId);
 
 		return c.json<DeleteSnapshotDto>({ message: "Snapshot deleted" }, 200);
@@ -169,7 +202,6 @@ export const repositoriesController = new Hono()
 	.delete("/:id/snapshots", deleteSnapshotsDto, validator("json", deleteSnapshotsBody), async (c) => {
 		const { id } = c.req.param();
 		const { snapshotIds } = c.req.valid("json");
-
 		await repositoriesService.deleteSnapshots(id, snapshotIds);
 
 		return c.json<DeleteSnapshotsResponseDto>({ message: "Snapshots deleted" }, 200);
@@ -177,7 +209,6 @@ export const repositoriesController = new Hono()
 	.post("/:id/snapshots/tag", tagSnapshotsDto, validator("json", tagSnapshotsBody), async (c) => {
 		const { id } = c.req.param();
 		const { snapshotIds, ...tags } = c.req.valid("json");
-
 		await repositoriesService.tagSnapshots(id, snapshotIds, tags);
 
 		return c.json<TagSnapshotsResponseDto>({ message: "Snapshots tagged" }, 200);
@@ -185,8 +216,42 @@ export const repositoriesController = new Hono()
 	.patch("/:id", updateRepositoryDto, validator("json", updateRepositoryBody), async (c) => {
 		const { id } = c.req.param();
 		const body = c.req.valid("json");
-
 		const res = await repositoriesService.updateRepository(id, body);
 
 		return c.json<UpdateRepositoryDto>(res.repository, 200);
-	});
+	})
+	.post(
+		"/:id/exec",
+		requireDevPanel,
+		requireOrgAdmin,
+		devPanelExecDto,
+		validator("json", devPanelExecBody),
+		async (c) => {
+			const { id } = c.req.param();
+			const body = c.req.valid("json");
+
+			return streamSSE(c, async (stream) => {
+				const abortController = new AbortController();
+				stream.onAbort(() => abortController.abort());
+
+				const sendSSE = async (event: string, data: unknown) => {
+					await stream.writeSSE({ data: JSON.stringify(data), event });
+				};
+
+				try {
+					const result = await repositoriesService.execResticCommand(
+						id,
+						body.command,
+						body.args,
+						async (line) => sendSSE("output", { type: "stdout", line }),
+						async (line) => sendSSE("output", { type: "stderr", line }),
+						abortController.signal,
+					);
+
+					await sendSSE("done", { type: "done", exitCode: result.exitCode });
+				} catch (error) {
+					await sendSSE("error", { type: "error", message: toMessage(error) });
+				}
+			});
+		},
+	);

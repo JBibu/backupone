@@ -9,26 +9,6 @@
 
 C3i Backup ONE is a backup automation tool built on top of Restic that provides a web interface for scheduling, managing, and monitoring encrypted backups. It supports multiple volume backends (NFS, SMB, WebDAV, SFTP, local directories) and repository backends (S3, Azure, GCS, local, and rclone-based storage).
 
-## Technology Stack
-
-- **Runtime**: Bun 1.3.1
-- **Server**: Hono (web framework) with Bun runtime
-- **Client**: React Router v7 (SSR) with React 19
-- **Database**: SQLite with Drizzle ORM
-- **Validation**: ArkType for runtime schema validation
-- **Styling**: Tailwind CSS v4 + Radix UI components
-- **Architecture**: Unified application structure (not a monorepo)
-- **Code Quality**: Biome (formatter & linter)
-
-## Repository Structure
-
-This is a unified application with the following structure:
-
-- `app/server` - Bun-based API server with Hono
-- `app/client` - React Router SSR frontend components and modules
-- `app/schemas` - Shared ArkType schemas for validation
-- `app/drizzle` - Database migrations
-
 ### Type Checking
 
 ```bash
@@ -67,22 +47,17 @@ bunx drizzle-kit generate --custom --name=fix-timestamps-to-ms
 ### API Client Generation
 
 ```bash
-# Generate TypeScript API client from OpenAPI spec
-# Note: Server is always running don't need to start it separately
 bun run gen:api-client
 ```
 
 ### Code Quality
 
 ```bash
-# Format and lint (Biome)
-bunx biome check --write .
+# Format
+bunx oxfmt format --write <path>
 
-# Format only
-bunx biome format --write .
-
-# Lint only
-bunx biome lint .
+# Lint
+bun run lint
 ```
 
 ## Architecture

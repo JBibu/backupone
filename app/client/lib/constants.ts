@@ -28,3 +28,5 @@ export function getDefaultVolumePath(): string {
 	}
 	return "/";
 }
+
+export const REGISTRATION_ENABLED_KEY = "registrations_enabled";

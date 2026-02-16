@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileIcon, RotateCcw, Trash2 } from "lucide-react";
-import { Link } from "react-router";
 import { FileTree } from "~/client/components/file-tree";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/client/components/ui/card";
 import { Button, buttonVariants } from "~/client/components/ui/button";
@@ -10,6 +9,7 @@ import { listSnapshotFilesOptions } from "~/client/api-client/@tanstack/react-qu
 import { formatDateTime } from "~/client/lib/datetime";
 import { useFileBrowser } from "~/client/hooks/use-file-browser";
 import { cn } from "~/client/lib/utils";
+import { Link } from "@tanstack/react-router";
 
 interface Props {
 	snapshot: Snapshot;
@@ -60,11 +60,11 @@ export const SnapshotFileBrowser = (props: Props) => {
 	const fileBrowser = useFileBrowser({
 		initialData: filesData,
 		isLoading: filesLoading,
-		fetchFolder: async (path) => {
+		fetchFolder: async (path, offset = 0) => {
 			return await queryClient.ensureQueryData(
 				listSnapshotFilesOptions({
 					path: { id: repositoryId, snapshotId: snapshot.short_id },
-					query: { path },
+					query: { path, offset: offset.toString(), limit: "500" },
 				}),
 			);
 		},
@@ -72,7 +72,7 @@ export const SnapshotFileBrowser = (props: Props) => {
 			void queryClient.prefetchQuery(
 				listSnapshotFilesOptions({
 					path: { id: repositoryId, snapshotId: snapshot.short_id },
-					query: { path },
+					query: { path, offset: "0", limit: "500" },
 				}),
 			);
 		},
@@ -95,10 +95,11 @@ export const SnapshotFileBrowser = (props: Props) => {
 						</div>
 						<div className="flex gap-2">
 							<Link
-								to={
+								to={backupId ? "/backups/$backupId/$snapshotId/restore" : "/repositories/$repositoryId/$snapshotId/restore"}
+								params={
 									backupId
-										? `/backups/${backupId}/${snapshot.short_id}/restore`
-										: `/repositories/${repositoryId}/${snapshot.short_id}/restore`
+										? { backupId, snapshotId: snapshot.short_id }
+										: { repositoryId: repositoryId, snapshotId: snapshot.short_id }
 								}
 								className={buttonVariants({ variant: "primary", size: "sm" })}
 							>
@@ -142,6 +143,8 @@ export const SnapshotFileBrowser = (props: Props) => {
 								onFolderHover={fileBrowser.handleFolderHover}
 								expandedFolders={fileBrowser.expandedFolders}
 								loadingFolders={fileBrowser.loadingFolders}
+								onLoadMore={fileBrowser.handleLoadMore}
+								getFolderPagination={fileBrowser.getFolderPagination}
 								className="px-2 py-2"
 							/>
 						</div>

@@ -13,4 +13,8 @@ export const RESTIC_CACHE_DIR = process.env.RESTIC_CACHE_DIR || path.join(zeroby
 export const DATABASE_URL = process.env.DATABASE_URL || path.join(zerobytePath, "data", "zerobyte.db");
 export const RESTIC_PASS_FILE = process.env.RESTIC_PASS_FILE || path.join(zerobytePath, "data", "restic.pass");
 
+export const RCLONE_CONFIG_DIR = process.env.RCLONE_CONFIG_DIR || "/root/.config/rclone";
+
 export const DEFAULT_EXCLUDES = [DATABASE_URL, RESTIC_PASS_FILE, REPOSITORY_BASE];
+
+export const REGISTRATION_ENABLED_KEY = "registrations_enabled";

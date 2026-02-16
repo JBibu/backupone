@@ -1,11 +1,30 @@
-import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import { nitro } from "nitro/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { reactRouterHonoServer } from "react-router-hono-server/dev";
+import viteReact from "@vitejs/plugin-react";
 
 export default defineConfig({
-	plugins: [reactRouterHonoServer({ runtime: "bun" }), reactRouter(), tailwindcss(), tsconfigPaths()],
+	plugins: [
+		tsconfigPaths(),
+		tanstackStart({
+			srcDirectory: "app",
+			router: {
+				routesDirectory: "routes",
+			},
+		}),
+		nitro({
+			preset: "bun",
+			plugins: ["./app/server/plugins/bootstrap.ts"],
+		}),
+		viteReact({
+			babel: {
+				plugins: ["babel-plugin-react-compiler"],
+			},
+		}),
+		tailwindcss(),
+	],
 	build: {
 		outDir: "dist",
 		sourcemap: false,
@@ -14,8 +33,8 @@ export default defineConfig({
 		},
 	},
 	server: {
-		host: '0.0.0.0',
-		port: 4096,
+		host: "0.0.0.0",
+		port: 3000,
 	},
 	optimizeDeps: {
 		include: [

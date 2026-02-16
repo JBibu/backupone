@@ -1,7 +1,5 @@
 import { Bell, CalendarClock, Database, HardDrive, Settings } from "lucide-react";
-import { Link, NavLink } from "react-router";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import {
 	Sidebar,
 	SidebarContent,
@@ -20,37 +18,37 @@ import { cn } from "~/client/lib/utils";
 import { APP_VERSION, RCLONE_VERSION, RESTIC_VERSION, SHOUTRRR_VERSION } from "~/client/lib/version";
 import { useUpdates } from "~/client/hooks/use-updates";
 import { ReleaseNotesDialog } from "./release-notes-dialog";
+import { Link } from "@tanstack/react-router";
 
-const navigationItems = [
+const items = [
 	{
-		key: "volumes",
+		title: "Volumes",
 		url: "/volumes",
 		icon: HardDrive,
 	},
 	{
-		key: "repositories",
+		title: "Repositories",
 		url: "/repositories",
 		icon: Database,
 	},
 	{
-		key: "backups",
+		title: "Backups",
 		url: "/backups",
 		icon: CalendarClock,
 	},
 	{
-		key: "notifications",
+		title: "Notifications",
 		url: "/notifications",
 		icon: Bell,
 	},
 	{
-		key: "settings",
+		title: "Settings",
 		url: "/settings",
 		icon: Settings,
 	},
 ];
 
 export function AppSidebar() {
-	const { t } = useTranslation();
 	const { state } = useSidebar();
 	const { updates, hasUpdate } = useUpdates();
 	const [showReleaseNotes, setShowReleaseNotes] = useState(false);
@@ -65,13 +63,13 @@ export function AppSidebar() {
 		<Sidebar variant="inset" collapsible="icon" className="p-0 pt-9">
 			<SidebarHeader className="bg-card-header border-b border-border/50 hidden md:flex h-16.25 flex-row items-center p-4">
 				<Link to="/volumes" className="flex items-center gap-3 font-semibold pl-2">
-					<img src="/images/zerobyte.png" alt={t("sidebar.logoAlt")} className={cn("h-8 w-8 shrink-0 object-contain -ml-2")} />
+					<img src="/images/zerobyte.png" alt="Zerobyte Logo" className={cn("h-8 w-8 shrink-0 object-contain -ml-2")} />
 					<span
 						className={cn("text-base transition-all duration-200 -ml-1", {
 							"opacity-0 w-0 overflow-hidden ": state === "collapsed",
 						})}
 					>
-						{t("sidebar.title")}
+						Zerobyte
 					</span>
 				</Link>
 			</SidebarHeader>
@@ -79,32 +77,29 @@ export function AppSidebar() {
 				<SidebarGroup>
 					<SidebarGroupContent>
 						<SidebarMenu>
-							{navigationItems.map((item) => {
-								const title = t(`sidebar.nav.${item.key}`);
-								return (
-									<SidebarMenuItem key={item.key}>
-										<TooltipProvider>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<SidebarMenuButton asChild>
-														<NavLink to={item.url}>
-															{({ isActive }) => (
-																<>
-																	<item.icon className={cn({ "text-strong-accent": isActive })} />
-																	<span className={cn({ "text-strong-accent": isActive })}>{title}</span>
-																</>
-															)}
-														</NavLink>
-													</SidebarMenuButton>
-												</TooltipTrigger>
-												<TooltipContent side="right" className={cn({ hidden: state !== "collapsed" })}>
-													<p>{title}</p>
-												</TooltipContent>
-											</Tooltip>
-										</TooltipProvider>
-									</SidebarMenuItem>
-								);
-							})}
+							{items.map((item) => (
+								<SidebarMenuItem key={item.title}>
+									<TooltipProvider>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<SidebarMenuButton asChild>
+													<Link to={item.url}>
+														{({ isActive }) => (
+															<>
+																<item.icon className={cn({ "text-strong-accent": isActive })} />
+																<span className={cn({ "text-strong-accent": isActive })}>{item.title}</span>
+															</>
+														)}
+													</Link>
+												</SidebarMenuButton>
+											</TooltipTrigger>
+											<TooltipContent side="right" className={cn({ hidden: state !== "collapsed" })}>
+												<p>{item.title}</p>
+											</TooltipContent>
+										</Tooltip>
+									</TooltipProvider>
+								</SidebarMenuItem>
+							))}
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>
@@ -127,11 +122,11 @@ export function AppSidebar() {
 						<HoverCardContent side="top" align="start" className="w-fit p-3">
 							<div className="flex flex-col gap-2">
 								<div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px]">
-									<span className="text-muted-foreground">{t("sidebar.version.restic")}</span>
+									<span className="text-muted-foreground">Restic:</span>
 									<span className="font-mono">{RESTIC_VERSION}</span>
-									<span className="text-muted-foreground">{t("sidebar.version.rclone")}</span>
+									<span className="text-muted-foreground">Rclone:</span>
 									<span className="font-mono">{RCLONE_VERSION}</span>
-									<span className="text-muted-foreground">{t("sidebar.version.shoutrrr")}</span>
+									<span className="text-muted-foreground">Shoutrrr:</span>
 									<span className="font-mono">{SHOUTRRR_VERSION}</span>
 								</div>
 							</div>
@@ -143,7 +138,7 @@ export function AppSidebar() {
 							onClick={() => setShowReleaseNotes(true)}
 							className="text-[10px] font-medium text-destructive hover:underline cursor-pointer"
 						>
-							{t("sidebar.updateAvailable")}
+							Update available
 						</button>
 					)}
 				</div>

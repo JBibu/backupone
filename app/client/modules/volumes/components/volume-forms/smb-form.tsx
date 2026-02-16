@@ -19,6 +19,7 @@ type Props = {
 
 export const SMBForm = ({ form }: Props) => {
 	const { t } = useTranslation();
+	const guest = form.watch("guest");
 
 	return (
 		<>
@@ -52,12 +53,44 @@ export const SMBForm = ({ form }: Props) => {
 			/>
 			<FormField
 				control={form.control}
+				name="guest"
+				defaultValue={false}
+				render={({ field }) => (
+					<FormItem>
+						<FormLabel>{t("volumes.smbForm.guestLabel")}</FormLabel>
+						<FormControl>
+							<div className="flex items-center space-x-2">
+								<input
+									type="checkbox"
+									checked={field.value ?? false}
+									onChange={(e) => {
+										field.onChange(e.target.checked);
+									}}
+									className="rounded border-gray-300"
+								/>
+								<span className="text-sm">{t("volumes.smbForm.guestCheckbox")}</span>
+							</div>
+						</FormControl>
+						<FormDescription>
+							{t("volumes.smbForm.guestDescription")}
+						</FormDescription>
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+			<FormField
+				control={form.control}
 				name="username"
 				render={({ field }) => (
 					<FormItem>
 						<FormLabel>{t("volumes.smbForm.usernameLabel")}</FormLabel>
 						<FormControl>
-							<Input placeholder="admin" value={field.value} onChange={field.onChange} />
+							<Input
+								placeholder="admin"
+								value={field.value}
+								onChange={field.onChange}
+								disabled={guest}
+							/>
 						</FormControl>
 						<FormDescription>{t("volumes.smbForm.usernameDescription")}</FormDescription>
 						<FormMessage />
@@ -71,7 +104,12 @@ export const SMBForm = ({ form }: Props) => {
 					<FormItem>
 						<FormLabel>{t("volumes.smbForm.passwordLabel")}</FormLabel>
 						<FormControl>
-							<SecretInput placeholder="••••••••" value={field.value ?? ""} onChange={field.onChange} />
+							<SecretInput
+								placeholder="••••••••"
+								value={field.value ?? ""}
+								onChange={field.onChange}
+								disabled={guest}
+							/>
 						</FormControl>
 						<FormDescription>{t("volumes.smbForm.passwordDescription")}</FormDescription>
 						<FormMessage />

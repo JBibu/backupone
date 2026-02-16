@@ -3,8 +3,8 @@ ARG BUN_VERSION="1.3.6"
 FROM oven/bun:${BUN_VERSION}-alpine AS base
 
 ARG RESTIC_VERSION="0.18.1"
-ARG RCLONE_VERSION="1.72.1"
-ARG SHOUTRRR_VERSION="0.13.1"
+ARG RCLONE_VERSION="1.73.0"
+ARG SHOUTRRR_VERSION="0.13.2"
 
 ENV VITE_RESTIC_VERSION=${RESTIC_VERSION} \
     VITE_RCLONE_VERSION=${RCLONE_VERSION} \
@@ -12,7 +12,7 @@ ENV VITE_RESTIC_VERSION=${RESTIC_VERSION} \
 
 RUN apk update --no-cache && \
     apk upgrade --no-cache && \
-    apk add --no-cache davfs2=1.6.1-r2 openssh-client fuse3 sshfs tini nfs-utils cifs-utils util-linux
+    apk add --no-cache davfs2=1.6.1-r2 openssh-client fuse3 sshfs tini
 
 ENTRYPOINT ["/sbin/tini", "-s", "--"]
 
@@ -68,7 +68,7 @@ RUN bun install --frozen-lockfile --ignore-scripts
 
 COPY . .
 
-EXPOSE 4096
+EXPOSE 3000
 
 CMD ["bun", "run", "dev"]
 
@@ -79,6 +79,7 @@ FROM base AS builder
 
 ARG APP_VERSION=dev
 ENV VITE_APP_VERSION=${APP_VERSION}
+ENV PORT=4096
 
 WORKDIR /app
 
@@ -94,17 +95,16 @@ FROM base AS production
 ARG APP_VERSION=dev
 ENV APP_VERSION=${APP_VERSION}
 ENV NODE_ENV="production"
+ENV PORT=4096
 
 WORKDIR /app
 
 COPY --from=builder /app/package.json ./
-RUN bun install --production --frozen-lockfile && rm -rf $HOME/.bun/install/cache
 
 COPY --from=deps /deps/restic /usr/local/bin/restic
 COPY --from=deps /deps/rclone /usr/local/bin/rclone
 COPY --from=deps /deps/shoutrrr /usr/local/bin/shoutrrr
-COPY --from=builder /app/dist/client ./dist/client
-COPY --from=builder /app/dist/server ./dist/server
+COPY --from=builder /app/.output ./.output
 COPY --from=builder /app/app/drizzle ./assets/migrations
 
 # Include third-party licenses and attribution
@@ -114,5 +114,4 @@ COPY ./LICENSE ./LICENSE.md
 
 EXPOSE 4096
 
-CMD ["bun", "run", "start"]
-
+CMD ["bun", ".output/server/index.mjs"]

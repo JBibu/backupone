@@ -1,6 +1,8 @@
 import { Command } from "commander";
+import { assignOrganizationCommand } from "./commands/assign-organization";
 import { changeUsernameCommand } from "./commands/change-username";
 import { disable2FACommand } from "./commands/disable-2fa";
+import { rekey2FACommand } from "./commands/rekey-2fa";
 import { resetPasswordCommand } from "./commands/reset-password";
 
 const program = new Command();
@@ -9,6 +11,8 @@ program.name("zerobyte").description("C3i Backup ONE CLI - Backup automation too
 program.addCommand(resetPasswordCommand);
 program.addCommand(disable2FACommand);
 program.addCommand(changeUsernameCommand);
+program.addCommand(rekey2FACommand);
+program.addCommand(assignOrganizationCommand);
 
 export async function runCLI(argv: string[]): Promise<boolean> {
 	const args = argv.slice(2);

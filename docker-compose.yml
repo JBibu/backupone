@@ -10,17 +10,21 @@ services:
       - /dev/fuse:/dev/fuse
     cap_add:
       - SYS_ADMIN
+    env_file:
+      - .env.local
     environment:
       - NODE_ENV=development
     ports:
-      - "4096:4096"
+      - "${PORT:-3000}:3000"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/lib/zerobyte:/var/lib/zerobyte
       - ./app:/app/app
-      - ~/.config/rclone:/root/.config/rclone
+      - ~/.config/rclone:/root/.config/rclone:ro
+      - ./tmp/:/test-data
 
   zerobyte-prod:
+    # image: ghcr.io/nicotsx/zerobyte:v0.22.0
     build:
       context: .
       dockerfile: Dockerfile
@@ -35,10 +39,15 @@ services:
       - SYS_ADMIN
     ports:
       - "4096:4096"
+    environment:
+      - APP_SECRET=94bad4678ce84a60b9789bd2114a6bf780aeb38df426f7352c941c66e25d5c2b
+      - BASE_URL=http://localhost:4096
+      - PORT=4096
+      - LOG_LEVEL=debug
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/lib/zerobyte:/var/lib/zerobyte
-      - ~/.config/rclone:/root/.config/rclone
+      - ~/.config/rclone:/root/.config/rclone:ro
 
   zerobyte-e2e:
     build:
@@ -49,6 +58,8 @@ services:
     restart: unless-stopped
     environment:
       - DISABLE_RATE_LIMITING=true
+      - APP_SECRET=94bad4678ce84a60b9789bd2114a6bf780aeb38df426f7352c941c66e25d5c2b
+      - BASE_URL=http://localhost:4096
     devices:
       - /dev/fuse:/dev/fuse
     cap_add:

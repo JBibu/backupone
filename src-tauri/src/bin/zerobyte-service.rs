@@ -122,19 +122,21 @@ mod windows_service {
     }
 
     fn find_server_executable() -> Result<PathBuf, Box<dyn std::error::Error>> {
-        // Look for the server executable in the same directory as this service
         let current_exe = env::current_exe()?;
         let exe_dir = current_exe.parent().ok_or("Cannot get exe directory")?;
 
-        let server_exe = exe_dir.join("zerobyte-server.exe");
-        if server_exe.exists() {
-            return Ok(server_exe);
-        }
+        // Check all possible locations and names (with and without target triple)
+        let candidates = [
+            exe_dir.join("zerobyte-server-x86_64-pc-windows-msvc.exe"),
+            exe_dir.join("zerobyte-server.exe"),
+            exe_dir.join("binaries").join("zerobyte-server-x86_64-pc-windows-msvc.exe"),
+            exe_dir.join("binaries").join("zerobyte-server.exe"),
+        ];
 
-        // Try the binaries subdirectory
-        let server_exe = exe_dir.join("binaries").join("zerobyte-server.exe");
-        if server_exe.exists() {
-            return Ok(server_exe);
+        for candidate in &candidates {
+            if candidate.exists() {
+                return Ok(candidate.clone());
+            }
         }
 
         Err(format!(

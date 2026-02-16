@@ -93,7 +93,7 @@ export const NtfyForm = ({ form }: Props) => {
 				render={({ field }) => (
 					<FormItem>
 						<FormLabel>{t("notifications.ntfyForm.priority")}</FormLabel>
-						<Select onValueChange={field.onChange} defaultValue={String(field.value)} value={String(field.value)}>
+						<Select onValueChange={field.onChange} value={String(field.value)}>
 							<FormControl>
 								<SelectTrigger>
 									<SelectValue placeholder={t("notifications.ntfyForm.priorityPlaceholder")} />

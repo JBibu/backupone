@@ -3,7 +3,7 @@ import { type } from "arktype";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { cn, slugify } from "~/client/lib/utils";
+import { cn } from "~/client/lib/utils";
 import { deepClean } from "~/utils/object";
 import {
 	Form,
@@ -87,6 +87,7 @@ const defaultValuesForType = {
 		type: "telegram" as const,
 		botToken: "",
 		chatId: "",
+		threadId: "",
 	},
 	generic: {
 		type: "generic" as const,
@@ -142,7 +143,6 @@ export const CreateNotificationForm = ({ onSubmit, mode = "create", initialValue
 								<Input
 									{...field}
 									placeholder={t("notifications.createForm.name.placeholder")}
-									onChange={(e) => field.onChange(slugify(e.target.value))}
 									max={32}
 									min={2}
 								/>
@@ -161,7 +161,6 @@ export const CreateNotificationForm = ({ onSubmit, mode = "create", initialValue
 							<FormLabel>{t("notifications.createForm.type.label")}</FormLabel>
 							<Select
 								onValueChange={field.onChange}
-								defaultValue={field.value}
 								value={field.value}
 								disabled={mode === "update"}
 							>

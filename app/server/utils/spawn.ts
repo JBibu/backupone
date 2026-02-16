@@ -73,6 +73,7 @@ export function safeSpawn(params: SafeSpawnParams) {
 		const child = spawn(effectiveCommand, args, {
 			env: { ...process.env, ...env, PATH: env.PATH || getDefaultPath() },
 			signal: signal,
+			stdio: ["ignore", "pipe", "pipe"],
 		});
 
 		child.stdout.setEncoding("utf8");

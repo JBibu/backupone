@@ -128,7 +128,7 @@ export const CreateRepositoryForm = ({
 					render={({ field }) => (
 						<FormItem>
 							<FormLabel>{t("repositories.createForm.backend.label")}</FormLabel>
-							<Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+							<Select onValueChange={field.onChange} value={field.value}>
 								<FormControl>
 									<SelectTrigger>
 										<SelectValue placeholder={t("repositories.createForm.backend.placeholder")} />
@@ -166,7 +166,7 @@ export const CreateRepositoryForm = ({
 					render={({ field }) => (
 						<FormItem>
 							<FormLabel>{t("repositories.createForm.compression.label")}</FormLabel>
-							<Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+							<Select onValueChange={field.onChange} value={field.value}>
 								<FormControl>
 									<SelectTrigger>
 										<SelectValue placeholder={t("repositories.createForm.compression.placeholder")} />

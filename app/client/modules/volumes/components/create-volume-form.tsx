@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { getDefaultVolumePath } from "~/client/lib/constants";
-import { cn, slugify } from "~/client/lib/utils";
+import { cn } from "~/client/lib/utils";
 import { deepClean } from "~/utils/object";
 import { Button } from "../../../components/ui/button";
 import {
@@ -135,7 +135,6 @@ export const CreateVolumeForm = ({ onSubmit, mode = "create", initialValues, for
 								<Input
 									{...field}
 									placeholder={t("volumes.createForm.namePlaceholder")}
-									onChange={(e) => field.onChange(slugify(e.target.value))}
 									maxLength={32}
 									minLength={2}
 								/>

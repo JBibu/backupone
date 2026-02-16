@@ -33,7 +33,8 @@ async function detectCapabilities(): Promise<SystemCapabilities> {
 }
 
 /**
- * Checks if rclone is available by checking if the rclone config directory exists
+ * Checks if rclone is available by:
+ * 1. Checking if the rclone config directory exists and is accessible
  */
 async function detectRclone(): Promise<boolean> {
 	const rcloneConfigPath = getRcloneConfigPath();
@@ -41,6 +42,7 @@ async function detectRclone(): Promise<boolean> {
 	try {
 		await fs.access(rcloneConfigPath);
 
+		// Make sure the folder is not empty
 		const files = await fs.readdir(rcloneConfigPath);
 		if (files.length === 0) {
 			throw new Error("rclone config directory is empty");

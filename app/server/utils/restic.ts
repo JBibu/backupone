@@ -1,38 +1,28 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
-import path from "node:path";
 import os from "node:os";
-import { throttle } from "es-toolkit";
+import path from "node:path";
 import { type } from "arktype";
-import { REPOSITORY_BASE, RESTIC_PASS_FILE, DEFAULT_EXCLUDES, RESTIC_CACHE_DIR } from "../core/constants";
+import { throttle } from "es-toolkit";
+import type { BandwidthLimit, CompressionMode, OverwriteMode, RepositoryConfig } from "~/schemas/restic";
+import {
+	type ResticBackupProgressDto,
+	type ResticRestoreOutputDto,
+	type ResticSnapshotSummaryDto,
+	resticBackupOutputSchema,
+	resticBackupProgressSchema,
+	resticRestoreOutputSchema,
+	resticSnapshotSummarySchema,
+} from "~/schemas/restic-dto";
 import { config as appConfig } from "../core/config";
-import { logger } from "./logger";
-import { cryptoUtils } from "./crypto";
+import { DEFAULT_EXCLUDES, RESTIC_CACHE_DIR, RESTIC_PASS_FILE } from "../core/constants";
+import { db } from "../db/db";
 import type { RetentionPolicy } from "../modules/backups/backups.dto";
-import { safeSpawn, exec } from "./spawn";
-import type { CompressionMode, RepositoryConfig, OverwriteMode, BandwidthLimit } from "~/schemas/restic";
+import { cryptoUtils } from "./crypto";
 import { ResticError } from "./errors";
-import { getDefaultPath } from "../core/platform";
-
-const getTempDir = () => os.tmpdir();
-
-const backupOutputSchema = type({
-	message_type: "'summary'",
-	files_new: "number",
-	files_changed: "number",
-	files_unmodified: "number",
-	dirs_new: "number",
-	dirs_changed: "number",
-	dirs_unmodified: "number",
-	data_blobs: "number",
-	tree_blobs: "number",
-	data_added: "number",
-	total_files_processed: "number",
-	total_bytes_processed: "number",
-	total_duration: "number",
-	snapshot_id: "string",
-});
-export type BackupOutput = typeof backupOutputSchema.infer;
+import { safeJsonParse } from "./json";
+import { logger } from "./logger";
+import { exec, safeSpawn } from "./spawn";
 
 const snapshotInfoSchema = type({
 	gid: "number?",
@@ -46,48 +36,19 @@ const snapshotInfoSchema = type({
 	uid: "number?",
 	username: "string?",
 	tags: "string[]?",
-	summary: type({
-		backup_end: "string",
-		backup_start: "string",
-		data_added: "number",
-		data_added_packed: "number",
-		data_blobs: "number",
-		dirs_changed: "number",
-		dirs_new: "number",
-		dirs_unmodified: "number",
-		files_changed: "number",
-		files_new: "number",
-		files_unmodified: "number",
-		total_bytes_processed: "number",
-		total_files_processed: "number",
-		tree_blobs: "number",
-	}).optional(),
+	summary: resticSnapshotSummarySchema.optional(),
 });
-
-const ensurePassfile = async () => {
-	await fs.mkdir(path.dirname(RESTIC_PASS_FILE), { recursive: true });
-
-	try {
-		await fs.access(RESTIC_PASS_FILE);
-	} catch {
-		logger.info("Restic passfile not found, creating a new one...");
-		await fs.writeFile(RESTIC_PASS_FILE, crypto.randomBytes(32).toString("hex"), { mode: 0o600 });
-	}
-};
 
 export const buildRepoUrl = (config: RepositoryConfig): string => {
 	switch (config.backend) {
 		case "local":
-			if (config.isExistingRepository) {
-				if (!config.path) throw new Error("Path is required for existing local repositories");
-				return config.path;
-			}
-
-			return path.join(config.path || REPOSITORY_BASE, config.name);
-		case "s3":
-			return `s3:${config.endpoint}/${config.bucket}`;
+			return config.path;
+		case "s3": {
+			const endpoint = config.endpoint.trim().replace(/\/$/, "");
+			return `s3:${endpoint}/${config.bucket}`;
+		}
 		case "r2": {
-			const endpoint = config.endpoint.replace(/^https?:\/\//, "");
+			const endpoint = config.endpoint.trim().replace(/^https?:\/\//, "").replace(/\/$/, "");
 			return `s3:${endpoint}/${config.bucket}`;
 		}
 		case "gcs":
@@ -108,26 +69,45 @@ export const buildRepoUrl = (config: RepositoryConfig): string => {
 	}
 };
 
-export const buildEnv = async (config: RepositoryConfig) => {
+export const buildEnv = async (config: RepositoryConfig, organizationId: string) => {
 	const env: Record<string, string> = {
 		RESTIC_CACHE_DIR,
-		PATH: getDefaultPath(),
+		PATH: process.env.PATH || "/usr/local/bin:/usr/bin:/bin",
 	};
 
 	if (config.isExistingRepository && config.customPassword) {
 		const decryptedPassword = await cryptoUtils.resolveSecret(config.customPassword);
-		const passwordFilePath = path.join(getTempDir(), `zerobyte-pass-${crypto.randomBytes(8).toString("hex")}.txt`);
+		const passwordFilePath = path.join("/tmp", `zerobyte-pass-${crypto.randomBytes(8).toString("hex")}.txt`);
 
 		await fs.writeFile(passwordFilePath, decryptedPassword, { mode: 0o600 });
 		env.RESTIC_PASSWORD_FILE = passwordFilePath;
 	} else {
-		env.RESTIC_PASSWORD_FILE = RESTIC_PASS_FILE;
+		const org = await db.query.organization.findFirst({ where: { id: organizationId } });
+
+		if (!org) {
+			throw new Error(`Organization ${organizationId} not found`);
+		}
+
+		const metadata = org.metadata;
+		if (!metadata?.resticPassword) {
+			throw new Error(`Restic password not configured for organization ${organizationId}`);
+		} else {
+			const decryptedPassword = await cryptoUtils.resolveSecret(metadata.resticPassword);
+			const passwordFilePath = path.join("/tmp", `zerobyte-pass-${crypto.randomBytes(8).toString("hex")}.txt`);
+			await fs.writeFile(passwordFilePath, decryptedPassword, { mode: 0o600 });
+			env.RESTIC_PASSWORD_FILE = passwordFilePath;
+		}
 	}
 
 	switch (config.backend) {
 		case "s3":
 			env.AWS_ACCESS_KEY_ID = await cryptoUtils.resolveSecret(config.accessKeyId);
 			env.AWS_SECRET_ACCESS_KEY = await cryptoUtils.resolveSecret(config.secretAccessKey);
+
+			// Huawei OBS requires virtual-hosted style access
+			if (config.endpoint.includes("myhuaweicloud")) {
+				env.AWS_S3_BUCKET_LOOKUP = "dns";
+			}
 			break;
 		case "r2":
 			env.AWS_ACCESS_KEY_ID = await cryptoUtils.resolveSecret(config.accessKeyId);
@@ -137,7 +117,7 @@ export const buildEnv = async (config: RepositoryConfig) => {
 			break;
 		case "gcs": {
 			const decryptedCredentials = await cryptoUtils.resolveSecret(config.credentialsJson);
-			const credentialsPath = path.join(getTempDir(), `zerobyte-gcs-${crypto.randomBytes(8).toString("hex")}.json`);
+			const credentialsPath = path.join("/tmp", `zerobyte-gcs-${crypto.randomBytes(8).toString("hex")}.json`);
 			await fs.writeFile(credentialsPath, decryptedCredentials, { mode: 0o600 });
 			env.GOOGLE_PROJECT_ID = config.projectId;
 			env.GOOGLE_APPLICATION_CREDENTIALS = credentialsPath;
@@ -162,7 +142,7 @@ export const buildEnv = async (config: RepositoryConfig) => {
 		}
 		case "sftp": {
 			const decryptedKey = await cryptoUtils.resolveSecret(config.privateKey);
-			const keyPath = path.join(getTempDir(), `zerobyte-ssh-${crypto.randomBytes(8).toString("hex")}`);
+			const keyPath = path.join("/tmp", `zerobyte-ssh-${crypto.randomBytes(8).toString("hex")}`);
 
 			let normalizedKey = decryptedKey.replace(/\r\n/g, "\n");
 			if (!normalizedKey.endsWith("\n")) {
@@ -180,7 +160,23 @@ export const buildEnv = async (config: RepositoryConfig) => {
 
 			const sshArgs = [
 				"-o",
-				"LogLevel=VERBOSE",
+				"LogLevel=ERROR",
+				"-o",
+				"BatchMode=yes",
+				"-o",
+				"NumberOfPasswordPrompts=0",
+				"-o",
+				"PreferredAuthentications=publickey",
+				"-o",
+				"PasswordAuthentication=no",
+				"-o",
+				"KbdInteractiveAuthentication=no",
+				"-o",
+				"IdentitiesOnly=yes",
+				"-o",
+				"ConnectTimeout=10",
+				"-o",
+				"ConnectionAttempts=1",
 				"-o",
 				"ServerAliveInterval=60",
 				"-o",
@@ -192,7 +188,7 @@ export const buildEnv = async (config: RepositoryConfig) => {
 			if (config.skipHostKeyCheck || !config.knownHosts) {
 				sshArgs.push("-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null");
 			} else if (config.knownHosts) {
-				const knownHostsPath = path.join(getTempDir(), `zerobyte-known-hosts-${crypto.randomBytes(8).toString("hex")}`);
+				const knownHostsPath = path.join("/tmp", `zerobyte-known-hosts-${crypto.randomBytes(8).toString("hex")}`);
 				await fs.writeFile(knownHostsPath, config.knownHosts, { mode: 0o600 });
 				env._SFTP_KNOWN_HOSTS_PATH = knownHostsPath;
 				sshArgs.push("-o", "StrictHostKeyChecking=yes", "-o", `UserKnownHostsFile=${knownHostsPath}`);
@@ -210,7 +206,7 @@ export const buildEnv = async (config: RepositoryConfig) => {
 
 	if (config.cacert) {
 		const decryptedCert = await cryptoUtils.resolveSecret(config.cacert);
-		const certPath = path.join(getTempDir(), `zerobyte-cacert-${crypto.randomBytes(8).toString("hex")}.pem`);
+		const certPath = path.join("/tmp", `zerobyte-cacert-${crypto.randomBytes(8).toString("hex")}.pem`);
 		await fs.writeFile(certPath, decryptedCert, { mode: 0o600 });
 		env.RESTIC_CACERT = certPath;
 	}
@@ -222,19 +218,17 @@ export const buildEnv = async (config: RepositoryConfig) => {
 	return env;
 };
 
-const init = async (config: RepositoryConfig) => {
-	await ensurePassfile();
-
+const init = async (config: RepositoryConfig, organizationId: string, options?: { timeoutMs?: number }) => {
 	const repoUrl = buildRepoUrl(config);
 
 	logger.info(`Initializing restic repository at ${repoUrl}...`);
 
-	const env = await buildEnv(config);
+	const env = await buildEnv(config, organizationId);
 
 	const args = ["init", "--repo", repoUrl];
 	addCommonArgs(args, env, config);
 
-	const res = await exec({ command: "restic", args, env });
+	const res = await exec({ command: "restic", args, env, timeout: options?.timeoutMs ?? 20000 });
 	await cleanupTemporaryKeys(env);
 
 	if (res.exitCode !== 0) {
@@ -246,23 +240,11 @@ const init = async (config: RepositoryConfig) => {
 	return { success: true, error: null };
 };
 
-const backupProgressSchema = type({
-	message_type: "'status'",
-	seconds_elapsed: "number",
-	percent_done: "number",
-	total_files: "number",
-	files_done: "number",
-	total_bytes: "number",
-	bytes_done: "number",
-	current_files: "string[]",
-});
-
-export type BackupProgress = typeof backupProgressSchema.infer;
-
 const backup = async (
 	config: RepositoryConfig,
 	source: string,
-	options?: {
+	options: {
+		organizationId: string;
 		exclude?: string[];
 		excludeIfPresent?: string[];
 		include?: string[];
@@ -270,11 +252,11 @@ const backup = async (
 		oneFileSystem?: boolean;
 		compressionMode?: CompressionMode;
 		signal?: AbortSignal;
-		onProgress?: (progress: BackupProgress) => void;
+		onProgress?: (progress: ResticBackupProgressDto) => void;
 	},
 ) => {
 	const repoUrl = buildRepoUrl(config);
-	const env = await buildEnv(config);
+	const env = await buildEnv(config, options?.organizationId);
 
 	const args: string[] = ["--repo", repoUrl, "backup", "--compression", options?.compressionMode ?? "auto"];
 
@@ -334,9 +316,11 @@ const backup = async (
 		if (options?.onProgress) {
 			try {
 				const jsonData = JSON.parse(data);
-				const progress = backupProgressSchema(jsonData);
+				const progress = resticBackupProgressSchema(jsonData);
 				if (!(progress instanceof type.errors)) {
 					options.onProgress(progress);
+				} else {
+					logger.error(progress.summary);
 				}
 			} catch (_) {
 				// Ignore JSON parse errors for non-JSON lines
@@ -389,7 +373,7 @@ const backup = async (
 	}
 
 	logger.debug(`Restic backup output last line: ${summaryLine}`);
-	const result = backupOutputSchema(summaryLine);
+	const result = resticBackupOutputSchema(summaryLine);
 
 	if (result instanceof type.errors) {
 		logger.error(`Restic backup output validation failed: ${result.summary}`);
@@ -399,39 +383,39 @@ const backup = async (
 	return { result, exitCode: res.exitCode };
 };
 
-const restoreOutputSchema = type({
-	message_type: "'summary'",
-	total_files: "number?",
-	files_restored: "number",
-	files_skipped: "number",
-	total_bytes: "number?",
-	bytes_restored: "number?",
-	bytes_skipped: "number",
+const restoreProgressSchema = type({
+	message_type: "'status' | 'summary'",
+	seconds_elapsed: "number",
+	percent_done: "number = 0",
+	total_files: "number",
+	files_restored: "number = 0",
+	total_bytes: "number = 0",
+	bytes_restored: "number = 0",
 });
 
+export type RestoreProgress = typeof restoreProgressSchema.infer;
 const restore = async (
 	config: RepositoryConfig,
 	snapshotId: string,
 	target: string,
-	options?: {
+	options: {
+		organizationId: string;
 		include?: string[];
 		exclude?: string[];
 		excludeXattr?: string[];
 		delete?: boolean;
 		overwrite?: OverwriteMode;
+		onProgress?: (progress: RestoreProgress) => void;
+		signal?: AbortSignal;
 	},
 ) => {
 	const repoUrl = buildRepoUrl(config);
-	const env = await buildEnv(config);
+	const env = await buildEnv(config, options.organizationId);
 
 	const args: string[] = ["--repo", repoUrl, "restore", snapshotId, "--target", target];
 
 	if (options?.overwrite) {
 		args.push("--overwrite", options.overwrite);
-	}
-
-	if (options?.delete) {
-		args.push("--delete");
 	}
 
 	if (options?.include?.length) {
@@ -454,8 +438,34 @@ const restore = async (
 
 	addCommonArgs(args, env, config);
 
+	const streamProgress = throttle((data: string) => {
+		if (options?.onProgress) {
+			try {
+				const jsonData = JSON.parse(data);
+				const progress = restoreProgressSchema(jsonData);
+				if (!(progress instanceof type.errors)) {
+					options.onProgress(progress);
+				} else {
+					logger.error(progress.summary);
+				}
+			} catch (_) {
+				// Ignore JSON parse errors for non-JSON lines
+			}
+		}
+	}, 1000);
+
 	logger.debug(`Executing: restic ${args.join(" ")}`);
-	const res = await safeSpawn({ command: "restic", args, env });
+	const res = await safeSpawn({
+		command: "restic",
+		args,
+		env,
+		signal: options?.signal,
+		onStdout: (data) => {
+			if (options?.onProgress) {
+				streamProgress(data);
+			}
+		},
+	});
 
 	await cleanupTemporaryKeys(env);
 
@@ -465,28 +475,29 @@ const restore = async (
 	}
 
 	const lastLine = res.summary.trim();
-	let summaryLine = "";
+	let summaryLine: unknown = {};
 	try {
-		const resSummary = JSON.parse(lastLine ?? "{}");
-		summaryLine = resSummary;
+		summaryLine = JSON.parse(lastLine ?? "{}");
 	} catch (_) {
-		logger.warn("Failed to parse restic backup output JSON summary.", lastLine);
-		summaryLine = "{}";
+		logger.warn("Failed to parse restic restore output JSON summary.", lastLine);
+		summaryLine = {};
 	}
 
-	logger.debug(`Restic restore output last line: ${summaryLine}`);
-	const result = restoreOutputSchema(summaryLine);
+	logger.debug(`Restic restore output last line: ${JSON.stringify(summaryLine)}`);
+	const result = resticRestoreOutputSchema(summaryLine);
 
 	if (result instanceof type.errors) {
 		logger.warn(`Restic restore output validation failed: ${result.summary}`);
 		logger.info(`Restic restore completed for snapshot ${snapshotId} to target ${target}`);
-		return {
+		const fallback: ResticRestoreOutputDto = {
 			message_type: "summary" as const,
 			total_files: 0,
 			files_restored: 0,
 			files_skipped: 0,
 			bytes_skipped: 0,
 		};
+
+		return fallback;
 	}
 
 	logger.info(
@@ -496,11 +507,11 @@ const restore = async (
 	return result;
 };
 
-const snapshots = async (config: RepositoryConfig, options: { tags?: string[] } = {}) => {
-	const { tags } = options;
+const snapshots = async (config: RepositoryConfig, options: { tags?: string[]; organizationId: string }) => {
+	const { tags, organizationId } = options;
 
 	const repoUrl = buildRepoUrl(config);
-	const env = await buildEnv(config);
+	const env = await buildEnv(config, organizationId);
 
 	const args = ["--repo", repoUrl, "snapshots"];
 
@@ -530,11 +541,52 @@ const snapshots = async (config: RepositoryConfig, options: { tags?: string[] } 
 	return result;
 };
 
-const forget = async (config: RepositoryConfig, options: RetentionPolicy, extra: { tag: string }) => {
+export type ResticForgetResponse = ForgetGroup[];
+
+export interface ForgetGroup {
+	tags: string[] | null;
+	host: string;
+	paths: string[] | null;
+	keep: Snapshot[];
+	remove: Snapshot[] | null;
+	reasons: ForgetReason[];
+}
+
+export interface Snapshot {
+	time: string;
+	parent?: string;
+	tree: string;
+	paths: string[];
+	hostname: string;
+	username?: string;
+	uid?: number;
+	gid?: number;
+	excludes?: string[] | null;
+	tags?: string[] | null;
+	program_version?: string;
+	summary?: ResticSnapshotSummaryDto;
+	id: string;
+	short_id: string;
+}
+
+export interface ForgetReason {
+	snapshot: Snapshot;
+	matches: string[];
+}
+
+const forget = async (
+	config: RepositoryConfig,
+	options: RetentionPolicy,
+	extra: { tag: string; organizationId: string; dryRun?: boolean },
+) => {
 	const repoUrl = buildRepoUrl(config);
-	const env = await buildEnv(config);
+	const env = await buildEnv(config, extra.organizationId);
 
 	const args: string[] = ["--repo", repoUrl, "forget", "--group-by", "tags", "--tag", extra.tag];
+
+	if (extra.dryRun) {
+		args.push("--dry-run", "--no-lock");
+	}
 
 	if (options.keepLast) {
 		args.push("--keep-last", String(options.keepLast));
@@ -558,7 +610,10 @@ const forget = async (config: RepositoryConfig, options: RetentionPolicy, extra:
 		args.push("--keep-within-duration", options.keepWithinDuration);
 	}
 
-	args.push("--prune");
+	if (!extra.dryRun) {
+		args.push("--prune");
+	}
+
 	addCommonArgs(args, env, config);
 
 	const res = await exec({ command: "restic", args, env });
@@ -569,12 +624,15 @@ const forget = async (config: RepositoryConfig, options: RetentionPolicy, extra:
 		throw new ResticError(res.exitCode, res.stderr);
 	}
 
-	return { success: true };
+	const lines = res.stdout.split("\n").filter((line) => line.trim());
+	const result = extra.dryRun ? safeJsonParse<ResticForgetResponse>(lines.at(-1) ?? "[]") : null;
+
+	return { success: true, data: result };
 };
 
-const deleteSnapshots = async (config: RepositoryConfig, snapshotIds: string[]) => {
+const deleteSnapshots = async (config: RepositoryConfig, snapshotIds: string[], organizationId: string) => {
 	const repoUrl = buildRepoUrl(config);
-	const env = await buildEnv(config);
+	const env = await buildEnv(config, organizationId);
 
 	if (snapshotIds.length === 0) {
 		throw new Error("No snapshot IDs provided for deletion.");
@@ -594,17 +652,18 @@ const deleteSnapshots = async (config: RepositoryConfig, snapshotIds: string[]) 
 	return { success: true };
 };
 
-const deleteSnapshot = async (config: RepositoryConfig, snapshotId: string) => {
-	return deleteSnapshots(config, [snapshotId]);
+const deleteSnapshot = async (config: RepositoryConfig, snapshotId: string, organizationId: string) => {
+	return deleteSnapshots(config, [snapshotId], organizationId);
 };
 
 const tagSnapshots = async (
 	config: RepositoryConfig,
 	snapshotIds: string[],
 	tags: { add?: string[]; remove?: string[]; set?: string[] },
+	organizationId: string,
 ) => {
 	const repoUrl = buildRepoUrl(config);
-	const env = await buildEnv(config);
+	const env = await buildEnv(config, organizationId);
 
 	if (snapshotIds.length === 0) {
 		throw new Error("No snapshot IDs provided for tagging.");
@@ -670,9 +729,15 @@ const lsSnapshotInfoSchema = type({
 	message_type: "'snapshot'",
 });
 
-const ls = async (config: RepositoryConfig, snapshotId: string, path?: string) => {
+const ls = async (
+	config: RepositoryConfig,
+	snapshotId: string,
+	organizationId: string,
+	path?: string,
+	options?: { offset?: number; limit?: number },
+) => {
 	const repoUrl = buildRepoUrl(config);
-	const env = await buildEnv(config);
+	const env = await buildEnv(config, organizationId);
 
 	const args: string[] = ["--repo", repoUrl, "ls", snapshotId, "--long"];
 
@@ -682,59 +747,92 @@ const ls = async (config: RepositoryConfig, snapshotId: string, path?: string) =
 
 	addCommonArgs(args, env, config);
 
-	const res = await exec({ command: "restic", args, env });
+	let snapshot: typeof lsSnapshotInfoSchema.infer | null = null;
+	const nodes: Array<typeof lsNodeSchema.infer> = [];
+	let totalNodes = 0;
+	let isFirstLine = true;
+	let hasMore = false;
+
+	const offset = Math.max(options?.offset ?? 0, 0);
+	const limit = Math.min(Math.max(options?.limit ?? 500, 1), 500);
+
+	const res = await safeSpawn({
+		command: "restic",
+		args,
+		env,
+		onStdout: (line) => {
+			const trimmedLine = line.trim();
+			if (!trimmedLine) return;
+
+			try {
+				const data = JSON.parse(trimmedLine);
+
+				if (isFirstLine) {
+					isFirstLine = false;
+					const snapshotValidation = lsSnapshotInfoSchema(data);
+					if (!(snapshotValidation instanceof type.errors)) {
+						snapshot = snapshotValidation;
+					}
+					return;
+				}
+
+				const nodeValidation = lsNodeSchema(data);
+				if (nodeValidation instanceof type.errors) {
+					logger.warn(`Skipping invalid node: ${nodeValidation.summary}`);
+					return;
+				}
+
+				if (totalNodes >= offset && totalNodes < offset + limit) {
+					nodes.push(nodeValidation);
+				}
+				totalNodes++;
+
+				if (totalNodes >= offset + limit + 1) {
+					hasMore = true;
+				}
+			} catch (_) {
+				// Ignore JSON parse errors for non-JSON lines
+			}
+		},
+	});
+
 	await cleanupTemporaryKeys(env);
 
 	if (res.exitCode !== 0) {
-		logger.error(`Restic ls failed: ${res.stderr}`);
-		throw new ResticError(res.exitCode, res.stderr);
+		logger.error(`Restic ls failed: ${res.error}`);
+		throw new ResticError(res.exitCode, res.error);
 	}
 
-	// The output is a stream of JSON objects, first is snapshot info, rest are file/dir nodes
-	const stdout = res.stdout;
-	const lines = stdout
-		.trim()
-		.split("\n")
-		.filter((line) => line.trim());
-
-	if (lines.length === 0) {
-		return { snapshot: null, nodes: [] };
+	if (totalNodes > offset + limit) {
+		hasMore = true;
 	}
 
-	// First line is snapshot info
-	const snapshotLine = JSON.parse(lines[0] ?? "{}");
-	const snapshot = lsSnapshotInfoSchema(snapshotLine);
-
-	if (snapshot instanceof type.errors) {
-		logger.error(`Restic ls snapshot info validation failed: ${snapshot.summary}`);
-		throw new Error(`Restic ls snapshot info validation failed: ${snapshot.summary}`);
-	}
-
-	const nodes: Array<typeof lsNodeSchema.infer> = [];
-	for (let i = 1; i < lines.length; i++) {
-		const nodeLine = JSON.parse(lines[i] ?? "{}");
-		const nodeValidation = lsNodeSchema(nodeLine);
-
-		if (nodeValidation instanceof type.errors) {
-			logger.warn(`Skipping invalid node: ${nodeValidation.summary}`);
-			continue;
-		}
-
-		nodes.push(nodeValidation);
-	}
-
-	return { snapshot, nodes };
+	return {
+		snapshot: snapshot as typeof lsSnapshotInfoSchema.infer | null,
+		nodes,
+		pagination: {
+			offset,
+			limit,
+			total: totalNodes,
+			hasMore,
+		},
+	};
 };
 
-const unlock = async (config: RepositoryConfig) => {
+const unlock = async (config: RepositoryConfig, options: { signal?: AbortSignal; organizationId: string }) => {
 	const repoUrl = buildRepoUrl(config);
-	const env = await buildEnv(config);
+	const env = await buildEnv(config, options.organizationId);
 
 	const args = ["unlock", "--repo", repoUrl, "--remove-all"];
 	addCommonArgs(args, env, config);
 
-	const res = await exec({ command: "restic", args, env });
+	const res = await exec({ command: "restic", args, env, signal: options?.signal });
 	await cleanupTemporaryKeys(env);
+
+	if (options?.signal?.aborted) {
+		logger.warn("Restic unlock was aborted by signal.");
+		return { success: false, message: "Operation aborted" };
+	}
 
 	if (res.exitCode !== 0) {
 		logger.error(`Restic unlock failed: ${res.stderr}`);
@@ -745,9 +843,12 @@ const unlock = async (config: RepositoryConfig) => {
 	return { success: true, message: "Repository unlocked successfully" };
 };
 
-const check = async (config: RepositoryConfig, options?: { readData?: boolean }) => {
+const check = async (
+	config: RepositoryConfig,
+	options: { readData?: boolean; signal?: AbortSignal; organizationId: string },
+) => {
 	const repoUrl = buildRepoUrl(config);
-	const env = await buildEnv(config);
+	const env = await buildEnv(config, options.organizationId);
 
 	const args: string[] = ["--repo", repoUrl, "check"];
 
@@ -757,8 +858,13 @@ const check = async (config: RepositoryConfig, options?: { readData?: boolean })
 
 	addCommonArgs(args, env, config);
 
-	const res = await exec({ command: "restic", args, env });
+	const res = await exec({ command: "restic", args, env, signal: options?.signal });
 	await cleanupTemporaryKeys(env);
+
+	if (options?.signal?.aborted) {
+		logger.warn("Restic check was aborted by signal.");
+		return { success: false, hasErrors: true, output: "", error: "Operation aborted" };
+	}
 
 	const { stdout, stderr } = res;
 
@@ -783,15 +889,20 @@ const check = async (config: RepositoryConfig, options?: { readData?: boolean })
 	};
 };
 
-const repairIndex = async (config: RepositoryConfig) => {
+const repairIndex = async (config: RepositoryConfig, options: { signal?: AbortSignal; organizationId: string }) => {
 	const repoUrl = buildRepoUrl(config);
-	const env = await buildEnv(config);
+	const env = await buildEnv(config, options.organizationId);
 
 	const args = ["repair", "index", "--repo", repoUrl];
 	addCommonArgs(args, env, config);
 
-	const res = await exec({ command: "restic", args, env });
+	const res = await exec({ command: "restic", args, env, signal: options?.signal });
 	await cleanupTemporaryKeys(env);
+
+	if (options?.signal?.aborted) {
+		logger.warn("Restic repair index was aborted by signal.");
+		return { success: false, message: "Operation aborted", output: "" };
+	}
 
 	const { stdout, stderr } = res;
 
@@ -811,16 +922,13 @@ const repairIndex = async (config: RepositoryConfig) => {
 const copy = async (
 	sourceConfig: RepositoryConfig,
 	destConfig: RepositoryConfig,
-	options: {
-		tag?: string;
-		snapshotId?: string;
-	},
+	options: { organizationId: string; tag?: string; snapshotId?: string },
 ) => {
 	const sourceRepoUrl = buildRepoUrl(sourceConfig);
 	const destRepoUrl = buildRepoUrl(destConfig);
 
-	const sourceEnv = await buildEnv(sourceConfig);
-	const destEnv = await buildEnv(destConfig);
+	const sourceEnv = await buildEnv(sourceConfig, options.organizationId);
+	const destEnv = await buildEnv(destConfig, options.organizationId);
 
 	const env: Record<string, string> = {
 		...sourceEnv,
@@ -899,7 +1007,8 @@ const formatBandwidthLimit = (limit?: BandwidthLimit): string => {
 			return "";
 	}
 
-	return `${Math.floor(kibibytesPerSecond)}`;
+	const limitValue = Math.max(1, Math.floor(kibibytesPerSecond));
+	return `${limitValue}`;
 };
 
 export const addCommonArgs = (
@@ -912,6 +1021,10 @@ export const addCommonArgs = (
 
 	if (env._SFTP_SSH_ARGS) {
 		args.push("-o", `sftp.args=${env._SFTP_SSH_ARGS}`);
+	}
+
+	if (env.AWS_S3_BUCKET_LOOKUP === "dns") {
+		args.push("-o", "s3.bucket-lookup=dns");
 	}
 
 	if (env._INSECURE_TLS === "true") {
@@ -936,7 +1049,6 @@ export const addCommonArgs = (
 };
 
 export const restic = {
-	ensurePassfile,
 	init,
 	backup,
 	restore,

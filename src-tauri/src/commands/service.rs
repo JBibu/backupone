@@ -159,14 +159,23 @@ pub async fn install_service(app: tauri::AppHandle) -> Result<(), String> {
             .resource_dir()
             .map_err(|e| format!("Failed to get resource directory: {}", e))?;
 
-        let service_exe = exe_dir.join("binaries").join("zerobyte-service.exe");
-
-        if !service_exe.exists() {
-            return Err(format!(
-                "Service executable not found at: {}",
-                service_exe.display()
-            ));
-        }
+        let binaries_dir = exe_dir.join("binaries");
+        let service_exe = binaries_dir
+            .join("zerobyte-service-x86_64-pc-windows-msvc.exe")
+            .exists()
+            .then(|| binaries_dir.join("zerobyte-service-x86_64-pc-windows-msvc.exe"))
+            .or_else(|| {
+                binaries_dir
+                    .join("zerobyte-service.exe")
+                    .exists()
+                    .then(|| binaries_dir.join("zerobyte-service.exe"))
+            })
+            .ok_or_else(|| {
+                format!(
+                    "Service executable not found in: {}",
+                    binaries_dir.display()
+                )
+            })?;
 
         info!("Installing service from: {}", service_exe.display());
 

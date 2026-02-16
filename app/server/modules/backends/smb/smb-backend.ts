@@ -47,18 +47,26 @@ const mountLinux = async (config: BackendConfig, path: string) => {
 	const run = async () => {
 		await fs.mkdir(path, { recursive: true });
 
-		const password = await cryptoUtils.resolveSecret(config.password);
-
 		const source = `//${config.server}/${config.share}`;
 		const { uid, gid } = os.userInfo();
-		const options = [`user=${config.username}`, `pass=${password}`, `port=${config.port}`, `uid=${uid}`, `gid=${gid}`];
 
-		if (config.vers && config.vers !== "auto") {
-			options.push(`vers=${config.vers}`);
+		const options = [`port=${config.port}`, `uid=${uid}`, `gid=${gid}`];
+
+		if (config.guest) {
+			options.push("user=guest", "pass=");
+		} else {
+			const password = await cryptoUtils.resolveSecret(config.password ?? "");
+			const safePassword = password.replace(/\\/g, "\\\\").replace(/,/g, "\\,");
+
+			options.push(`user=${config.username ?? "user"}`, `pass=${safePassword}`);
 		}
 
 		if (config.domain) {
 			options.push(`domain=${config.domain}`);
+		}
+
+		if (config.vers && config.vers !== "auto") {
+			options.push(`vers=${config.vers}`);
 		}
 
 		if (config.readOnly) {
@@ -73,8 +81,8 @@ const mountLinux = async (config: BackendConfig, path: string) => {
 		try {
 			await executeMount(args);
 		} catch (error) {
-			logger.warn(`Initial SMB mount failed, retrying with -i flag: ${toMessage(error)}`);
-			await executeMount(["-i", ...args]);
+			logger.error(`SMB mount failed: ${toMessage(error)}`);
+			throw error;
 		}
 
 		logger.info(`SMB volume at ${path} mounted successfully.`);
@@ -168,7 +176,7 @@ const connectWindows = async (config: BackendConfig, uncPath: string) => {
 		}
 
 		// Try to establish connection using net use
-		const password = await cryptoUtils.resolveSecret(config.password);
+		const password = await cryptoUtils.resolveSecret(config.password ?? "");
 		const serverShare = `\\\\${config.server}\\${config.share}`;
 
 		const args = ["use", serverShare];

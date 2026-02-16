@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -18,10 +18,11 @@ import { parseError } from "~/client/lib/errors";
 import type { Repository } from "~/client/lib/types";
 import { RepositoryIcon } from "~/client/components/repository-icon";
 import { StatusDot } from "~/client/components/status-dot";
+import { useServerEvents } from "~/client/hooks/use-server-events";
 import { formatDistanceToNow } from "date-fns";
-import { Link } from "react-router";
 import { cn } from "~/client/lib/utils";
 import type { GetScheduleMirrorsResponse } from "~/client/api-client";
+import { Link } from "@tanstack/react-router";
 
 type Props = {
 	scheduleId: number;
@@ -34,19 +35,41 @@ type MirrorAssignment = {
 	repositoryId: string;
 	enabled: boolean;
 	lastCopyAt: number | null;
-	lastCopyStatus: "success" | "error" | null;
+	lastCopyStatus: "success" | "error" | "in_progress" | null;
 	lastCopyError: string | null;
 };
 
+const isSyncing = (assignment: MirrorAssignment) => assignment.lastCopyStatus === "in_progress";
+
+const buildAssignments = (mirrors: GetScheduleMirrorsResponse) =>
+	new Map<string, MirrorAssignment>(
+		mirrors.map((mirror) => [
+			mirror.repositoryId,
+			{
+				repositoryId: mirror.repositoryId,
+				enabled: mirror.enabled,
+				lastCopyAt: mirror.lastCopyAt,
+				lastCopyStatus: mirror.lastCopyStatus,
+				lastCopyError: mirror.lastCopyError,
+			},
+		]),
+	);
+
 export const ScheduleMirrorsConfig = ({ scheduleId, primaryRepositoryId, repositories, initialData }: Props) => {
-	const [assignments, setAssignments] = useState<Map<string, MirrorAssignment>>(new Map());
+	const [assignments, setAssignments] = useState<Map<string, MirrorAssignment>>(() => buildAssignments(initialData));
 	const [hasChanges, setHasChanges] = useState(false);
 	const [isAddingNew, setIsAddingNew] = useState(false);
+	const { addEventListener } = useServerEvents();
 
-	const { data: currentMirrors } = useQuery({
+	const { data: currentMirrors } = useSuspenseQuery({
 		...getScheduleMirrorsOptions({ path: { scheduleId: scheduleId.toString() } }),
-		initialData,
 	});
+
+	useEffect(() => {
+		if (!hasChanges) {
+			setAssignments(buildAssignments(currentMirrors));
+		}
+	}, [currentMirrors, hasChanges]);
 
 	const { data: compatibility } = useQuery({
 		...getMirrorCompatibilityOptions({ path: { scheduleId: scheduleId.toString() } }),
@@ -76,21 +99,38 @@ export const ScheduleMirrorsConfig = ({ scheduleId, primaryRepositoryId, reposit
 	}, [compatibility]);
 
 	useEffect(() => {
-		if (currentMirrors && !hasChanges) {
-			const map = new Map<string, MirrorAssignment>();
-			for (const mirror of currentMirrors) {
-				map.set(mirror.repositoryId, {
-					repositoryId: mirror.repositoryId,
-					enabled: mirror.enabled,
-					lastCopyAt: mirror.lastCopyAt,
-					lastCopyStatus: mirror.lastCopyStatus,
-					lastCopyError: mirror.lastCopyError,
-				});
-			}
+		const unsubscribeStarted = addEventListener("mirror:started", (event) => {
+			if (event.scheduleId !== scheduleId) return;
+			setAssignments((prev) => {
+				const next = new Map(prev);
+				const existing = next.get(event.repositoryId);
+				if (!existing) return prev;
+				next.set(event.repositoryId, { ...existing, lastCopyStatus: "in_progress", lastCopyError: null });
+				return next;
+			});
+		});
 
-			setAssignments(map);
-		}
-	}, [currentMirrors, hasChanges]);
+		const unsubscribeCompleted = addEventListener("mirror:completed", (event) => {
+			if (event.scheduleId !== scheduleId) return;
+			setAssignments((prev) => {
+				const next = new Map(prev);
+				const existing = next.get(event.repositoryId);
+				if (!existing) return prev;
+				next.set(event.repositoryId, {
+					...existing,
+					lastCopyStatus: event.status ?? existing.lastCopyStatus,
+					lastCopyError: event.error ?? null,
+					lastCopyAt: Date.now(),
+				});
+				return next;
+			});
+		});
+
+		return () => {
+			unsubscribeStarted();
+			unsubscribeCompleted();
+		};
+	}, [addEventListener, scheduleId]);
 
 	const addRepository = (repositoryId: string) => {
 		const newAssignments = new Map(assignments);
@@ -142,20 +182,8 @@ export const ScheduleMirrorsConfig = ({ scheduleId, primaryRepositoryId, reposit
 	};
 
 	const handleReset = () => {
-		if (currentMirrors) {
-			const map = new Map<string, MirrorAssignment>();
-			for (const mirror of currentMirrors) {
-				map.set(mirror.repositoryId, {
-					repositoryId: mirror.repositoryId,
-					enabled: mirror.enabled,
-					lastCopyAt: mirror.lastCopyAt,
-					lastCopyStatus: mirror.lastCopyStatus,
-					lastCopyError: mirror.lastCopyError,
-				});
-			}
-			setAssignments(map);
-			setHasChanges(false);
-		}
+		setAssignments(buildAssignments(currentMirrors));
+		setHasChanges(false);
 	};
 
 	const selectableRepositories =
@@ -174,13 +202,27 @@ export const ScheduleMirrorsConfig = ({ scheduleId, primaryRepositoryId, reposit
 		.map((id) => repositories?.find((r) => r.id === id))
 		.filter((r) => r !== undefined);
 
-	const getStatusVariant = (status: "success" | "error" | null) => {
+	const getStatusVariant = (status: string | null) => {
 		if (status === "success") return "success";
 		if (status === "error") return "error";
+		if (status === "in_progress") return "info";
 		return "neutral";
 	};
 
+	const getLabel = (assignment: MirrorAssignment) => {
+		if (isSyncing(assignment)) {
+			return "Syncing...";
+		}
+		if (assignment.lastCopyAt) {
+			return formatDistanceToNow(new Date(assignment.lastCopyAt), { addSuffix: true });
+		}
+		return "Never";
+	};
+
 	const getStatusLabel = (assignment: MirrorAssignment) => {
+		if (isSyncing(assignment)) {
+			return "Mirror sync in progress";
+		}
 		if (assignment.lastCopyStatus === "error" && assignment.lastCopyError) {
 			return assignment.lastCopyError;
 		}
@@ -288,7 +330,8 @@ export const ScheduleMirrorsConfig = ({ scheduleId, primaryRepositoryId, reposit
 											<TableCell>
 												<div className="flex items-center gap-2">
 													<Link
-														to={`/repositories/${repository.shortId}`}
+														to="/repositories/$repositoryId"
+														params={{ repositoryId: repository.id }}
 														className="hover:underline flex items-center gap-2"
 													>
 														<RepositoryIcon backend={repository.type} className="h-4 w-4" />
@@ -307,19 +350,14 @@ export const ScheduleMirrorsConfig = ({ scheduleId, primaryRepositoryId, reposit
 												/>
 											</TableCell>
 											<TableCell>
-												{assignment.lastCopyAt ? (
-													<div className="flex items-center gap-2">
-														<StatusDot
-															variant={getStatusVariant(assignment.lastCopyStatus)}
-															label={getStatusLabel(assignment)}
-														/>
-														<span className="text-sm text-muted-foreground">
-															{formatDistanceToNow(new Date(assignment.lastCopyAt), { addSuffix: true })}
-														</span>
-													</div>
-												) : (
-													<span className="text-sm text-muted-foreground">Never</span>
-												)}
+												<div className="flex items-center gap-2">
+													<StatusDot
+														variant={getStatusVariant(assignment.lastCopyStatus)}
+														label={getStatusLabel(assignment)}
+														animated={isSyncing(assignment)}
+													/>
+													<span className="text-sm text-muted-foreground">{getLabel(assignment)}</span>
+												</div>
 											</TableCell>
 											<TableCell>
 												<Button

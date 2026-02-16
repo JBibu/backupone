@@ -2,11 +2,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FolderOpen } from "lucide-react";
 import { FileTree } from "~/client/components/file-tree";
 import { listFilesOptions } from "../api-client/@tanstack/react-query.gen";
-import { useFileBrowser } from "../hooks/use-file-browser";
+import { useFileBrowser, type FetchFolderResult } from "../hooks/use-file-browser";
 import { parseError } from "../lib/errors";
 
 type VolumeFileBrowserProps = {
-	volumeName: string;
+	volumeId: string;
 	enabled?: boolean;
 	withCheckboxes?: boolean;
 	selectedPaths?: Set<string>;
@@ -18,7 +18,7 @@ type VolumeFileBrowserProps = {
 };
 
 export const VolumeFileBrowser = ({
-	volumeName,
+	volumeId,
 	enabled = true,
 	withCheckboxes = false,
 	selectedPaths,
@@ -31,25 +31,25 @@ export const VolumeFileBrowser = ({
 	const queryClient = useQueryClient();
 
 	const { data, isLoading, error } = useQuery({
-		...listFilesOptions({ path: { name: volumeName } }),
+		...listFilesOptions({ path: { id: volumeId } }),
 		enabled,
 	});
 
 	const fileBrowser = useFileBrowser({
 		initialData: data,
 		isLoading,
-		fetchFolder: async (path) => {
+		fetchFolder: async (path, offset): Promise<FetchFolderResult> => {
 			return await queryClient.ensureQueryData(
 				listFilesOptions({
-					path: { name: volumeName },
-					query: { path },
+					path: { id: volumeId },
+					query: { path, offset: offset?.toString() },
 				}),
 			);
 		},
 		prefetchFolder: (path) => {
 			void queryClient.prefetchQuery(
 				listFilesOptions({
-					path: { name: volumeName },
+					path: { id: volumeId },
 					query: { path },
 				}),
 			);
@@ -88,6 +88,8 @@ export const VolumeFileBrowser = ({
 				files={fileBrowser.fileArray}
 				onFolderExpand={fileBrowser.handleFolderExpand}
 				onFolderHover={fileBrowser.handleFolderHover}
+				onLoadMore={fileBrowser.handleLoadMore}
+				getFolderPagination={fileBrowser.getFolderPagination}
 				expandedFolders={fileBrowser.expandedFolders}
 				loadingFolders={fileBrowser.loadingFolders}
 				withCheckboxes={withCheckboxes}

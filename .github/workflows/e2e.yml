@@ -50,13 +50,18 @@ jobs:
           touch .env.local
           echo "SERVER_IP=localhost" >> .env.local
           echo "DATABASE_URL=./data/zerobyte.db" >> .env.local
+          echo "BASE_URL=http://localhost:4096" >> .env.local
 
       - name: Start zerobyte-e2e service
         run: bun run start:e2e -- -d
 
       - name: Wait for zerobyte to be ready
         run: |
-          timeout 30s bash -c 'until curl -f http://localhost:4096/healthcheck; do echo "Waiting for server..." && sleep 2; done'
+          timeout 30s bash -c 'until curl -f http://localhost:4096/api/healthcheck; do echo "Waiting for server..." && sleep 2; done'
+
+      - name: Print docker logs if failed to start
+        if: failure()
+        run: docker logs zerobyte || true
 
       - name: Make playwright directory writable
         run: sudo chmod 777 playwright/data/zerobyte.db

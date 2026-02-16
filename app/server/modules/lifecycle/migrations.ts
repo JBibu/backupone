@@ -1,10 +1,11 @@
-import { db } from "~/server/db/db";
 import { logger } from "../../utils/logger";
 import { v00001 } from "./migrations/00001-retag-snapshots";
-import { usersTable } from "~/server/db/schema";
+import { v00002 } from "./migrations/00002-isolate-restic-passwords";
+import { v00003 } from "./migrations/00003-assign-organization";
+import { v00004 } from "./migrations/00004-concat-path-name";
 import { sql } from "drizzle-orm";
-import { eq } from "drizzle-orm";
-import { appMetadataTable } from "../../db/schema";
+import { appMetadataTable, usersTable } from "../../db/schema";
+import { db } from "../../db/db";
 
 const MIGRATION_KEY_PREFIX = "migration:";
 
@@ -25,9 +26,7 @@ const recordMigrationCheckpoint = async (version: string): Promise<void> => {
 
 const hasMigrationCheckpoint = async (id: string): Promise<boolean> => {
 	const key = `${MIGRATION_KEY_PREFIX}${id}`;
-	const result = await db.query.appMetadataTable.findFirst({
-		where: eq(appMetadataTable.key, key),
-	});
+	const result = await db.query.appMetadataTable.findFirst({ where: { key } });
 	return result !== undefined;
 };
 
@@ -38,7 +37,7 @@ type MigrationEntity = {
 	dependsOn?: string[];
 };
 
-const registry: MigrationEntity[] = [v00001];
+const registry: MigrationEntity[] = [v00001, v00002, v00003, v00004];
 
 export const runMigrations = async () => {
 	const userCount = await db.select({ count: sql<number>`count(*)` }).from(usersTable);

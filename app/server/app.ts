@@ -1,6 +1,7 @@
 import path from "node:path";
 import { Scalar } from "@scalar/hono-api-reference";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { logger as honoLogger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
@@ -18,7 +19,7 @@ import { notificationsController } from "./modules/notifications/notifications.c
 import { handleServiceError } from "./utils/errors";
 import { logger } from "./utils/logger";
 import { config } from "./core/config";
-import { auth } from "~/lib/auth";
+import { auth } from "~/server/lib/auth";
 import { closeDatabase } from "./db/db";
 
 // Get the static files directory - use execDir for bundled binaries
@@ -53,7 +54,7 @@ export const scalarDescriptor = Scalar({
 });
 
 export const createApp = () => {
-	const app = new Hono().use(secureHeaders());
+	const app = new Hono();
 
 	// Serve static files from dist/client (images, favicon, etc.)
 	// This must be before other middleware to ensure static files are served
@@ -68,7 +69,8 @@ export const createApp = () => {
 		app.use(cors({ origin: config.trustedOrigins }));
 	}
 
-	if (config.environment !== "test") {
+	if (config.environment === "production") {
+		app.use(secureHeaders());
 		app.use(honoLogger());
 	}
 
@@ -85,8 +87,15 @@ export const createApp = () => {
 		);
 	}
 
+	app.use(
+		bodyLimit({
+			maxSize: 10 * 1024 * 1024, // 10MB
+			onError: (c) => c.json({ message: "Request body too large" }, 413),
+		}),
+	);
+
 	app
-		.get("healthcheck", (c) => c.json({ status: "ok" }))
+		.get("/api/healthcheck", (c) => c.json({ status: "ok" }))
 		.post("/api/shutdown", async (c) => {
 			// Graceful shutdown endpoint for Tauri/Service
 			if (isShuttingDown) {
@@ -127,7 +136,7 @@ export const createApp = () => {
 
 		const { status, message } = handleServiceError(err);
 
-		return c.json({ message }, status);
+		return c.json({ message }, status as 500);
 	});
 
 	return app;

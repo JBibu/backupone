@@ -10,15 +10,33 @@ import {
 	type LogsDto,
 	type SystemInfoDto,
 	type UpdateInfoDto,
+	setRegistrationStatusDto,
+	getRegistrationStatusDto,
+	registrationStatusBody,
+	type RegistrationStatusDto,
+	getDevPanelDto,
+	type DevPanelDto,
 } from "./system.dto";
 import { systemService } from "./system.service";
-import { requireAuth } from "../auth/auth.middleware";
-import { RESTIC_PASS_FILE } from "../../core/constants";
+import { requireAuth, requireOrgAdmin } from "../auth/auth.middleware";
 import { db } from "../../db/db";
 import { usersTable } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { verifyUserPassword } from "../auth/helpers";
 import { getZerobytePath } from "../../core/platform";
+import { cryptoUtils } from "../../utils/crypto";
+import { createMiddleware } from "hono/factory";
+import { getOrganizationId } from "~/server/core/request-context";
+
+const requireGlobalAdmin = createMiddleware(async (c, next) => {
+	const user = c.get("user");
+
+	if (!user || user.role !== "admin") {
+		return c.json({ message: "Forbidden" }, 403);
+	}
+
+	await next();
+});
 
 export const systemController = new Hono()
 	.use(requireAuth)
@@ -53,12 +71,32 @@ export const systemController = new Hono()
 			return c.json<LogsDto>({ logs: "Failed to read log file.", path: logPath }, 200);
 		}
 	})
+	.get("/registration-status", getRegistrationStatusDto, async (c) => {
+		const enabled = await systemService.isRegistrationEnabled();
+
+		return c.json<RegistrationStatusDto>({ enabled }, 200);
+	})
+	.put(
+		"/registration-status",
+		requireGlobalAdmin,
+		setRegistrationStatusDto,
+		validator("json", registrationStatusBody),
+		async (c) => {
+			const body = c.req.valid("json");
+
+			await systemService.setRegistrationEnabled(body.enabled);
+
+			return c.json<RegistrationStatusDto>({ enabled: body.enabled }, 200);
+		},
+	)
 	.post(
 		"/restic-password",
+		requireOrgAdmin,
 		downloadResticPasswordDto,
 		validator("json", downloadResticPasswordBodySchema),
 		async (c) => {
 			const user = c.get("user");
+			const organizationId = getOrganizationId();
 			const body = c.req.valid("json");
 
 			const isPasswordValid = await verifyUserPassword({ password: body.password, userId: user.id });
@@ -67,8 +105,13 @@ export const systemController = new Hono()
 			}
 
 			try {
-				const file = Bun.file(RESTIC_PASS_FILE);
-				const content = await file.text();
+				const org = await db.query.organization.findFirst({ where: { id: organizationId } });
+
+				if (!org?.metadata?.resticPassword) {
+					return c.json({ message: "Organization Restic password not found" }, 404);
+				}
+
+				const content = await cryptoUtils.resolveSecret(org.metadata.resticPassword);
 
 				await db.update(usersTable).set({ hasDownloadedResticPassword: true }).where(eq(usersTable.id, user.id));
 
@@ -77,7 +120,12 @@ export const systemController = new Hono()
 
 				return c.text(content);
 			} catch (_error) {
-				return c.json({ message: "Failed to read Restic password file" }, 500);
+				return c.json({ message: "Failed to retrieve Restic password" }, 500);
 			}
 		},
-	);
+	)
+	.get("/dev-panel", getDevPanelDto, async (c) => {
+		const enabled = systemService.isDevPanelEnabled();
+
+		return c.json<DevPanelDto>({ enabled }, 200);
+	});

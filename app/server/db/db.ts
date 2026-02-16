@@ -1,59 +1,27 @@
 import { Database } from "bun:sqlite";
+import { relations } from "./relations";
 import path from "node:path";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { DATABASE_URL } from "../core/constants";
 import fs from "node:fs";
 import { config } from "../core/config";
-import type * as schemaTypes from "./schema";
+import * as schema from "./schema";
 
-/**
- * Database initialization variables
- * Lazy initialization pattern to ensure proper schema setup before database operations
- */
-let _sqlite: Database | undefined;
-let _db: ReturnType<typeof drizzle<typeof schemaTypes>> | undefined;
-let _schema: typeof schemaTypes | undefined;
+fs.mkdirSync(path.dirname(DATABASE_URL), { recursive: true });
 
-/**
- * Sets the database schema. This must be called before any database operations.
- */
-export const setSchema = (schema: typeof schemaTypes) => {
-	_schema = schema;
-};
+if (
+	fs.existsSync(path.join(path.dirname(DATABASE_URL), "ironmount.db")) &&
+	!fs.existsSync(DATABASE_URL)
+) {
+	fs.renameSync(
+		path.join(path.dirname(DATABASE_URL), "ironmount.db"),
+		DATABASE_URL,
+	);
+}
 
-const initDb = () => {
-	if (!_schema) {
-		throw new Error("Database schema not set. Call setSchema() before accessing the database.");
-	}
-
-	// Skip directory creation for in-memory databases
-	if (DATABASE_URL !== ":memory:") {
-		fs.mkdirSync(path.dirname(DATABASE_URL), { recursive: true });
-
-		if (fs.existsSync(path.join(path.dirname(DATABASE_URL), "ironmount.db")) && !fs.existsSync(DATABASE_URL)) {
-			fs.renameSync(path.join(path.dirname(DATABASE_URL), "ironmount.db"), DATABASE_URL);
-		}
-	}
-
-	_sqlite = new Database(DATABASE_URL);
-	return drizzle({ client: _sqlite, schema: _schema });
-};
-
-/**
- * Database instance (Proxy for lazy initialization)
- */
-export const db = new Proxy(
-	{},
-	{
-		get(_, prop, receiver) {
-			if (!_db) {
-				_db = initDb();
-			}
-			return Reflect.get(_db, prop, receiver);
-		},
-	},
-) as ReturnType<typeof drizzle<typeof schemaTypes>>;
+const sqlite = new Database(DATABASE_URL);
+export const db = drizzle({ client: sqlite, relations, schema });
 
 /**
  * Get the migrations folder path based on platform and environment.
@@ -97,11 +65,7 @@ export const runDbMigrations = () => {
 
 	migrate(db, { migrationsFolder });
 
-	if (!_sqlite) {
-		throw new Error("Database not initialized");
-	}
-
-	_sqlite.run("PRAGMA foreign_keys = ON;");
+	sqlite.run("PRAGMA foreign_keys = ON;");
 };
 
 /**
@@ -109,19 +73,13 @@ export const runDbMigrations = () => {
  * Useful before shutdown to ensure all data is written.
  */
 export const flushDatabase = () => {
-	if (_sqlite) {
-		_sqlite.run("PRAGMA wal_checkpoint(TRUNCATE);");
-	}
+	sqlite.run("PRAGMA wal_checkpoint(TRUNCATE);");
 };
 
 /**
  * Close the database connection.
  */
 export const closeDatabase = () => {
-	if (_sqlite) {
-		flushDatabase();
-		_sqlite.close();
-		_sqlite = undefined;
-		_db = undefined;
-	}
+	flushDatabase();
+	sqlite.close();
 };

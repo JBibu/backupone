@@ -1,30 +1,49 @@
 import crypto from "node:crypto";
-import { eq, or } from "drizzle-orm";
-import { InternalServerError, NotFoundError } from "http-errors-enhanced";
-import { db } from "../../db/db";
-import { repositoriesTable } from "../../db/schema";
-import { toMessage } from "../../utils/errors";
-import { generateShortId } from "../../utils/id";
-import { restic } from "../../utils/restic";
-import { cryptoUtils } from "../../utils/crypto";
-import { cache } from "../../utils/cache";
-import { repoMutex } from "../../core/repository-mutex";
+import { type } from "arktype";
+import { and, eq } from "drizzle-orm";
 import {
-	repositoryConfigSchema,
+	BadRequestError,
+	ConflictError,
+	InternalServerError,
+	NotFoundError,
+} from "http-errors-enhanced";
+import {
 	type CompressionMode,
 	type OverwriteMode,
 	type RepositoryConfig,
+	repositoryConfigSchema,
 } from "~/schemas/restic";
-import { type } from "arktype";
+import { serverEvents } from "~/server/core/events";
+import { getOrganizationId } from "~/server/core/request-context";
+import { logger } from "~/server/utils/logger";
+import { parseRetentionCategories, type RetentionCategory } from "~/server/utils/retention-categories";
+import { repoMutex } from "../../core/repository-mutex";
+import { db } from "../../db/db";
+import { repositoriesTable } from "../../db/schema";
+import { cache } from "../../utils/cache";
+import { cryptoUtils } from "../../utils/crypto";
+import { toMessage } from "../../utils/errors";
+import { generateShortId } from "../../utils/id";
+import { addCommonArgs, buildEnv, buildRepoUrl, cleanupTemporaryKeys, restic } from "../../utils/restic";
+import { safeSpawn } from "../../utils/spawn";
+import { backupsService } from "../backups/backups.service";
+import type { UpdateRepositoryBody } from "./repositories.dto";
+import { executeDoctor } from "./doctor";
+
+const runningDoctors = new Map<string, AbortController>();
 
 const findRepository = async (idOrShortId: string) => {
+	const organizationId = getOrganizationId();
 	return await db.query.repositoriesTable.findFirst({
-		where: or(eq(repositoriesTable.id, idOrShortId), eq(repositoriesTable.shortId, idOrShortId)),
+		where: {
+			AND: [{ OR: [{ id: idOrShortId }, { shortId: idOrShortId }] }, { organizationId }],
+		},
 	});
 };
 
 const listRepositories = async () => {
-	const repositories = await db.query.repositoriesTable.findMany({});
+	const organizationId = getOrganizationId();
+	const repositories = await db.query.repositoriesTable.findMany({ where: { organizationId } });
 	return repositories;
 };
 
@@ -67,15 +86,51 @@ const encryptConfig = async (config: RepositoryConfig): Promise<RepositoryConfig
 	return encryptedConfig as RepositoryConfig;
 };
 
+const decryptConfig = async (config: RepositoryConfig): Promise<RepositoryConfig> => {
+	const decryptedConfig: Record<string, unknown> = { ...config };
+
+	if (config.customPassword) {
+		decryptedConfig.customPassword = await cryptoUtils.resolveSecret(config.customPassword);
+	}
+
+	if (config.cacert) {
+		decryptedConfig.cacert = await cryptoUtils.resolveSecret(config.cacert);
+	}
+
+	switch (config.backend) {
+		case "s3":
+		case "r2":
+			decryptedConfig.accessKeyId = await cryptoUtils.resolveSecret(config.accessKeyId);
+			decryptedConfig.secretAccessKey = await cryptoUtils.resolveSecret(config.secretAccessKey);
+			break;
+		case "gcs":
+			decryptedConfig.credentialsJson = await cryptoUtils.resolveSecret(config.credentialsJson);
+			break;
+		case "azure":
+			decryptedConfig.accountKey = await cryptoUtils.resolveSecret(config.accountKey);
+			break;
+		case "rest":
+			if (config.username) {
+				decryptedConfig.username = await cryptoUtils.resolveSecret(config.username);
+			}
+			if (config.password) {
+				decryptedConfig.password = await cryptoUtils.resolveSecret(config.password);
+			}
+			break;
+		case "sftp":
+			decryptedConfig.privateKey = await cryptoUtils.resolveSecret(config.privateKey);
+			break;
+	}
+
+	return decryptedConfig as RepositoryConfig;
+};
+
 const createRepository = async (name: string, config: RepositoryConfig, compressionMode?: CompressionMode) => {
+	const organizationId = getOrganizationId();
 	const id = crypto.randomUUID();
 	const shortId = generateShortId();
 
 	let processedConfig = config;
-	if (config.backend === "local" && !config.isExistingRepository) {
-		processedConfig = { ...config, name: shortId };
-	}
-
 	const encryptedConfig = await encryptConfig(processedConfig);
 
 	const [created] = await db
@@ -88,6 +143,7 @@ const createRepository = async (name: string, config: RepositoryConfig, compress
 			config: encryptedConfig,
 			compressionMode: compressionMode ?? "auto",
 			status: "unknown",
+			organizationId,
 		})
 		.returning();
 
@@ -99,13 +155,13 @@ const createRepository = async (name: string, config: RepositoryConfig, compress
 
 	if (config.isExistingRepository) {
 		const result = await restic
-			.snapshots(encryptedConfig)
+			.snapshots(encryptedConfig, { organizationId })
 			.then(() => ({ error: null }))
 			.catch((error) => ({ error }));
 
 		error = result.error;
 	} else {
-		const initResult = await restic.init(encryptedConfig);
+		const initResult = await restic.init(encryptedConfig, organizationId, { timeoutMs: 20000 });
 		error = initResult.error;
 	}
 
@@ -113,13 +169,15 @@ const createRepository = async (name: string, config: RepositoryConfig, compress
 		await db
 			.update(repositoriesTable)
 			.set({ status: "healthy", lastChecked: Date.now(), lastError: null })
-			.where(eq(repositoriesTable.id, id));
+			.where(and(eq(repositoriesTable.id, id), eq(repositoriesTable.organizationId, organizationId)));
 
 		return { repository: created, status: 201 };
 	}
 
 	const errorMessage = toMessage(error);
-	await db.delete(repositoriesTable).where(eq(repositoriesTable.id, id));
+	await db
+		.delete(repositoriesTable)
+		.where(and(eq(repositoriesTable.id, id), eq(repositoriesTable.organizationId, organizationId)));
 
 	throw new InternalServerError(`Failed to initialize repository: ${errorMessage}`);
 };
@@ -143,7 +201,11 @@ const deleteRepository = async (id: string) => {
 
 	// TODO: Add cleanup logic for the actual restic repository files
 
-	await db.delete(repositoriesTable).where(eq(repositoriesTable.id, repository.id));
+	await db
+		.delete(repositoriesTable)
+		.where(
+			and(eq(repositoriesTable.id, repository.id), eq(repositoriesTable.organizationId, repository.organizationId)),
+		);
 
 	cache.delByPrefix(`snapshots:${repository.id}:`);
 	cache.delByPrefix(`ls:${repository.id}:`);
@@ -158,6 +220,7 @@ const deleteRepository = async (id: string) => {
  * @returns List of snapshots
  */
 const listSnapshots = async (id: string, backupId?: string) => {
+	const organizationId = getOrganizationId();
 	const repository = await findRepository(id);
 
 	if (!repository) {
@@ -175,9 +238,9 @@ const listSnapshots = async (id: string, backupId?: string) => {
 		let snapshots = [];
 
 		if (backupId) {
-			snapshots = await restic.snapshots(repository.config, { tags: [backupId] });
+			snapshots = await restic.snapshots(repository.config, { tags: [backupId], organizationId });
 		} else {
-			snapshots = await restic.snapshots(repository.config);
+			snapshots = await restic.snapshots(repository.config, { organizationId });
 		}
 
 		cache.set(cacheKey, snapshots);
@@ -188,25 +251,43 @@ const listSnapshots = async (id: string, backupId?: string) => {
 	}
 };
 
-const listSnapshotFiles = async (id: string, snapshotId: string, path?: string) => {
+const listSnapshotFiles = async (
+	id: string,
+	snapshotId: string,
+	path?: string,
+	options?: { offset?: number; limit?: number },
+) => {
+	const organizationId = getOrganizationId();
 	const repository = await findRepository(id);
 
 	if (!repository) {
 		throw new NotFoundError("Repository not found");
 	}
 
-	const cacheKey = `ls:${repository.id}:${snapshotId}:${path || "root"}`;
-	const cached = cache.get<Awaited<ReturnType<typeof restic.ls>>>(cacheKey);
+	const offset = options?.offset ?? 0;
+	const limit = options?.limit ?? 500;
+
+	const cacheKey = `ls:${repository.id}:${snapshotId}:${path || "root"}:${offset}:${limit}`;
+	type LsResult = {
+		snapshot: { id: string; short_id: string; time: string; hostname: string; paths: string[] } | null;
+		nodes: { name: string; type: string; path: string; size?: number; mode?: number }[];
+		pagination: { offset: number; limit: number; total: number; hasMore: boolean };
+	};
+	const cached = cache.get<LsResult>(cacheKey);
 	if (cached?.snapshot) {
 		return {
 			snapshot: cached.snapshot,
 			files: cached.nodes,
+			offset: cached.pagination.offset,
+			limit: cached.pagination.limit,
+			total: cached.pagination.total,
+			hasMore: cached.pagination.hasMore,
 		};
 	}
 
 	const releaseLock = await repoMutex.acquireShared(repository.id, `ls:${snapshotId}`);
 	try {
-		const result = await restic.ls(repository.config, snapshotId, path);
+		const result = await restic.ls(repository.config, snapshotId, organizationId, path, { offset, limit });
 
 		if (!result.snapshot) {
 			throw new NotFoundError("Snapshot not found or empty");
@@ -221,6 +302,10 @@ const listSnapshotFiles = async (id: string, snapshotId: string, path?: string) 
 				paths: result.snapshot.paths,
 			},
 			files: result.nodes,
+			offset: result.pagination.offset,
+			limit: result.pagination.limit,
+			total: result.pagination.total,
+			hasMore: result.pagination.hasMore,
 		};
 
 		cache.set(cacheKey, result);
@@ -243,6 +328,7 @@ const restoreSnapshot = async (
 		overwrite?: OverwriteMode;
 	},
 ) => {
+	const organizationId = getOrganizationId();
 	const repository = await findRepository(id);
 
 	if (!repository) {
@@ -253,7 +339,31 @@ const restoreSnapshot = async (
 
 	const releaseLock = await repoMutex.acquireShared(repository.id, `restore:${snapshotId}`);
 	try {
-		const result = await restic.restore(repository.config, snapshotId, target, options);
+		serverEvents.emit("restore:started", {
+			organizationId,
+			repositoryId: repository.id,
+			snapshotId,
+		});
+
+		const result = await restic.restore(repository.config, snapshotId, target, {
+			...options,
+			organizationId,
+			onProgress: (progress) => {
+				serverEvents.emit("restore:progress", {
+					organizationId,
+					repositoryId: repository.id,
+					snapshotId,
+					...progress,
+				});
+			},
+		});
+
+		serverEvents.emit("restore:completed", {
+			organizationId,
+			repositoryId: repository.id,
+			snapshotId,
+			status: "success",
+		});
 
 		return {
 			success: true,
@@ -261,12 +371,22 @@ const restoreSnapshot = async (
 			filesRestored: result.files_restored,
 			filesSkipped: result.files_skipped,
 		};
+	} catch (error) {
+		serverEvents.emit("restore:completed", {
+			organizationId,
+			repositoryId: repository.id,
+			snapshotId,
+			status: "error",
+			error: toMessage(error),
+		});
+		throw error;
 	} finally {
 		releaseLock();
 	}
 };
 
 const getSnapshotDetails = async (id: string, snapshotId: string) => {
+	const organizationId = getOrganizationId();
 	const repository = await findRepository(id);
 
 	if (!repository) {
@@ -279,7 +399,7 @@ const getSnapshotDetails = async (id: string, snapshotId: string) => {
 	if (!snapshots) {
 		const releaseLock = await repoMutex.acquireShared(repository.id, `snapshot_details:${snapshotId}`);
 		try {
-			snapshots = await restic.snapshots(repository.config);
+			snapshots = await restic.snapshots(repository.config, { organizationId });
 			cache.set(cacheKey, snapshots);
 		} finally {
 			releaseLock();
@@ -289,6 +409,8 @@ const getSnapshotDetails = async (id: string, snapshotId: string) => {
 	const snapshot = snapshots.find((snap) => snap.id === snapshotId || snap.short_id === snapshotId);
 
 	if (!snapshot) {
+		void refreshSnapshots(id).catch(() => {});
+
 		throw new NotFoundError("Snapshot not found");
 	}
 
@@ -296,6 +418,7 @@ const getSnapshotDetails = async (id: string, snapshotId: string) => {
 };
 
 const checkHealth = async (repositoryId: string) => {
+	const organizationId = getOrganizationId();
 	const repository = await findRepository(repositoryId);
 
 	if (!repository) {
@@ -304,7 +427,7 @@ const checkHealth = async (repositoryId: string) => {
 
 	const releaseLock = await repoMutex.acquireExclusive(repository.id, "check");
 	try {
-		const { hasErrors, error } = await restic.check(repository.config);
+		const { hasErrors, error } = await restic.check(repository.config, { organizationId });
 
 		await db
 			.update(repositoriesTable)
@@ -313,7 +436,9 @@ const checkHealth = async (repositoryId: string) => {
 				lastChecked: Date.now(),
 				lastError: error,
 			})
-			.where(eq(repositoriesTable.id, repository.id));
+			.where(
+				and(eq(repositoriesTable.id, repository.id), eq(repositoriesTable.organizationId, repository.organizationId)),
+			);
 
 		return { lastError: error };
 	} finally {
@@ -321,96 +446,74 @@ const checkHealth = async (repositoryId: string) => {
 	}
 };
 
-const doctorRepository = async (id: string) => {
+const startDoctor = async (id: string) => {
 	const repository = await findRepository(id);
 
 	if (!repository) {
 		throw new NotFoundError("Repository not found");
 	}
 
-	const steps: Array<{ step: string; success: boolean; output: string | null; error: string | null }> = [];
-
-	const unlockResult = await restic.unlock(repository.config).then(
-		(result) => ({ success: true, message: result.message, error: null }),
-		(error) => ({ success: false, message: null, error: toMessage(error) }),
-	);
-
-	steps.push({
-		step: "unlock",
-		success: unlockResult.success,
-		output: unlockResult.message,
-		error: unlockResult.error,
-	});
-
-	const releaseLock = await repoMutex.acquireExclusive(repository.id, "doctor");
-	try {
-		const checkResult = await restic.check(repository.config, { readData: false }).then(
-			(result) => result,
-			(error) => ({ success: false, output: null, error: toMessage(error), hasErrors: true }),
-		);
-
-		steps.push({
-			step: "check",
-			success: checkResult.success,
-			output: checkResult.output,
-			error: checkResult.error,
-		});
-
-		if (checkResult.hasErrors) {
-			const repairResult = await restic.repairIndex(repository.config).then(
-				(result) => ({ success: true, output: result.output, error: null }),
-				(error) => ({ success: false, output: null, error: toMessage(error) }),
-			);
-
-			steps.push({
-				step: "repair_index",
-				success: repairResult.success,
-				output: repairResult.output,
-				error: repairResult.error,
-			});
-
-			const recheckResult = await restic.check(repository.config, { readData: false }).then(
-				(result) => result,
-				(error) => ({ success: false, output: null, error: toMessage(error), hasErrors: true }),
-			);
-
-			steps.push({
-				step: "recheck",
-				success: recheckResult.success,
-				output: recheckResult.output,
-				error: recheckResult.error,
-			});
-		}
-	} catch (error) {
-		steps.push({
-			step: "unexpected_error",
-			success: false,
-			output: null,
-			error: toMessage(error),
-		});
-	} finally {
-		releaseLock();
+	if (runningDoctors.has(repository.id)) {
+		throw new ConflictError("Doctor operation already in progress");
 	}
 
-	const doctorSucceeded = steps.every((step) => step.success);
-	const doctorError = steps.find((step) => step.error)?.error ?? null;
+	const abortController = new AbortController();
 
-	await db
-		.update(repositoriesTable)
-		.set({
-			status: doctorSucceeded ? "healthy" : "error",
-			lastChecked: Date.now(),
-			lastError: doctorError,
+	try {
+		await db.update(repositoriesTable).set({ status: "doctor" }).where(eq(repositoriesTable.id, repository.id));
+
+		serverEvents.emit("doctor:started", {
+			organizationId: repository.organizationId,
+			repositoryId: repository.id,
+			repositoryName: repository.name,
+		});
+
+		runningDoctors.set(repository.id, abortController);
+	} catch (error) {
+		runningDoctors.delete(repository.id);
+		throw error;
+	}
+
+	executeDoctor(repository.id, repository.config, repository.name, abortController.signal)
+		.catch((error) => {
+			logger.error(`Doctor background task failed: ${toMessage(error)}`);
 		})
-		.where(eq(repositoriesTable.id, repository.id));
+		.finally(() => {
+			runningDoctors.delete(repository.id);
+		});
 
-	return {
-		success: doctorSucceeded,
-		steps,
-	};
+	return { message: "Doctor operation started", repositoryId: repository.id };
+};
+
+const cancelDoctor = async (id: string) => {
+	const repository = await findRepository(id);
+
+	if (!repository) {
+		throw new NotFoundError("Repository not found");
+	}
+
+	const abortController = runningDoctors.get(repository.id);
+	if (!abortController) {
+		await db.update(repositoriesTable).set({ status: "unknown" }).where(eq(repositoriesTable.id, repository.id));
+		throw new ConflictError("No doctor operation is currently running");
+	}
+
+	abortController.abort();
+	runningDoctors.delete(repository.id);
+
+	await db.update(repositoriesTable).set({ status: "unknown" }).where(eq(repositoriesTable.id, repository.id));
+
+	serverEvents.emit("doctor:cancelled", {
+		organizationId: repository.organizationId,
+		repositoryId: repository.id,
+		repositoryName: repository.name,
+	});
+
+	return { message: "Doctor operation cancelled" };
 };
 
 const deleteSnapshot = async (id: string, snapshotId: string) => {
+	const organizationId = getOrganizationId();
 	const repository = await findRepository(id);
 
 	if (!repository) {
@@ -419,7 +522,7 @@ const deleteSnapshot = async (id: string, snapshotId: string) => {
 
 	const releaseLock = await repoMutex.acquireExclusive(repository.id, `delete:${snapshotId}`);
 	try {
-		await restic.deleteSnapshot(repository.config, snapshotId);
+		await restic.deleteSnapshot(repository.config, snapshotId, organizationId);
 		cache.delByPrefix(`snapshots:${repository.id}:`);
 		cache.delByPrefix(`ls:${repository.id}:${snapshotId}:`);
 	} finally {
@@ -428,6 +531,7 @@ const deleteSnapshot = async (id: string, snapshotId: string) => {
 };
 
 const deleteSnapshots = async (id: string, snapshotIds: string[]) => {
+	const organizationId = getOrganizationId();
 	const repository = await findRepository(id);
 
 	if (!repository) {
@@ -436,7 +540,7 @@ const deleteSnapshots = async (id: string, snapshotIds: string[]) => {
 
 	const releaseLock = await repoMutex.acquireExclusive(repository.id, `delete:bulk`);
 	try {
-		await restic.deleteSnapshots(repository.config, snapshotIds);
+		await restic.deleteSnapshots(repository.config, snapshotIds, organizationId);
 		cache.delByPrefix(`snapshots:${repository.id}:`);
 		for (const snapshotId of snapshotIds) {
 			cache.delByPrefix(`ls:${repository.id}:${snapshotId}:`);
@@ -451,6 +555,7 @@ const tagSnapshots = async (
 	snapshotIds: string[],
 	tags: { add?: string[]; remove?: string[]; set?: string[] },
 ) => {
+	const organizationId = getOrganizationId();
 	const repository = await findRepository(id);
 
 	if (!repository) {
@@ -459,7 +564,7 @@ const tagSnapshots = async (
 
 	const releaseLock = await repoMutex.acquireExclusive(repository.id, `tag:bulk`);
 	try {
-		await restic.tagSnapshots(repository.config, snapshotIds, tags);
+		await restic.tagSnapshots(repository.config, snapshotIds, tags, organizationId);
 		cache.delByPrefix(`snapshots:${repository.id}:`);
 		for (const snapshotId of snapshotIds) {
 			cache.delByPrefix(`ls:${repository.id}:${snapshotId}:`);
@@ -469,41 +574,195 @@ const tagSnapshots = async (
 	}
 };
 
-const updateRepository = async (id: string, updates: { name?: string; compressionMode?: CompressionMode }) => {
+const refreshSnapshots = async (id: string) => {
+	const organizationId = getOrganizationId();
+	const repository = await findRepository(id);
+
+	if (!repository) {
+		throw new NotFoundError("Repository not found");
+	}
+
+	cache.delByPrefix(`snapshots:${repository.id}:`);
+	cache.delByPrefix(`ls:${repository.id}:`);
+
+	const releaseLock = await repoMutex.acquireShared(repository.id, "refresh");
+	try {
+		const snapshots = await restic.snapshots(repository.config, { organizationId });
+		const cacheKey = `snapshots:${repository.id}:all`;
+		cache.set(cacheKey, snapshots);
+
+		return {
+			message: "Snapshot cache cleared and refreshed",
+			count: snapshots.length,
+		};
+	} finally {
+		releaseLock();
+	}
+};
+
+const updateRepository = async (id: string, updates: UpdateRepositoryBody) => {
 	const existing = await findRepository(id);
 
 	if (!existing) {
 		throw new NotFoundError("Repository not found");
 	}
 
-	const newConfig = repositoryConfigSchema(existing.config);
-	if (newConfig instanceof type.errors) {
+	const existingConfig = repositoryConfigSchema(existing.config);
+	if (existingConfig instanceof type.errors) {
 		throw new InternalServerError("Invalid repository configuration");
 	}
 
-	const encryptedConfig = await encryptConfig(newConfig);
-
 	let newName = existing.name;
-	if (updates.name !== undefined && updates.name !== existing.name) {
+	if (updates.name) {
 		newName = updates.name.trim();
+		if (newName.length === 0) {
+			throw new BadRequestError("Repository name cannot be empty");
+		}
 	}
+
+	let parsedConfig = existingConfig;
+	if (updates.config) {
+		const nextConfig = repositoryConfigSchema(updates.config);
+		if (nextConfig instanceof type.errors) {
+			throw new BadRequestError("Invalid repository configuration");
+		}
+
+		if (nextConfig.backend !== existing.type) {
+			throw new BadRequestError("Repository backend cannot be changed");
+		}
+
+		parsedConfig = nextConfig;
+	}
+
+	const decryptedExisting = existingConfig ? await decryptConfig(existingConfig) : null;
+	const configChanged =
+		updates.config && JSON.stringify(decryptedExisting) !== JSON.stringify(parsedConfig);
+	const encryptedConfig = updates.config ? await encryptConfig(parsedConfig) : existingConfig;
+
+	const updatedAt = Date.now();
+	const updatePayload = {
+		name: newName,
+		compressionMode: updates.compressionMode ?? existing.compressionMode,
+		updatedAt,
+		config: encryptedConfig,
+		...(configChanged
+			? {
+					status: "unknown" as const,
+					lastChecked: null,
+					lastError: null,
+					doctorResult: null,
+				}
+			: {}),
+	};
 
 	const [updated] = await db
 		.update(repositoriesTable)
-		.set({
-			name: newName,
-			compressionMode: updates.compressionMode ?? existing.compressionMode,
-			updatedAt: Date.now(),
-			config: encryptedConfig,
-		})
-		.where(eq(repositoriesTable.id, existing.id))
+		.set(updatePayload)
+		.where(and(eq(repositoriesTable.id, existing.id), eq(repositoriesTable.organizationId, existing.organizationId)))
 		.returning();
 
 	if (!updated) {
 		throw new InternalServerError("Failed to update repository");
 	}
 
+	if (configChanged) {
+		cache.delByPrefix(`snapshots:${existing.id}:`);
+		cache.delByPrefix(`ls:${existing.id}:`);
+	}
+
 	return { repository: updated };
+};
+
+const unlockRepository = async (id: string) => {
+	const organizationId = getOrganizationId();
+	const repository = await findRepository(id);
+
+	if (!repository) {
+		throw new NotFoundError("Repository not found");
+	}
+
+	const releaseLock = await repoMutex.acquireExclusive(repository.id, "unlock");
+	try {
+		const result = await restic.unlock(repository.config, { organizationId });
+		return result;
+	} finally {
+		releaseLock();
+	}
+};
+
+const execResticCommand = async (
+	id: string,
+	command: string,
+	args: string[] | undefined,
+	onStdout: (line: string) => void,
+	onStderr: (line: string) => void,
+	signal?: AbortSignal,
+) => {
+	const organizationId = getOrganizationId();
+	const repository = await findRepository(id);
+
+	if (!repository) {
+		throw new NotFoundError("Repository not found");
+	}
+
+	const repoUrl = buildRepoUrl(repository.config);
+	const env = await buildEnv(repository.config, organizationId);
+
+	const resticArgs: string[] = ["--repo", repoUrl, command];
+	if (args && args.length > 0) {
+		resticArgs.push(...args);
+	}
+	addCommonArgs(resticArgs, env, repository.config);
+
+	const result = await safeSpawn({ command: "restic", args: resticArgs, env, signal, onStdout, onStderr });
+
+	await cleanupTemporaryKeys(env);
+
+	return { exitCode: result.exitCode };
+};
+
+const getRetentionCategories = async (repositoryId: string, scheduleId?: string) => {
+	if (!scheduleId) {
+		return new Map<string, RetentionCategory[]>();
+	}
+
+	const cacheKey = `retention:${scheduleId}`;
+	const cached = cache.get<Record<string, RetentionCategory[]>>(cacheKey);
+
+	if (cached && Object.keys(cached).length > 0) {
+		return new Map(Object.entries(cached));
+	}
+
+	try {
+		const [schedule, repositoryResult] = await Promise.all([
+			backupsService.getScheduleByShortId(scheduleId),
+			repositoriesService.getRepository(repositoryId),
+		]);
+
+		if (!schedule?.retentionPolicy) {
+			return new Map<string, RetentionCategory[]>();
+		}
+
+		const { repository } = repositoryResult;
+
+		const dryRunResults = await restic.forget(repository.config, schedule.retentionPolicy, {
+			tag: scheduleId,
+			organizationId: getOrganizationId(),
+			dryRun: true,
+		});
+
+		if (!dryRunResults.data) {
+			return new Map<string, RetentionCategory[]>();
+		}
+
+		const categories = parseRetentionCategories(dryRunResults.data);
+		cache.set(cacheKey, Object.fromEntries(categories));
+
+		return categories;
+	} catch (error) {
+		logger.error(`Failed to get retention categories: ${toMessage(error)}`);
+		return new Map<string, RetentionCategory[]>();
+	}
 };
 
 export const repositoriesService = {
@@ -517,8 +776,13 @@ export const repositoriesService = {
 	restoreSnapshot,
 	getSnapshotDetails,
 	checkHealth,
-	doctorRepository,
+	startDoctor,
+	cancelDoctor,
 	deleteSnapshot,
 	deleteSnapshots,
 	tagSnapshots,
+	refreshSnapshots,
+	execResticCommand,
+	getRetentionCategories,
+	unlockRepository,
 };

@@ -3,9 +3,8 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { promisify } from "node:util";
-import { and, eq, ne } from "drizzle-orm";
-import { ConflictError, InternalServerError, NotFoundError } from "http-errors-enhanced";
-import slugify from "slugify";
+import { and, eq } from "drizzle-orm";
+import { BadRequestError, InternalServerError, NotFoundError } from "http-errors-enhanced";
 import { db } from "../../db/db";
 import { volumesTable } from "../../db/schema";
 import { cryptoUtils } from "../../utils/crypto";
@@ -20,13 +19,15 @@ import { logger } from "../../utils/logger";
 import { serverEvents } from "../../core/events";
 import { volumeConfigSchema, type BackendConfig } from "~/schemas/volumes";
 import { type } from "arktype";
+import { getOrganizationId } from "~/server/core/request-context";
+import { isNodeJSErrnoException } from "~/server/utils/fs";
 
 async function encryptSensitiveFields(config: BackendConfig): Promise<BackendConfig> {
 	switch (config.backend) {
 		case "smb":
 			return {
 				...config,
-				password: await cryptoUtils.sealSecret(config.password),
+				password: config.password ? await cryptoUtils.sealSecret(config.password) : undefined,
 			};
 		case "webdav":
 			return {
@@ -45,20 +46,32 @@ async function encryptSensitiveFields(config: BackendConfig): Promise<BackendCon
 }
 
 const listVolumes = async () => {
-	const volumes = await db.query.volumesTable.findMany({});
+	const organizationId = getOrganizationId();
+	const volumes = await db.query.volumesTable.findMany({
+		where: { organizationId: organizationId },
+	});
 
 	return volumes;
 };
 
-const createVolume = async (name: string, backendConfig: BackendConfig) => {
-	const slug = slugify(name, { lower: true, strict: true });
-
-	const existing = await db.query.volumesTable.findFirst({
-		where: eq(volumesTable.name, slug),
+const findVolume = async (idOrShortId: string | number) => {
+	const organizationId = getOrganizationId();
+	return await db.query.volumesTable.findFirst({
+		where: {
+			AND: [
+				{ OR: [{ id: Number(idOrShortId) }, { shortId: String(idOrShortId) }] },
+				{ organizationId: organizationId },
+			],
+		},
 	});
+};
 
-	if (existing) {
-		throw new ConflictError("Volume already exists");
+const createVolume = async (name: string, backendConfig: BackendConfig) => {
+	const organizationId = getOrganizationId();
+	const trimmedName = name.trim();
+
+	if (trimmedName.length === 0) {
+		throw new BadRequestError("Volume name cannot be empty");
 	}
 
 	const shortId = generateShortId();
@@ -68,9 +81,10 @@ const createVolume = async (name: string, backendConfig: BackendConfig) => {
 		.insert(volumesTable)
 		.values({
 			shortId,
-			name: slug,
+			name: trimmedName,
 			config: encryptedConfig,
 			type: backendConfig.backend,
+			organizationId,
 		})
 		.returning();
 
@@ -84,15 +98,14 @@ const createVolume = async (name: string, backendConfig: BackendConfig) => {
 	await db
 		.update(volumesTable)
 		.set({ status, lastError: error ?? null, lastHealthCheck: Date.now() })
-		.where(eq(volumesTable.name, slug));
+		.where(and(eq(volumesTable.id, created.id), eq(volumesTable.organizationId, organizationId)));
 
 	return { volume: created, status: 201 };
 };
 
-const deleteVolume = async (name: string) => {
-	const volume = await db.query.volumesTable.findFirst({
-		where: eq(volumesTable.name, name),
-	});
+const deleteVolume = async (idOrShortId: string | number) => {
+	const organizationId = getOrganizationId();
+	const volume = await findVolume(idOrShortId);
 
 	if (!volume) {
 		throw new NotFoundError("Volume not found");
@@ -100,13 +113,14 @@ const deleteVolume = async (name: string) => {
 
 	const backend = createVolumeBackend(volume);
 	await backend.unmount();
-	await db.delete(volumesTable).where(eq(volumesTable.name, name));
+	await db
+		.delete(volumesTable)
+		.where(and(eq(volumesTable.id, volume.id), eq(volumesTable.organizationId, organizationId)));
 };
 
-const mountVolume = async (name: string) => {
-	const volume = await db.query.volumesTable.findFirst({
-		where: eq(volumesTable.name, name),
-	});
+const mountVolume = async (idOrShortId: string | number) => {
+	const organizationId = getOrganizationId();
+	const volume = await findVolume(idOrShortId);
 
 	if (!volume) {
 		throw new NotFoundError("Volume not found");
@@ -118,19 +132,18 @@ const mountVolume = async (name: string) => {
 	await db
 		.update(volumesTable)
 		.set({ status, lastError: error ?? null, lastHealthCheck: Date.now() })
-		.where(eq(volumesTable.name, name));
+		.where(and(eq(volumesTable.id, volume.id), eq(volumesTable.organizationId, organizationId)));
 
 	if (status === "mounted") {
-		serverEvents.emit("volume:mounted", { volumeName: name });
+		serverEvents.emit("volume:mounted", { organizationId, volumeName: volume.name });
 	}
 
 	return { error, status };
 };
 
-const unmountVolume = async (name: string) => {
-	const volume = await db.query.volumesTable.findFirst({
-		where: eq(volumesTable.name, name),
-	});
+const unmountVolume = async (idOrShortId: string | number) => {
+	const organizationId = getOrganizationId();
+	const volume = await findVolume(idOrShortId);
 
 	if (!volume) {
 		throw new NotFoundError("Volume not found");
@@ -139,19 +152,20 @@ const unmountVolume = async (name: string) => {
 	const backend = createVolumeBackend(volume);
 	const { status, error } = await backend.unmount();
 
-	await db.update(volumesTable).set({ status }).where(eq(volumesTable.name, name));
+	await db
+		.update(volumesTable)
+		.set({ status })
+		.where(and(eq(volumesTable.id, volume.id), eq(volumesTable.organizationId, organizationId)));
 
 	if (status === "unmounted") {
-		serverEvents.emit("volume:unmounted", { volumeName: name });
+		serverEvents.emit("volume:unmounted", { organizationId, volumeName: volume.name });
 	}
 
 	return { error, status };
 };
 
-const getVolume = async (name: string) => {
-	const volume = await db.query.volumesTable.findFirst({
-		where: eq(volumesTable.name, name),
-	});
+const getVolume = async (idOrShortId: string | number) => {
+	const volume = await findVolume(idOrShortId);
 
 	if (!volume) {
 		throw new NotFoundError("Volume not found");
@@ -160,7 +174,7 @@ const getVolume = async (name: string) => {
 	let statfs: Partial<StatFs> = {};
 	if (volume.status === "mounted") {
 		statfs = await withTimeout(getStatFs(getVolumePath(volume)), 1000, "getStatFs").catch((error) => {
-			logger.warn(`Failed to get statfs for volume ${name}: ${toMessage(error)}`);
+			logger.warn(`Failed to get statfs for volume ${volume.name}: ${toMessage(error)}`);
 			return {};
 		});
 	}
@@ -168,28 +182,18 @@ const getVolume = async (name: string) => {
 	return { volume, statfs };
 };
 
-const updateVolume = async (name: string, volumeData: UpdateVolumeBody) => {
-	const existing = await db.query.volumesTable.findFirst({
-		where: eq(volumesTable.name, name),
-	});
+const updateVolume = async (idOrShortId: string | number, volumeData: UpdateVolumeBody) => {
+	const organizationId = getOrganizationId();
+	const existing = await findVolume(idOrShortId);
 
 	if (!existing) {
 		throw new NotFoundError("Volume not found");
 	}
 
-	let newName = existing.name;
-	if (volumeData.name !== undefined && volumeData.name !== existing.name) {
-		const newSlug = slugify(volumeData.name, { lower: true, strict: true });
+	const newName = volumeData.name !== undefined ? volumeData.name.trim() : existing.name;
 
-		const conflict = await db.query.volumesTable.findFirst({
-			where: and(eq(volumesTable.name, newSlug), ne(volumesTable.id, existing.id)),
-		});
-
-		if (conflict) {
-			throw new ConflictError("A volume with this name already exists");
-		}
-
-		newName = newSlug;
+	if (newName.length === 0) {
+		throw new BadRequestError("Volume name cannot be empty");
 	}
 
 	const configChanged =
@@ -203,7 +207,7 @@ const updateVolume = async (name: string, volumeData: UpdateVolumeBody) => {
 
 	const newConfig = volumeConfigSchema(volumeData.config || existing.config);
 	if (newConfig instanceof type.errors) {
-		throw new InternalServerError("Invalid volume configuration");
+		throw new BadRequestError("Invalid volume configuration");
 	}
 
 	const encryptedConfig = await encryptSensitiveFields(newConfig);
@@ -217,7 +221,7 @@ const updateVolume = async (name: string, volumeData: UpdateVolumeBody) => {
 			autoRemount: volumeData.autoRemount,
 			updatedAt: Date.now(),
 		})
-		.where(eq(volumesTable.id, existing.id))
+		.where(and(eq(volumesTable.id, existing.id), eq(volumesTable.organizationId, organizationId)))
 		.returning();
 
 	if (!updated) {
@@ -230,9 +234,9 @@ const updateVolume = async (name: string, volumeData: UpdateVolumeBody) => {
 		await db
 			.update(volumesTable)
 			.set({ status, lastError: error ?? null, lastHealthCheck: Date.now() })
-			.where(eq(volumesTable.id, existing.id));
+			.where(and(eq(volumesTable.id, existing.id), eq(volumesTable.organizationId, organizationId)));
 
-		serverEvents.emit("volume:updated", { volumeName: updated.name });
+		serverEvents.emit("volume:updated", { organizationId, volumeName: updated.name });
 	}
 
 	return { volume: updated };
@@ -254,6 +258,7 @@ const testConnection = async (backendConfig: BackendConfig) => {
 		status: "unmounted" as const,
 		lastError: null,
 		autoRemount: true,
+		organizationId: "test-org",
 	};
 
 	const backend = createVolumeBackend(mockVolume);
@@ -270,10 +275,9 @@ const testConnection = async (backendConfig: BackendConfig) => {
 	};
 };
 
-const checkHealth = async (name: string) => {
-	const volume = await db.query.volumesTable.findFirst({
-		where: eq(volumesTable.name, name),
-	});
+const checkHealth = async (idOrShortId: string | number) => {
+	const organizationId = getOrganizationId();
+	const volume = await findVolume(idOrShortId);
 
 	if (!volume) {
 		throw new NotFoundError("Volume not found");
@@ -283,21 +287,27 @@ const checkHealth = async (name: string) => {
 	const { error, status } = await backend.checkHealth();
 
 	if (status !== volume.status) {
-		serverEvents.emit("volume:status_changed", { volumeName: name, status });
+		serverEvents.emit("volume:status_changed", { organizationId, volumeName: volume.name, status });
 	}
 
 	await db
 		.update(volumesTable)
 		.set({ lastHealthCheck: Date.now(), status, lastError: error ?? null })
-		.where(eq(volumesTable.name, volume.name));
+		.where(and(eq(volumesTable.id, volume.id), eq(volumesTable.organizationId, organizationId)));
 
 	return { status, error };
 };
 
-const listFiles = async (name: string, subPath?: string) => {
-	const volume = await db.query.volumesTable.findFirst({
-		where: eq(volumesTable.name, name),
-	});
+const DEFAULT_PAGE_SIZE = 500;
+const MAX_PAGE_SIZE = 500;
+
+const listFiles = async (
+	idOrShortId: string | number,
+	subPath?: string,
+	offset: number = 0,
+	limit: number = DEFAULT_PAGE_SIZE,
+) => {
+	const volume = await findVolume(idOrShortId);
 
 	if (!volume) {
 		throw new NotFoundError("Volume not found");
@@ -307,70 +317,79 @@ const listFiles = async (name: string, subPath?: string) => {
 		throw new InternalServerError("Volume is not mounted");
 	}
 
-	// For directory volumes, use the configured path directly
 	const volumePath = getVolumePath(volume);
-	// Normalize volume path for consistent comparison (handles Windows trailing slashes)
-	const normalizedVolumePath = path.normalize(volumePath);
-
-	const requestedPath = subPath ? path.join(normalizedVolumePath, subPath) : normalizedVolumePath;
-
+	const requestedPath = subPath ? path.join(volumePath, subPath) : volumePath;
 	const normalizedPath = path.normalize(requestedPath);
+	const relative = path.relative(volumePath, normalizedPath);
 
-	// Log paths for debugging
-	logger.debug(`[listFiles] volumePath: ${volumePath}, normalizedVolumePath: ${normalizedVolumePath}, requestedPath: ${requestedPath}, normalizedPath: ${normalizedPath}`);
-
-	if (!normalizedPath.startsWith(normalizedVolumePath)) {
-		logger.warn(`[listFiles] Path validation failed: ${normalizedPath} does not start with ${normalizedVolumePath}`);
-		throw new InternalServerError("Invalid path");
+	if (relative.startsWith("..") || path.isAbsolute(relative)) {
+		throw new BadRequestError("Invalid path");
 	}
 
+	const pageSize = Math.min(Math.max(limit, 1), MAX_PAGE_SIZE);
+	const startOffset = Math.max(offset, 0);
+
 	try {
-		const entries = await fs.readdir(normalizedPath, { withFileTypes: true });
+		const dirents = await fs.readdir(normalizedPath, { withFileTypes: true });
 
-		const files = await Promise.all(
-			entries.map(async (entry) => {
-				const fullPath = path.join(normalizedPath, entry.name);
-				// Normalize to forward slashes for consistent API response
-				const relativePath = path.relative(normalizedVolumePath, fullPath).replace(/\\/g, "/");
+		dirents.sort((a, b) => {
+			const aIsDir = a.isDirectory();
+			const bIsDir = b.isDirectory();
 
-				try {
-					const stats = await fs.stat(fullPath);
-					return {
-						name: entry.name,
-						path: `/${relativePath}`,
-						type: entry.isDirectory() ? ("directory" as const) : ("file" as const),
-						size: entry.isFile() ? stats.size : undefined,
-						modifiedAt: stats.mtimeMs,
-					};
-				} catch {
-					return {
-						name: entry.name,
-						path: `/${relativePath}`,
-						type: entry.isDirectory() ? ("directory" as const) : ("file" as const),
-						size: undefined,
-						modifiedAt: undefined,
-					};
-				}
-			}),
-		);
+			if (aIsDir === bIsDir) {
+				return a.name.localeCompare(b.name);
+			}
+			return aIsDir ? -1 : 1;
+		});
+
+		const total = dirents.length;
+		const paginatedDirents = dirents.slice(startOffset, startOffset + pageSize);
+
+		const entries = (
+			await Promise.all(
+				paginatedDirents.map(async (dirent) => {
+					const fullPath = path.join(normalizedPath, dirent.name);
+
+					try {
+						const stats = await fs.stat(fullPath);
+						const relativePath = path.relative(volumePath, fullPath);
+
+						return {
+							name: dirent.name,
+							path: `/${relativePath}`,
+							type: dirent.isDirectory() ? ("directory" as const) : ("file" as const),
+							size: dirent.isFile() ? stats.size : undefined,
+							modifiedAt: stats.mtimeMs,
+						};
+					} catch {
+						return null;
+					}
+				}),
+			)
+		).filter((e) => e !== null);
 
 		return {
-			files: files.sort((a, b) => {
-				if (a.type !== b.type) {
-					return a.type === "directory" ? -1 : 1;
-				}
-				return a.name.localeCompare(b.name);
-			}),
+			files: entries,
 			path: subPath || "/",
+			offset: startOffset,
+			limit: pageSize,
+			total,
+			hasMore: startOffset + pageSize < total,
 		};
 	} catch (error) {
+		if (isNodeJSErrnoException(error) && error.code === "ENOENT") {
+			throw new NotFoundError("Directory not found");
+		}
 		// Handle permission denied and other access errors gracefully
 		const errorMessage = toMessage(error);
-		logger.warn(`[listFiles] Error reading directory ${normalizedPath}: ${errorMessage}`);
 		if (errorMessage.includes("EPERM") || errorMessage.includes("EACCES") || errorMessage.includes("denied")) {
 			return {
 				files: [],
 				path: subPath || "/",
+				offset: startOffset,
+				limit: pageSize,
+				total: 0,
+				hasMore: false,
 			};
 		}
 		throw new InternalServerError(`Failed to list files: ${errorMessage}`);

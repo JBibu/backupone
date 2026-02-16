@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Bell, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "~/client/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/client/components/ui/card";
@@ -31,7 +31,18 @@ type NotificationAssignment = {
 };
 
 export const ScheduleNotificationsConfig = ({ scheduleId, destinations, initialData }: Props) => {
-	const [assignments, setAssignments] = useState<Map<number, NotificationAssignment>>(new Map());
+	const map = new Map<number, NotificationAssignment>();
+	for (const assignment of initialData) {
+		map.set(assignment.destinationId, {
+			destinationId: assignment.destinationId,
+			notifyOnStart: assignment.notifyOnStart,
+			notifyOnSuccess: assignment.notifyOnSuccess,
+			notifyOnWarning: assignment.notifyOnWarning,
+			notifyOnFailure: assignment.notifyOnFailure,
+		});
+	}
+
+	const [assignments, setAssignments] = useState<Map<number, NotificationAssignment>>(map);
 	const [hasChanges, setHasChanges] = useState(false);
 	const [isAddingNew, setIsAddingNew] = useState(false);
 
@@ -52,23 +63,6 @@ export const ScheduleNotificationsConfig = ({ scheduleId, destinations, initialD
 			});
 		},
 	});
-
-	useEffect(() => {
-		if (currentAssignments) {
-			const map = new Map<number, NotificationAssignment>();
-			for (const assignment of currentAssignments) {
-				map.set(assignment.destinationId, {
-					destinationId: assignment.destinationId,
-					notifyOnStart: assignment.notifyOnStart,
-					notifyOnSuccess: assignment.notifyOnSuccess,
-					notifyOnWarning: assignment.notifyOnWarning,
-					notifyOnFailure: assignment.notifyOnFailure,
-				});
-			}
-
-			setAssignments(map);
-		}
-	}, [currentAssignments]);
 
 	const addDestination = (destinationId: string) => {
 		const id = Number.parseInt(destinationId, 10);

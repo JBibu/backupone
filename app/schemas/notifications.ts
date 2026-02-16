@@ -21,6 +21,7 @@ export const emailNotificationConfigSchema = type({
 	username: "string?",
 	password: "string?",
 	from: "string",
+	fromName: "string?",
 	to: "string[]",
 	useTLS: "boolean",
 });
@@ -71,6 +72,7 @@ export const telegramNotificationConfigSchema = type({
 	type: "'telegram'",
 	botToken: "string",
 	chatId: "string",
+	threadId: "string?",
 });
 
 export const genericNotificationConfigSchema = type({

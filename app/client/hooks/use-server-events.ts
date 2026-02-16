@@ -1,58 +1,39 @@
-import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-	notifyError,
-	notifyInfo,
-	notifySuccess,
-	notifyWarning,
-} from "../lib/notifications";
+import { useCallback, useEffect, useRef } from "react";
+import { notifyError, notifyInfo, notifySuccess, notifyWarning } from "~/client/lib/notifications";
+import { serverEventNames, type ServerEventPayloadMap } from "~/schemas/server-events";
 
-type ServerEventType =
-	| "connected"
-	| "heartbeat"
-	| "backup:started"
-	| "backup:progress"
-	| "backup:completed"
-	| "volume:mounted"
-	| "volume:unmounted"
-	| "volume:updated"
-	| "mirror:started"
-	| "mirror:completed";
+type LifecycleEventPayloadMap = {
+	connected: { type: "connected"; timestamp: number };
+	heartbeat: { timestamp: number };
+};
 
-export interface BackupEvent {
-	scheduleId: number;
-	volumeName: string;
-	repositoryName: string;
-	status?: "success" | "error" | "warning" | "stopped";
-	error?: string;
-}
+type ServerEventsPayloadMap = LifecycleEventPayloadMap & ServerEventPayloadMap;
+type ServerEventType = keyof ServerEventsPayloadMap;
 
-export interface BackupProgressEvent {
-	scheduleId: number;
-	volumeName: string;
-	repositoryName: string;
-	seconds_elapsed: number;
-	percent_done: number;
-	total_files: number;
-	files_done: number;
-	total_bytes: number;
-	bytes_done: number;
-	current_files: string[];
-}
+type EventHandler<T extends ServerEventType> = (data: ServerEventsPayloadMap[T]) => void;
+type EventHandlerSet<T extends ServerEventType> = Set<EventHandler<T>>;
+type EventHandlerMap = {
+	[K in ServerEventType]?: EventHandlerSet<K>;
+};
 
-export interface VolumeEvent {
-	volumeName: string;
-}
+const invalidatingEvents = new Set<ServerEventType>([
+	"backup:completed",
+	"volume:updated",
+	"volume:status_changed",
+	"mirror:completed",
+	"doctor:started",
+	"doctor:completed",
+	"doctor:cancelled",
+]);
 
-export interface MirrorEvent {
-	scheduleId: number;
-	repositoryId: string;
-	repositoryName: string;
-	status?: "success" | "error";
-	error?: string;
-}
+export type RestoreEvent = ServerEventsPayloadMap["restore:started"] | ServerEventsPayloadMap["restore:completed"];
+export type RestoreProgressEvent = ServerEventsPayloadMap["restore:progress"];
+export type RestoreCompletedEvent = ServerEventsPayloadMap["restore:completed"];
+export type BackupProgressEvent = ServerEventsPayloadMap["backup:progress"];
 
-type EventHandler = (data: unknown) => void;
+const parseEventData = <T extends ServerEventType>(event: Event): ServerEventsPayloadMap[T] =>
+	JSON.parse((event as MessageEvent<string>).data) as ServerEventsPayloadMap[T];
 
 /**
  * Hook to listen to Server-Sent Events (SSE) from the backend
@@ -61,177 +42,114 @@ type EventHandler = (data: unknown) => void;
 export function useServerEvents() {
 	const queryClient = useQueryClient();
 	const eventSourceRef = useRef<EventSource | null>(null);
-	const handlersRef = useRef<Map<ServerEventType, Set<EventHandler>>>(new Map());
+	const handlersRef = useRef<EventHandlerMap>({});
+	const emit = useCallback(<T extends ServerEventType>(eventName: T, data: ServerEventsPayloadMap[T]) => {
+		const handlers = handlersRef.current[eventName] as EventHandlerSet<T> | undefined;
+		handlers?.forEach((handler) => {
+			handler(data);
+		});
+	}, []);
 
 	useEffect(() => {
 		const eventSource = new EventSource("/api/v1/events");
 		eventSourceRef.current = eventSource;
 
-		eventSource.addEventListener("connected", () => {
-			// Connected to server events
+		eventSource.addEventListener("connected", (event) => {
+			const data = parseEventData<"connected">(event);
+			console.info("[SSE] Connected to server events");
+			emit("connected", data);
 		});
 
-		eventSource.addEventListener("heartbeat", () => {});
+		eventSource.addEventListener("heartbeat", (event) => {
+			emit("heartbeat", parseEventData<"heartbeat">(event));
+		});
 
-		eventSource.addEventListener("backup:started", (e) => {
-			const data = JSON.parse(e.data) as BackupEvent;
+		for (const eventName of serverEventNames) {
+			eventSource.addEventListener(eventName, (event) => {
+				const data = parseEventData<typeof eventName>(event);
+				console.info(`[SSE] ${eventName}:`, data);
 
-			// Send desktop notification for backup start (only works in Tauri)
-			notifyInfo(
-				"Backup Started",
-				`Backing up ${data.volumeName} to ${data.repositoryName}`,
-			).catch(console.error);
+				if (invalidatingEvents.has(eventName)) {
+					void queryClient.invalidateQueries();
+				}
 
-			handlersRef.current.get("backup:started")?.forEach((handler) => {
-				handler(data);
+				if (eventName === "backup:completed") {
+					void queryClient.refetchQueries();
+				}
+
+				if (eventName === "volume:status_changed") {
+					const statusData = data as ServerEventsPayloadMap["volume:status_changed"];
+					emit("volume:status_changed", statusData);
+					emit("volume:updated", statusData);
+					return;
+				}
+
+				emit(eventName, data);
+
+				switch (eventName) {
+					case "backup:started": {
+						const d = data as ServerEventsPayloadMap["backup:started"];
+						void notifyInfo("Backup Started", `${d.repositoryName} — ${d.volumeName}`);
+						break;
+					}
+					case "backup:completed": {
+						const d = data as ServerEventsPayloadMap["backup:completed"];
+						const label = `${d.repositoryName} — ${d.volumeName}`;
+						if (d.status === "success") void notifySuccess("Backup Completed", label);
+						else if (d.status === "warning") void notifyWarning("Backup Completed with Warnings", label);
+						else void notifyError("Backup Failed", label);
+						break;
+					}
+					case "mirror:started": {
+						const d = data as ServerEventsPayloadMap["mirror:started"];
+						void notifyInfo("Mirror Started", d.repositoryName);
+						break;
+					}
+					case "mirror:completed": {
+						const d = data as ServerEventsPayloadMap["mirror:completed"];
+						if (d.status === "success") void notifySuccess("Mirror Completed", d.repositoryName);
+						else void notifyError("Mirror Failed", d.error ?? d.repositoryName);
+						break;
+					}
+					case "volume:mounted": {
+						const d = data as ServerEventsPayloadMap["volume:mounted"];
+						void notifySuccess("Volume Mounted", d.volumeName);
+						break;
+					}
+					case "volume:unmounted": {
+						const d = data as ServerEventsPayloadMap["volume:unmounted"];
+						void notifyInfo("Volume Unmounted", d.volumeName);
+						break;
+					}
+				}
 			});
-		});
+		}
 
-		eventSource.addEventListener("backup:progress", (e) => {
-			const data = JSON.parse(e.data) as BackupProgressEvent;
-
-			handlersRef.current.get("backup:progress")?.forEach((handler) => {
-				handler(data);
-			});
-		});
-
-		eventSource.addEventListener("backup:completed", (e) => {
-			const data = JSON.parse(e.data) as BackupEvent;
-
-			void queryClient.invalidateQueries();
-			void queryClient.refetchQueries();
-
-			// Send desktop notification based on backup status (only works in Tauri)
-			if (data.status === "success") {
-				notifySuccess(
-					"Backup Complete",
-					`Successfully backed up ${data.volumeName} to ${data.repositoryName}`,
-				).catch(console.error);
-			} else if (data.status === "warning") {
-				notifyWarning(
-					"Backup Completed with Warnings",
-					`Backup of ${data.volumeName} completed but with warnings`,
-				).catch(console.error);
-			} else if (data.status === "error") {
-				notifyError(
-					"Backup Failed",
-					data.error || `Failed to backup ${data.volumeName} to ${data.repositoryName}`,
-				).catch(console.error);
-			} else if (data.status === "stopped") {
-				notifyInfo(
-					"Backup Stopped",
-					`Backup of ${data.volumeName} was stopped`,
-				).catch(console.error);
-			}
-
-			handlersRef.current.get("backup:completed")?.forEach((handler) => {
-				handler(data);
-			});
-		});
-
-		eventSource.addEventListener("volume:mounted", (e) => {
-			const data = JSON.parse(e.data) as VolumeEvent;
-
-			// Send desktop notification for volume mount (only works in Tauri)
-			notifySuccess("Volume Mounted", `${data.volumeName} is now accessible`).catch(
-				console.error,
-			);
-
-			handlersRef.current.get("volume:mounted")?.forEach((handler) => {
-				handler(data);
-			});
-		});
-
-		eventSource.addEventListener("volume:unmounted", (e) => {
-			const data = JSON.parse(e.data) as VolumeEvent;
-
-			// Send desktop notification for volume unmount (only works in Tauri)
-			notifyInfo("Volume Unmounted", `${data.volumeName} has been disconnected`).catch(
-				console.error,
-			);
-
-			handlersRef.current.get("volume:unmounted")?.forEach((handler) => {
-				handler(data);
-			});
-		});
-
-		eventSource.addEventListener("volume:updated", (e) => {
-			const data = JSON.parse(e.data) as VolumeEvent;
-
-			void queryClient.invalidateQueries();
-
-			handlersRef.current.get("volume:updated")?.forEach((handler) => {
-				handler(data);
-			});
-		});
-
-		eventSource.addEventListener("volume:status_updated", (e) => {
-			const data = JSON.parse(e.data) as VolumeEvent;
-
-			void queryClient.invalidateQueries();
-
-			handlersRef.current.get("volume:updated")?.forEach((handler) => {
-				handler(data);
-			});
-		});
-
-		eventSource.addEventListener("mirror:started", (e) => {
-			const data = JSON.parse(e.data) as MirrorEvent;
-
-			// Send desktop notification for mirror start (only works in Tauri)
-			notifyInfo("Mirror Started", `Mirroring repository ${data.repositoryName}`).catch(
-				console.error,
-			);
-
-			handlersRef.current.get("mirror:started")?.forEach((handler) => {
-				handler(data);
-			});
-		});
-
-		eventSource.addEventListener("mirror:completed", (e) => {
-			const data = JSON.parse(e.data) as MirrorEvent;
-
-			// Invalidate queries to refresh mirror status in the UI
-			void queryClient.invalidateQueries();
-
-			// Send desktop notification based on mirror status (only works in Tauri)
-			if (data.status === "success") {
-				notifySuccess(
-					"Mirror Complete",
-					`Successfully mirrored repository ${data.repositoryName}`,
-				).catch(console.error);
-			} else if (data.status === "error") {
-				notifyError(
-					"Mirror Failed",
-					data.error || `Failed to mirror repository ${data.repositoryName}`,
-				).catch(console.error);
-			}
-
-			handlersRef.current.get("mirror:completed")?.forEach((handler) => {
-				handler(data);
-			});
-		});
-
-		eventSource.onerror = () => {
-			// SSE connection error - will auto-reconnect
+		eventSource.onerror = (error) => {
+			console.error("[SSE] Connection error:", error);
 		};
 
 		return () => {
+			console.info("[SSE] Disconnecting from server events");
 			eventSource.close();
 			eventSourceRef.current = null;
 		};
-	}, [queryClient]);
+	}, [emit, queryClient]);
 
-	const addEventListener = (event: ServerEventType, handler: EventHandler) => {
-		if (!handlersRef.current.has(event)) {
-			handlersRef.current.set(event, new Set());
-		}
-		handlersRef.current.get(event)?.add(handler);
+	const addEventListener = useCallback(<T extends ServerEventType>(eventName: T, handler: EventHandler<T>) => {
+		const existingHandlers = handlersRef.current[eventName] as EventHandlerSet<T> | undefined;
+		const eventHandlers = existingHandlers ?? new Set<EventHandler<T>>();
+		eventHandlers.add(handler);
+		handlersRef.current[eventName] = eventHandlers as EventHandlerMap[T];
 
 		return () => {
-			handlersRef.current.get(event)?.delete(handler);
+			const handlers = handlersRef.current[eventName] as EventHandlerSet<T> | undefined;
+			handlers?.delete(handler);
+			if (handlers && handlers.size === 0) {
+				delete handlersRef.current[eventName];
+			}
 		};
-	};
+	}, []);
 
 	return { addEventListener };
 }

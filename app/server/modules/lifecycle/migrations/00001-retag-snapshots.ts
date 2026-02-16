@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "../../../db/db";
-import { backupScheduleMirrorsTable, repositoriesTable, type Repository } from "../../../db/schema";
+import { backupScheduleMirrorsTable, type Repository } from "../../../db/schema";
 import { logger } from "../../../utils/logger";
 import { toMessage } from "~/server/utils/errors";
 import { exec } from "~/server/utils/spawn";
@@ -13,7 +13,7 @@ const migrateTag = async (
 	scheduleName: string,
 ): Promise<string | null> => {
 	const repoUrl = buildRepoUrl(repository.config);
-	const env = await buildEnv(repository.config);
+	const env = await buildEnv(repository.config, repository.organizationId);
 
 	const args = ["--repo", repoUrl, "tag", "--tag", oldTag, "--add", newTag, "--remove", oldTag];
 
@@ -42,7 +42,7 @@ const execute = async () => {
 			const newTag = schedule.shortId;
 
 			const repository = await db.query.repositoriesTable.findFirst({
-				where: eq(repositoriesTable.id, schedule.repositoryId),
+				where: { id: schedule.repositoryId },
 			});
 
 			if (!repository) {
@@ -63,7 +63,7 @@ const execute = async () => {
 
 			for (const mirror of mirrors) {
 				const mirrorRepo = await db.query.repositoriesTable.findFirst({
-					where: eq(repositoriesTable.id, mirror.repositoryId),
+					where: { id: mirror.repositoryId },
 				});
 
 				if (!mirrorRepo) {

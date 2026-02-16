@@ -36,6 +36,7 @@ export const ScheduleSummary = (props: Props) => {
 		props;
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 	const [showForgetConfirm, setShowForgetConfirm] = useState(false);
+	const [showStopConfirm, setShowStopConfirm] = useState(false);
 
 	const runForget = useMutation({
 		...runForgetMutation(),
@@ -79,6 +80,12 @@ export const ScheduleSummary = (props: Props) => {
 		runForget.mutate({ path: { scheduleId: schedule.id.toString() } });
 	};
 
+	const handleConfirmStop = () => {
+		setShowStopConfirm(false);
+		if (schedule.lastBackupStatus !== "in_progress") return;
+		handleStopBackup();
+	};
+
 	return (
 		<div className="space-y-4">
 			<Card>
@@ -87,7 +94,7 @@ export const ScheduleSummary = (props: Props) => {
 						<div>
 							<CardTitle>{schedule.name}</CardTitle>
 							<CardDescription className="mt-1">
-								<Link to={`/volumes/${schedule.volume.name}`} className="hover:underline">
+								<Link to={`/volumes/${schedule.volume.shortId}`} className="hover:underline">
 									<HardDrive className="inline h-4 w-4 mr-2" />
 									<span>{schedule.volume.name}</span>
 								</Link>
@@ -109,7 +116,12 @@ export const ScheduleSummary = (props: Props) => {
 					</div>
 					<div className="flex flex-col @lg:flex-row gap-2">
 						{schedule.lastBackupStatus === "in_progress" ? (
-							<Button variant="destructive" size="sm" onClick={handleStopBackup} className="w-full @md:w-auto">
+							<Button
+								variant="destructive"
+								size="sm"
+								onClick={() => setShowStopConfirm(true)}
+								className="w-full @md:w-auto"
+							>
 								<Square className="h-4 w-4 mr-2" />
 								<span>Stop backup</span>
 							</Button>
@@ -238,6 +250,26 @@ export const ScheduleSummary = (props: Props) => {
 						<AlertDialogAction onClick={handleConfirmForget}>
 							<Check className="h-4 w-4 mr-2" />
 							Run cleanup
+						</AlertDialogAction>
+					</div>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			<AlertDialog open={showStopConfirm} onOpenChange={setShowStopConfirm}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Stop running backup?</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to stop the current backup for <strong>{schedule.name}</strong>?
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<div className="flex gap-3 justify-end">
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleConfirmStop}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							Stop backup
 						</AlertDialogAction>
 					</div>
 				</AlertDialogContent>

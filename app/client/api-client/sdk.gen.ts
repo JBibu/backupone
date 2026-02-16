@@ -5,6 +5,9 @@ import { client } from "./client.gen";
 import type {
 	BrowseFilesystemData,
 	BrowseFilesystemResponses,
+	CancelDoctorData,
+	CancelDoctorErrors,
+	CancelDoctorResponses,
 	CreateBackupScheduleData,
 	CreateBackupScheduleResponses,
 	CreateNotificationDestinationData,
@@ -26,8 +29,6 @@ import type {
 	DeleteSnapshotsResponses,
 	DeleteVolumeData,
 	DeleteVolumeResponses,
-	DoctorRepositoryData,
-	DoctorRepositoryResponses,
 	DownloadResticPasswordData,
 	DownloadResticPasswordResponses,
 	GetBackupScheduleData,
@@ -41,6 +42,8 @@ import type {
 	GetNotificationDestinationData,
 	GetNotificationDestinationErrors,
 	GetNotificationDestinationResponses,
+	GetRegistrationStatusData,
+	GetRegistrationStatusResponses,
 	GetRepositoryData,
 	GetRepositoryResponses,
 	GetScheduleMirrorsData,
@@ -55,6 +58,8 @@ import type {
 	GetSystemInfoResponses,
 	GetUpdatesData,
 	GetUpdatesResponses,
+	GetUserDeletionImpactData,
+	GetUserDeletionImpactResponses,
 	GetVolumeData,
 	GetVolumeErrors,
 	GetVolumeResponses,
@@ -79,6 +84,8 @@ import type {
 	ListVolumesResponses,
 	MountVolumeData,
 	MountVolumeResponses,
+	RefreshSnapshotsData,
+	RefreshSnapshotsResponses,
 	ReorderBackupSchedulesData,
 	ReorderBackupSchedulesResponses,
 	RestoreSnapshotData,
@@ -87,6 +94,11 @@ import type {
 	RunBackupNowResponses,
 	RunForgetData,
 	RunForgetResponses,
+	SetRegistrationStatusData,
+	SetRegistrationStatusResponses,
+	StartDoctorData,
+	StartDoctorErrors,
+	StartDoctorResponses,
 	StopBackupData,
 	StopBackupErrors,
 	StopBackupResponses,
@@ -143,6 +155,17 @@ export const getStatus = <ThrowOnError extends boolean = false>(options?: Option
 	});
 
 /**
+ * Get impact of deleting a user
+ */
+export const getUserDeletionImpact = <ThrowOnError extends boolean = false>(
+	options: Options<GetUserDeletionImpactData, ThrowOnError>,
+) =>
+	(options.client ?? client).get<GetUserDeletionImpactResponses, unknown, ThrowOnError>({
+		url: "/api/v1/auth/deletion-impact/{userId}",
+		...options,
+	});
+
+/**
  * List all volumes
  */
 export const listVolumes = <ThrowOnError extends boolean = false>(options?: Options<ListVolumesData, ThrowOnError>) =>
@@ -181,7 +204,7 @@ export const testConnection = <ThrowOnError extends boolean = false>(
  */
 export const deleteVolume = <ThrowOnError extends boolean = false>(options: Options<DeleteVolumeData, ThrowOnError>) =>
 	(options.client ?? client).delete<DeleteVolumeResponses, unknown, ThrowOnError>({
-		url: "/api/v1/volumes/{name}",
+		url: "/api/v1/volumes/{id}",
 		...options,
 	});
 
@@ -190,7 +213,7 @@ export const deleteVolume = <ThrowOnError extends boolean = false>(options: Opti
  */
 export const getVolume = <ThrowOnError extends boolean = false>(options: Options<GetVolumeData, ThrowOnError>) =>
 	(options.client ?? client).get<GetVolumeResponses, GetVolumeErrors, ThrowOnError>({
-		url: "/api/v1/volumes/{name}",
+		url: "/api/v1/volumes/{id}",
 		...options,
 	});
 
@@ -199,7 +222,7 @@ export const getVolume = <ThrowOnError extends boolean = false>(options: Options
  */
 export const updateVolume = <ThrowOnError extends boolean = false>(options: Options<UpdateVolumeData, ThrowOnError>) =>
 	(options.client ?? client).put<UpdateVolumeResponses, UpdateVolumeErrors, ThrowOnError>({
-		url: "/api/v1/volumes/{name}",
+		url: "/api/v1/volumes/{id}",
 		...options,
 		headers: {
 			"Content-Type": "application/json",
@@ -212,7 +235,7 @@ export const updateVolume = <ThrowOnError extends boolean = false>(options: Opti
  */
 export const mountVolume = <ThrowOnError extends boolean = false>(options: Options<MountVolumeData, ThrowOnError>) =>
 	(options.client ?? client).post<MountVolumeResponses, unknown, ThrowOnError>({
-		url: "/api/v1/volumes/{name}/mount",
+		url: "/api/v1/volumes/{id}/mount",
 		...options,
 	});
 
@@ -223,7 +246,7 @@ export const unmountVolume = <ThrowOnError extends boolean = false>(
 	options: Options<UnmountVolumeData, ThrowOnError>,
 ) =>
 	(options.client ?? client).post<UnmountVolumeResponses, unknown, ThrowOnError>({
-		url: "/api/v1/volumes/{name}/unmount",
+		url: "/api/v1/volumes/{id}/unmount",
 		...options,
 	});
 
@@ -234,7 +257,7 @@ export const healthCheckVolume = <ThrowOnError extends boolean = false>(
 	options: Options<HealthCheckVolumeData, ThrowOnError>,
 ) =>
 	(options.client ?? client).post<HealthCheckVolumeResponses, HealthCheckVolumeErrors, ThrowOnError>({
-		url: "/api/v1/volumes/{name}/health-check",
+		url: "/api/v1/volumes/{id}/health-check",
 		...options,
 	});
 
@@ -243,7 +266,7 @@ export const healthCheckVolume = <ThrowOnError extends boolean = false>(
  */
 export const listFiles = <ThrowOnError extends boolean = false>(options: Options<ListFilesData, ThrowOnError>) =>
 	(options.client ?? client).get<ListFilesResponses, unknown, ThrowOnError>({
-		url: "/api/v1/volumes/{name}/files",
+		url: "/api/v1/volumes/{id}/files",
 		...options,
 	});
 
@@ -370,6 +393,17 @@ export const listSnapshots = <ThrowOnError extends boolean = false>(
 	});
 
 /**
+ * Clear snapshot cache and force refresh from repository
+ */
+export const refreshSnapshots = <ThrowOnError extends boolean = false>(
+	options: Options<RefreshSnapshotsData, ThrowOnError>,
+) =>
+	(options.client ?? client).post<RefreshSnapshotsResponses, unknown, ThrowOnError>({
+		url: "/api/v1/repositories/{id}/snapshots/refresh",
+		...options,
+	});
+
+/**
  * Delete a specific snapshot from a repository
  */
 export const deleteSnapshot = <ThrowOnError extends boolean = false>(
@@ -418,12 +452,19 @@ export const restoreSnapshot = <ThrowOnError extends boolean = false>(
 	});
 
 /**
- * Run doctor operations on a repository to fix common issues (unlock, check, repair index). Use this when the repository is locked or has errors.
+ * Cancel a running doctor operation on a repository
  */
-export const doctorRepository = <ThrowOnError extends boolean = false>(
-	options: Options<DoctorRepositoryData, ThrowOnError>,
-) =>
-	(options.client ?? client).post<DoctorRepositoryResponses, unknown, ThrowOnError>({
+export const cancelDoctor = <ThrowOnError extends boolean = false>(options: Options<CancelDoctorData, ThrowOnError>) =>
+	(options.client ?? client).delete<CancelDoctorResponses, CancelDoctorErrors, ThrowOnError>({
+		url: "/api/v1/repositories/{id}/doctor",
+		...options,
+	});
+
+/**
+ * Start an asynchronous doctor operation on a repository to fix common issues (unlock, check, repair index). The operation runs in the background and sends results via SSE events.
+ */
+export const startDoctor = <ThrowOnError extends boolean = false>(options: Options<StartDoctorData, ThrowOnError>) =>
+	(options.client ?? client).post<StartDoctorResponses, StartDoctorErrors, ThrowOnError>({
 		url: "/api/v1/repositories/{id}/doctor",
 		...options,
 	});
@@ -721,7 +762,33 @@ export const getUpdates = <ThrowOnError extends boolean = false>(options?: Optio
 	});
 
 /**
- * Download the Restic password file for backup recovery. Requires password re-authentication.
+ * Get the current registration status for new users
+ */
+export const getRegistrationStatus = <ThrowOnError extends boolean = false>(
+	options?: Options<GetRegistrationStatusData, ThrowOnError>,
+) =>
+	(options?.client ?? client).get<GetRegistrationStatusResponses, unknown, ThrowOnError>({
+		url: "/api/v1/system/registration-status",
+		...options,
+	});
+
+/**
+ * Update the registration status for new users. Requires global admin role.
+ */
+export const setRegistrationStatus = <ThrowOnError extends boolean = false>(
+	options?: Options<SetRegistrationStatusData, ThrowOnError>,
+) =>
+	(options?.client ?? client).put<SetRegistrationStatusResponses, unknown, ThrowOnError>({
+		url: "/api/v1/system/registration-status",
+		...options,
+		headers: {
+			"Content-Type": "application/json",
+			...options?.headers,
+		},
+	});
+
+/**
+ * Download the organization's Restic password for backup recovery. Requires organization owner or admin role and password re-authentication.
  */
 export const downloadResticPassword = <ThrowOnError extends boolean = false>(
 	options?: Options<DownloadResticPasswordData, ThrowOnError>,

@@ -1,41 +1,31 @@
-import { Outlet, redirect, useNavigate } from "react-router";
-import { useTranslation } from "react-i18next";
+import { LifeBuoy } from "lucide-react";
 import { toast } from "sonner";
-import { appContext } from "~/context";
-import { authMiddleware } from "~/middleware/auth";
-import type { Route } from "./+types/layout";
-import { AppBreadcrumb } from "./app-breadcrumb";
+import { type AppContext } from "~/context";
 import { GridBackground } from "./grid-background";
 import { Button } from "./ui/button";
 import { SidebarProvider, SidebarTrigger } from "./ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
 import { authClient } from "../lib/auth-client";
+import { DevPanelListener } from "./dev-panel-listener";
+import { Outlet, useNavigate } from "@tanstack/react-router";
+import { AppBreadcrumb } from "./app-breadcrumb";
 import { Titlebar } from "./titlebar";
 
-export const clientMiddleware = [authMiddleware];
+type Props = {
+	loaderData: AppContext;
+};
 
-export async function clientLoader({ context }: Route.LoaderArgs) {
-	const ctx = context.get(appContext);
-
-	if (ctx.user && !ctx.user.hasDownloadedResticPassword) {
-		throw redirect("/download-recovery-key");
-	}
-
-	return ctx;
-}
-
-export default function Layout({ loaderData }: Route.ComponentProps) {
-	const { t } = useTranslation();
+export function Layout({ loaderData }: Props) {
 	const navigate = useNavigate();
 
 	const handleLogout = async () => {
 		await authClient.signOut({
 			fetchOptions: {
 				onSuccess: () => {
-					void navigate("/login", { replace: true });
+					void navigate({ to: "/login", replace: true });
 				},
 				onError: ({ error }) => {
-					toast.error(t("settings.logout.failed"), { description: error.message });
+					toast.error("Logout failed", { description: error.message });
 				},
 			},
 		});
@@ -56,11 +46,11 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
 						{loaderData.user && (
 							<div className="flex items-center gap-4">
 								<span className="text-sm text-muted-foreground hidden md:inline-flex">
-									{t("layout.welcome")}&nbsp;
+									Welcome,&nbsp;
 									<span className="text-strong-accent">{loaderData.user?.username}</span>
 								</span>
 								<Button variant="default" size="sm" onClick={handleLogout}>
-									{t("layout.logoutButton")}
+									Logout
 								</Button>
 							</div>
 						)}
@@ -74,6 +64,7 @@ export default function Layout({ loaderData }: Route.ComponentProps) {
 					</GridBackground>
 				</div>
 			</div>
+			<DevPanelListener />
 		</SidebarProvider>
 	);
 }
