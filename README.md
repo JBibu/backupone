@@ -1,31 +1,48 @@
 # Backup ONE
 
-Automatizacion de copias de seguridad con cifrado, compresion y politicas de retencion. Basado en [Restic](https://github.com/restic/restic) y [Zerobyte](https://github.com/nicotsx/zerobyte) 
+Automatizacion de copias de seguridad con cifrado, compresion y politicas de retencion. Basado en [Restic](https://github.com/restic/restic) y [Zerobyte](https://github.com/nicotsx/zerobyte).
 
 > [!WARNING]
-> Backup ONE esta en version 0.x.x y puede sufrir cambios importantes entre versiones. Es posible que encuentres errores. Por favor, abre issues o solicitudes de funcionalidades.
+> Backup ONE esta en desarrollo activo y puede sufrir cambios importantes entre versiones.
 
 ## Caracteristicas
 
-- Copias de seguridad automatizadas con cifrado y compresion
-- Programacion flexible con politicas de retencion
-- Soporte multi-protocolo: NFS, SMB, WebDAV, SFTP o directorios locales
-- Repositorios compatibles con S3, Google Cloud Storage, Azure Blob Storage y rclone
+- Copias de seguridad cifradas y comprimidas con programacion cron y politicas de retencion
+- Interfaz web para gestionar volumenes, repositorios, programaciones y notificaciones
+- Volumenes: NFS, SMB, WebDAV, SFTP, directorios locales
+- Repositorios: S3, Google Cloud Storage, Azure Blob Storage, rclone, locales
+- Notificaciones: Discord, Email, Gotify, Ntfy, Slack, Pushover
+- Multi-arquitectura: amd64 y arm64
 
 ## Instalacion
 
-Descarga el instalador para tu plataforma desde la seccion de [Releases](https://github.com/JBibu/backupone/releases).
+### Docker
 
-### Windows
+```yaml
+services:
+  backupone:
+    image: ghcr.io/c3i-servicios-informaticos/backupone:latest
+    container_name: backupone
+    restart: unless-stopped
+    cap_add:
+      - SYS_ADMIN
+    devices:
+      - /dev/fuse:/dev/fuse
+    ports:
+      - "4096:4096"
+    environment:
+      - TZ=${TZ:-UTC}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/lib/zerobyte:/var/lib/zerobyte
+```
 
-- **NSIS (.exe)**: Instalador estandar
-- **MSI (.msi)**: Instalador para despliegues gestionados
+### Escritorio
 
-### Linux
+Descarga el instalador desde [Releases](https://github.com/C3i-Servicios-Informaticos/backupone/releases):
 
-- **AppImage**: Ejecutable portable, no requiere instalacion
-- **DEB**: Para distribuciones basadas en Debian/Ubuntu
-- **RPM**: Para distribuciones basadas en Fedora/RHEL
+- **Windows**: NSIS (.exe) o MSI (.msi)
+- **Linux**: AppImage, DEB o RPM
 
 ## Desarrollo
 
