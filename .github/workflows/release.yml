@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  determine-release-type:
+    runs-on: ubuntu-latest
+    outputs:
+      release_type: ${{ steps.set-type.outputs.release_type }}
+      tagname: ${{ github.ref_name }}
+    steps:
+      - name: Set release type
+        id: set-type
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          if [[ $TAG == *-alpha* ]]; then
+            echo "release_type=alpha" >> $GITHUB_OUTPUT
+          elif [[ $TAG == *-beta* ]]; then
+            echo "release_type=beta" >> $GITHUB_OUTPUT
+          else
+            echo "release_type=release" >> $GITHUB_OUTPUT
+          fi
+
+  checks:
+    uses: ./.github/workflows/checks.yml
+
+  build-windows:
+    needs: [checks]
+    uses: ./.github/workflows/build-windows.yml
+    secrets:
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+  publish-release:
+    runs-on: ubuntu-latest
+    needs: [determine-release-type, build-windows]
+    steps:
+      - name: Download Windows NSIS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: zerobyte-windows-nsis
+          path: artifacts/windows-nsis
+
+      - name: Collect release files
+        run: |
+          mkdir -p release-files
+          cp artifacts/windows-nsis/* release-files/ 2>/dev/null || true
+          echo "Release files:"
+          ls -la release-files/
+
+      - name: Generate latest.json for updater
+        run: |
+          TAG="${{ needs.determine-release-type.outputs.tagname }}"
+          VERSION="${TAG#v}"
+          REPO="${{ github.repository }}"
+
+          NSIS_EXE=$(find release-files -name '*.exe' ! -name '*.sig' | head -1)
+          NSIS_SIG=$(cat "${NSIS_EXE}.sig" 2>/dev/null || echo "")
+
+          NSIS_NAME=$(basename "$NSIS_EXE")
+
+          cat > release-files/latest.json <<EOF
+          {
+            "version": "${VERSION}",
+            "notes": "Release ${TAG}",
+            "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "platforms": {
+              "windows-x86_64": {
+                "signature": "${NSIS_SIG}",
+                "url": "https://github.com/${REPO}/releases/download/${TAG}/${NSIS_NAME}"
+              }
+            }
+          }
+          EOF
+
+          echo "Generated latest.json:"
+          cat release-files/latest.json
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.determine-release-type.outputs.tagname }}
+          name: ${{ needs.determine-release-type.outputs.tagname }}
+          body: |
+            **${{ needs.determine-release-type.outputs.tagname }}**
+          draft: ${{ needs.determine-release-type.outputs.release_type != 'release' }}
+          prerelease: ${{ needs.determine-release-type.outputs.release_type != 'release' }}
+          files: release-files/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

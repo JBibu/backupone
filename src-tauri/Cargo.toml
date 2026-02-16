@@ -1,0 +1,62 @@
+[package]
+name = "zerobyte"
+version = "0.1.0"
+description = "C3i Backup ONE - Backup automation powered by Restic"
+authors = ["C3i Servicios Informáticos"]
+license = "AGPL-3.0"
+repository = "https://github.com/zerobytecode/zerobyte"
+edition = "2021"
+rust-version = "1.70"
+default-run = "zerobyte"
+
+[lib]
+name = "zerobyte_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "zerobyte"
+path = "src/main.rs"
+
+[[bin]]
+name = "zerobyte-service"
+path = "src/bin/zerobyte-service.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["devtools", "tray-icon"] }
+tauri-plugin-shell = "2"
+tauri-plugin-process = "2"
+tauri-plugin-single-instance = "2"
+tauri-plugin-autostart = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", features = ["json", "blocking"] }
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tauri-plugin-notification = "2"
+tauri-plugin-updater = "2.10"
+
+[target.'cfg(windows)'.dependencies]
+windows-service = "0.7"
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_Services",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = "debuginfo"
