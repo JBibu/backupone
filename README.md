@@ -37,12 +37,12 @@ services:
       - /var/lib/zerobyte:/var/lib/zerobyte
 ```
 
-### Escritorio
+### Windows
 
 Descarga el instalador desde [Releases](https://github.com/C3i-Servicios-Informaticos/backupone/releases):
 
-- **Windows**: NSIS (.exe) o MSI (.msi)
-- **Linux**: AppImage, DEB o RPM
+- **NSIS (.exe)**: Instalador estandar
+- **MSI (.msi)**: Instalador para despliegues gestionados
 
 ## Desarrollo
 
