@@ -3,6 +3,7 @@ pub mod service;
 use crate::AppState;
 use serde::Serialize;
 use std::sync::atomic::Ordering;
+use tauri::Manager;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct BackendInfo {
