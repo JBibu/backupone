@@ -1,0 +1,82 @@
+{
+	"$schema": "https://schema.tauri.app/config/2",
+	"productName": "C3i Backup ONE",
+	"version": "0.1.0",
+	"identifier": "com.c3i.backupone",
+	"build": {
+		"beforeDevCommand": "bun run dev",
+		"devUrl": "http://localhost:4096",
+		"beforeBuildCommand": "bun run build",
+		"frontendDist": "assets"
+	},
+	"app": {
+		"withGlobalTauri": true,
+		"windows": [
+			{
+				"title": "C3i Backup ONE",
+				"width": 1200,
+				"height": 800,
+				"minWidth": 800,
+				"minHeight": 600,
+				"resizable": true,
+				"fullscreen": false,
+				"center": true,
+				"decorations": false,
+				"visible": false
+			}
+		],
+		"security": {
+			"csp": null
+		}
+	},
+	"bundle": {
+		"createUpdaterArtifacts": true,
+		"active": true,
+		"targets": ["nsis"],
+		"icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+		"resources": {
+			"binaries/assets/migrations": "assets/migrations",
+			"binaries/dist/client": "dist/client"
+		},
+		"externalBin": [
+			"binaries/zerobyte-server",
+			"binaries/zerobyte-service",
+			"binaries/restic",
+			"binaries/rclone",
+			"binaries/shoutrrr"
+		],
+		"copyright": "Copyright © 2026 C3i Servicios Informáticos",
+		"windows": {
+			"digestAlgorithm": "sha256",
+			"webviewInstallMode": {
+				"type": "embedBootstrapper"
+			},
+			"wix": {
+				"language": ["en-US", "es-ES"]
+			},
+			"nsis": {
+				"installerIcon": "icons/icon.ico",
+				"installMode": "perMachine",
+				"languages": ["English", "Spanish"],
+				"displayLanguageSelector": true,
+				"startMenuFolder": "C3i Backup ONE"
+			}
+		},
+		"category": "Utility",
+		"shortDescription": "Backup automation powered by Restic",
+		"longDescription": "C3i Backup ONE is a backup automation tool that provides a modern web interface for managing encrypted backups using Restic.",
+		"publisher": "C3i Servicios Informáticos"
+	},
+	"plugins": {
+		"shell": {
+			"open": true
+		},
+		"updater": {
+			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDIxRDJGMDYzMDgwNzY2REYKUldUZlpnY0lZL0RTSWNqMllpK3B6L1JmM1NoVDk2WFcrbjF6RndSSEU5b0xMU05DMTJVdnZhOHUK",
+			"endpoints": ["https://github.com/JBibu/backupone/releases/latest/download/latest.json"],
+			"windows": {
+				"installMode": "passive"
+			}
+		}
+	}
+}
