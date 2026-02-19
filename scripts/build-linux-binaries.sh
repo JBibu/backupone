@@ -20,7 +20,7 @@ bun run build
 echo "Compiling server to standalone executable..."
 
 TARGET="bun-linux-x64"
-ENTRY_POINT="./dist/server/index.js"
+ENTRY_POINT="./.output/server/index.mjs"
 OUTPUT_FILE="$OUTPUT_DIR/zerobyte-server-x86_64-unknown-linux-gnu"
 
 BUN_ARGS=(
@@ -46,7 +46,7 @@ cp -r app/drizzle/* "$OUTPUT_DIR/assets/migrations/"
 # Copy client assets for SSR hydration
 echo "Copying client assets..."
 mkdir -p "$OUTPUT_DIR/dist"
-cp -r dist/client "$OUTPUT_DIR/dist/"
+cp -r .output/public "$OUTPUT_DIR/dist/client"
 
 # Verify the output file exists
 if [ -f "$OUTPUT_FILE" ]; then

@@ -28,7 +28,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "Compiling server to standalone executable..." -ForegroundColor Yellow
 
 $target = "bun-windows-x64"
-$entryPoint = "./dist/server/index.js"
+$entryPoint = "./.output/server/index.mjs"
 $outputFile = Join-Path $OutputDir "zerobyte-server-x86_64-pc-windows-msvc.exe"
 
 $bunArgs = @(
@@ -78,7 +78,7 @@ $distDir = Join-Path $OutputDir "dist"
 if (-not (Test-Path $distDir)) {
     New-Item -ItemType Directory -Path $distDir -Force | Out-Null
 }
-Copy-Item -Path "dist\client" -Destination $distDir -Recurse -Force
+Copy-Item -Path ".output\public" -Destination (Join-Path $distDir "client") -Recurse -Force
 Write-Host "Client assets copied to: $(Join-Path $distDir 'client')" -ForegroundColor Green
 
 # Build the Windows Service binary
